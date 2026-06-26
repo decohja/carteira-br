@@ -94,15 +94,16 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 /* market boxes — right side of header */
 .mkt-panel{display:flex;align-items:center;gap:5px;padding:0 10px;border-left:1px solid var(--border);flex-shrink:0}
 .mkt-box{
-  display:flex;flex-direction:column;align-items:center;gap:1px;
-  background:var(--bg3);border:1px solid var(--border);border-radius:7px;
-  padding:4px 8px;cursor:default;transition:border-color .15s;min-width:74px;
+  display:flex;flex-direction:column;align-items:flex-end;gap:0;
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:5px 10px;cursor:default;transition:border-color .15s,background .15s;min-width:82px;
 }
-.mkt-box:hover{border-color:var(--border3)}
-.mk-name{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
-.mk-val{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text);line-height:1.1}
-.mk-chg{font-size:10px;font-family:var(--mono);display:flex;align-items:center;gap:2px;line-height:1}
-.mk-chg.up{color:var(--pos)}.mk-chg.dn{color:var(--neg)}.mk-chg.neu{color:var(--muted)}
+.mkt-box:hover{border-color:var(--border3);background:var(--bg4)}
+.mk-name{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);align-self:flex-start}
+.mk-val{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);line-height:1.2}
+.mk-chg{font-size:10px;font-family:var(--mono);display:flex;align-items:center;gap:2px;line-height:1.2}
+.mk-chg.up{color:var(--pos)}.mk-chg.dn{color:var(--neg)}.mk-chg.neu{color:var(--faint)}
 
 .hdr-r{display:flex;align-items:center;gap:6px;padding-left:8px;flex-shrink:0}
 .ibtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);
@@ -538,8 +539,8 @@ tr.total-row:hover td{background:var(--bg4)}
           <thead><tr>
             <th class="sort" data-col="tk" data-t="et">ETF</th>
             <th class="r sort" data-col="inv" data-t="et">Inv. (USD)</th><th class="r">Inv. (BRL)</th>
-            <th class="r sort" data-col="atual" data-t="et">Atual (USD)</th><th class="r">Atual (BRL)</th>
             <th class="r">Cotação</th>
+            <th class="r sort" data-col="atual" data-t="et">Atual (USD)</th><th class="r">Atual (BRL)</th>
             <th class="r sort" data-col="lucro" data-t="et">Lucro</th>
             <th class="r">DY%</th><th>Papel</th>
           </tr></thead>
@@ -564,8 +565,8 @@ tr.total-row:hover td{background:var(--bg4)}
           <thead><tr>
             <th class="sort" data-col="tk" data-t="sk">Stock</th>
             <th class="r sort" data-col="inv" data-t="sk">Inv. (USD)</th><th class="r">Inv. (BRL)</th>
-            <th class="r sort" data-col="atual" data-t="sk">Atual (USD)</th><th class="r">Atual (BRL)</th>
             <th class="r">Cotação</th>
+            <th class="r sort" data-col="atual" data-t="sk">Atual (USD)</th><th class="r">Atual (BRL)</th>
             <th class="r sort" data-col="lucro" data-t="sk">Lucro</th>
             <th class="r">DY%</th><th>Objetivo</th>
           </tr></thead>
@@ -658,7 +659,7 @@ tr.total-row:hover td{background:var(--bg4)}
       <input class="finp" id="uEmail" type="email" placeholder="seu@email.com" style="margin-bottom:10px"/>
       <div class="sep"></div>
       <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">🔒 Login completo com senha e sessão multi-dispositivo funciona quando hospedar com Supabase.</p>
-      <button class="btn-pri" style="width:100%" onclick="closeMod()">Salvar perfil</button>
+      <button class="btn-pri" style="width:100%" onclick="saveUser()">Salvar perfil</button>
     </div>
 
     <div id="mt-metas" style="display:none">
@@ -678,7 +679,7 @@ tr.total-row:hover td{background:var(--bg4)}
       <div class="sep"></div>
       <p style="font-size:11px;color:var(--muted);line-height:1.7"><strong>API B3 (futuro)</strong><br/>
       Integração via OAuth da B3/CEI é possível com backend (Supabase + servidor). Custo: infraestrutura ~R$50/mês. A B3 não cobra taxa de API para PF.</p>
-      <button class="btn-pri" style="width:100%;margin-top:12px" onclick="closeMod()">Salvar</button>
+      <button class="btn-pri" style="width:100%;margin-top:12px" onclick="saveAppSettings()">Salvar configurações</button>
     </div>
 
     <div id="mt-changelog" style="display:none">
@@ -805,6 +806,16 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v11.0",d:"Jun/2026",items:[
+    "Token Brapi salvo no localStorage — persiste entre sessões",
+    "Avatar e nome de perfil salvos localmente e no Supabase Storage",
+    "Botões Salvar perfil e Salvar configurações funcionais",
+    "IBOV e S&P 500 via Yahoo Finance (sem token, sem delay de mercado fechado)",
+    "IFIX via Brapi com token, fallback Yahoo para sem token",
+    "Cotação EUA separada de Atual — mostra '—' quando não carregou (não duplica valor)",
+    "Colunas EUA reordenadas: Inv | Cotação | Atual | Lucro",
+    "Cards de mercado com design melhorado",
+  ]},
   {v:"v10.0",d:"Jun/2026",items:[
     "COTAÇÕES REAIS: Brapi para BR (com token = sem delay), Yahoo Finance para ETFs/Stocks EUA",
     "Snapshot não é mais exibido como dado real — é apenas fallback de emergência",
@@ -1100,35 +1111,47 @@ async function refreshPrices(){
       }
     }catch(e){}
 
-    /* IBOV */
+    /* IBOV — Yahoo Finance (sem token, sem CORS) */
     try{
-      const r2=await fetch(`https://brapi.dev/api/quote/%5EBVSP?range=1d&interval=1d${ts}`);
-      const j2=await r2.json();
-      if(j2.results&&j2.results[0]){
-        const q=j2.results[0];
-        updMkt("ibov",(q.regularMarketPrice/1000).toFixed(1)+"k",q.regularMarketChangePercent);
+      const rB=await fetch('https://query1.finance.yahoo.com/v8/finance/chart/%5EBVSP?interval=1m&range=1d');
+      const jB=await rB.json();
+      const qB=jB.chart?.result?.[0]?.meta;
+      if(qB?.regularMarketPrice){
+        const chB=qB.regularMarketChangePercent||0;
+        updMkt("ibov",(qB.regularMarketPrice/1000).toFixed(2)+"k",chB);
       } else { updMktErr("ibov"); }
-    }catch(e){ updMktErr("ibov"); console.warn("IBOV:",e.message); }
+    }catch(e){ updMktErr("ibov"); console.warn("IBOV Yahoo:",e.message); }
 
-    /* S&P 500 */
+    /* S&P 500 — Yahoo Finance (sem token) */
     try{
-      const r4=await fetch(`https://brapi.dev/api/quote/%5EGSPC?range=1d&interval=1d${ts}`);
-      const j4=await r4.json();
-      if(j4.results&&j4.results[0]){
-        const q=j4.results[0];
-        updMkt("sp",q.regularMarketPrice.toFixed(0),q.regularMarketChangePercent);
+      const rS=await fetch('https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1m&range=1d');
+      const jS=await rS.json();
+      const qS=jS.chart?.result?.[0]?.meta;
+      if(qS?.regularMarketPrice){
+        const chS=qS.regularMarketChangePercent||0;
+        updMkt("sp",qS.regularMarketPrice.toFixed(0),chS);
       } else { updMktErr("sp"); }
-    }catch(e){ updMktErr("sp"); console.warn("SP500:",e.message); }
+    }catch(e){ updMktErr("sp"); console.warn("SP Yahoo:",e.message); }
 
-    /* IFIX */
+    /* IFIX — Brapi (precisa de token no plano free) */
     try{
-      const r5=await fetch(`https://brapi.dev/api/quote/IFIX11?range=1d&interval=1d${ts}`);
-      const j5=await r5.json();
-      if(j5.results&&j5.results[0]){
-        const q=j5.results[0];
-        updMkt("ifix",q.regularMarketPrice.toFixed(0),q.regularMarketChangePercent);
-      } else { updMktErr("ifix"); }
-    }catch(e){ updMktErr("ifix"); console.warn("IFIX:",e.message); }
+      if(ts){ // só tenta com token
+        const r5=await fetch(`https://brapi.dev/api/quote/IFIX11?range=1d&interval=1d${ts}`);
+        const j5=await r5.json();
+        if(j5.results&&j5.results[0]){
+          updMkt("ifix",j5.results[0].regularMarketPrice.toFixed(0),j5.results[0].regularMarketChangePercent);
+        } else updMktErr("ifix");
+      } else {
+        // sem token: tenta Yahoo para IFIX11
+        try{
+          const rI=await fetch('https://query1.finance.yahoo.com/v8/finance/chart/IFIX11.SA?interval=1m&range=1d');
+          const jI=await rI.json();
+          const qI=jI.chart?.result?.[0]?.meta;
+          if(qI?.regularMarketPrice) updMkt("ifix",qI.regularMarketPrice.toFixed(0),qI.regularMarketChangePercent||0);
+          else updMktErr("ifix");
+        }catch(e2){ updMktErr("ifix"); }
+      }
+    }catch(e){ updMktErr("ifix"); }
 
     pricesArelife=true;
     // busca logos em lote após cotações carregarem
@@ -1160,9 +1183,9 @@ function updMktErr(key){
   const vEl=document.getElementById("mk-"+key+"-v");
   const cEl=document.getElementById("mk-"+key+"-c");
   if(!vEl||!cEl) return;
-  if(vEl.textContent==="—"||vEl.textContent.includes("·")) vEl.textContent="—";
+  vEl.textContent="—";
   cEl.className="mk-chg neu";
-  cEl.textContent="sem dados";
+  cEl.textContent="indisponível";
 }
 
 /* ═══════════════════ RENDER ══════════════════════ */
@@ -1402,11 +1425,12 @@ function renderETFs(sc,sd){
   const tot=rows.reduce((s,e)=>s+e.atual,0);
   rows.forEach(e=>{
     const tr=document.createElement("tr");
-    const eLive=e.priceUSD||e.atual; // usa preço ao vivo se disponível
+    const eLive=e.priceUSD||null;
+    const eLiveChg=eLive&&e.prevClose ? eLive>=e.prevClose : null;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
       <td class="r">${usd(e.inv)}</td><td class="r" style="color:var(--muted)">${brl(e.inv*usdBRL,2)}</td>
+      <td class="r" style="${eLive?`color:${eLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`:"color:var(--muted)"}">${eLive?usd(eLive):"—"}</td>
       <td class="r">${usd(e.atual)}</td><td class="r" style="color:var(--muted)">${brl(e.atual*usdBRL,2)}</td>
-      <td class="r" style="color:${eLive>=(e.prevClose||eLive)?"var(--pos)":"var(--neg)"}">${usd(eLive)}</td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),0)}</div></td>
       <td class="r">${e.dy.toFixed(2)}%</td><td><span class="pill core">CORE</span></td>`;
@@ -1435,11 +1459,12 @@ function renderStocks(sc,sd){
   rows.forEach(s=>{
     const opts=objs.map(o=>`<option${o===s.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
-    const sLive=s.priceUSD||s.atual;
+    const sLive=s.priceUSD||null;
+    const sLiveChg=sLive&&s.prevClose ? sLive>=s.prevClose : null;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
       <td class="r">${usd(s.inv)}</td><td class="r" style="color:var(--muted)">${brl(s.inv*usdBRL,2)}</td>
+      <td class="r" style="${sLive?`color:${sLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`:"color:var(--muted)"}">${sLive?usd(sLive):"—"}</td>
       <td class="r">${usd(s.atual)}</td><td class="r" style="color:var(--muted)">${brl(s.atual*usdBRL,2)}</td>
-      <td class="r" style="color:${sLive>=(s.prevClose||sLive)?"var(--pos)":"var(--neg)"}">${usd(sLive)}</td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),0)}</div></td>
       <td class="r">${s.dy.toFixed(2)}%</td>
@@ -1649,11 +1674,48 @@ function upAvt(input){
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
   reader.onload=e=>{
+    const dataUrl=e.target.result;
     const up=document.getElementById("avtUp");
-    up.style.backgroundImage=`url(${e.target.result})`;up.style.backgroundSize="cover";up.textContent="";
-    document.getElementById("avtBtn").innerHTML=`<img src="${e.target.result}"/>`;
+    up.style.backgroundImage=`url(${dataUrl})`;up.style.backgroundSize="cover";up.textContent="";
+    document.getElementById("avtBtn").innerHTML=`<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+    try{ localStorage.setItem("avatar", dataUrl); }catch(e2){ console.warn("avatar storage full"); }
+    if(sbOK) uploadAvatar_SB(file).catch(e2=>console.warn("Supabase avatar:",e2));
   };
   reader.readAsDataURL(file);
+}
+
+function saveUser(){
+  const nome=(document.getElementById("uName")||{}).value||"";
+  const email=(document.getElementById("uEmail")||{}).value||"";
+  if(nome) localStorage.setItem("userName",nome);
+  if(email) localStorage.setItem("userEmail",email);
+  closeMod();
+}
+
+function saveAppSettings(){
+  const tok=(document.getElementById("brapiTok")||{}).value||"";
+  localStorage.setItem("brapiToken",tok);
+  closeMod();
+  refreshPrices();
+}
+
+function loadSettings(){
+  const tok=localStorage.getItem("brapiToken")||"";
+  const tokEl=document.getElementById("brapiTok");
+  if(tokEl&&tok) tokEl.value=tok;
+  const nome=localStorage.getItem("userName")||"Denys";
+  const nEl=document.getElementById("uName");
+  if(nEl) nEl.value=nome;
+  const email=localStorage.getItem("userEmail")||"";
+  const eEl=document.getElementById("uEmail");
+  if(eEl&&email) eEl.value=email;
+  const av=localStorage.getItem("avatar");
+  if(av){
+    const btn=document.getElementById("avtBtn");
+    if(btn) btn.innerHTML=`<img src="${av}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+    const up=document.getElementById("avtUp");
+    if(up){up.style.backgroundImage=`url(${av})`;up.style.backgroundSize="cover";up.textContent="";}
+  }
 }
 
 /* Metas */
@@ -1770,6 +1832,7 @@ async function setMeta(i){
     setLdStatus("Banco OK…");
     // carrega avatar salvo
     loadAvatar_SB();
+    loadSettings();
     // popula datalist de tickers
     const dl = document.getElementById('tickerList');
     if(dl) TICKERS_BR.forEach(t=>{ const o=document.createElement('option'); o.value=t; dl.appendChild(o); });
@@ -1778,6 +1841,7 @@ async function setMeta(i){
     console.warn('Supabase init error:', e);
     setSbStatus(false);
     setLdStatus("Banco offline — usando local");
+    loadSettings();
   }
 
   /* 3. Loading screen some */
