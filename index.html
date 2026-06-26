@@ -323,6 +323,10 @@ tr.total-row:hover td{background:var(--bg4)}
 .refbtn:hover{border-color:var(--gold);color:var(--gold)}
 
 .bx{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px}
+.add-btn{font-size:11px;font-weight:600;padding:3px 10px;border-radius:var(--rm);
+  border:1px solid var(--gold-dim);background:var(--gold-bg);color:var(--gold);
+  cursor:pointer;transition:all .15s;white-space:nowrap}
+.add-btn:hover{background:var(--gold);color:#fff}
 
 /* ─── FOOTER ──────────────────────────── */
 .footer{background:var(--bg2);border-top:1px solid var(--border);padding:14px 18px;
@@ -450,7 +454,7 @@ tr.total-row:hover td{background:var(--bg4)}
 <section class="panel" id="p-acoes">
   <div class="two">
     <div>
-      <div class="st">Posições — <span id="ac-src" style="color:var(--gold)">snapshot</span></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="ac-src" style="color:var(--gold)">snapshot</span><button class="add-btn" onclick="openAddAtivo('acoes')">＋ Adicionar ação</button></div>
       <div class="tw">
         <table>
           <thead><tr>
@@ -485,7 +489,7 @@ tr.total-row:hover td{background:var(--bg4)}
 <section class="panel" id="p-fiis">
   <div class="two">
     <div>
-      <div class="st">Posições — <span id="fi-src" style="color:var(--gold)">snapshot</span></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="fi-src" style="color:var(--gold)">snapshot</span><button class="add-btn" onclick="openAddAtivo('fiis')">＋ Adicionar FII</button></div>
       <div class="tw">
         <table>
           <thead><tr>
@@ -638,6 +642,57 @@ tr.total-row:hover td{background:var(--bg4)}
 </footer>
 
 <!-- MODAL -->
+<!-- Modal: Adicionar Ativo -->
+<div class="mbg" id="modAdd" onclick="if(event.target===this)closeAddAtivo()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+    <div class="m-title">
+      <span id="addModalTitle">Adicionar ativo</span>
+      <button class="m-close" onclick="closeAddAtivo()">×</button>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="flbl">Ticker</label>
+      <input class="finp" id="addTicker" placeholder="Ex: WEGE3, BTLG11, VOO"
+        list="tickerList" autocomplete="off" style="font-family:var(--mono);text-transform:uppercase"
+        oninput="this.value=this.value.toUpperCase()"/>
+    </div>
+    <div class="form-row" id="addFormFields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <label class="flbl">Preço médio (R$)</label>
+        <input class="finp" id="addPM" type="number" step="0.01" placeholder="0,00" style="font-family:var(--mono)"/>
+      </div>
+      <div>
+        <label class="flbl">Qtd. cotas</label>
+        <input class="finp" id="addCotas" type="number" placeholder="0" style="font-family:var(--mono)"/>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <label class="flbl">Setor</label>
+        <select class="fsel" id="addSetor">
+          <option>Financeiro</option><option>Energia</option><option>Indústria</option>
+          <option>Saneamento</option><option>Serviços</option><option>Saúde</option>
+          <option>Consumo</option><option>Tecnologia</option><option>Outros</option>
+          <option>Logística</option><option>Papel HG</option><option>Shopping</option><option>Híbrido</option>
+        </select>
+      </div>
+      <div>
+        <label class="flbl">DY% (estimado)</label>
+        <input class="finp" id="addDY" type="number" step="0.1" placeholder="0.0" style="font-family:var(--mono)"/>
+      </div>
+    </div>
+    <div id="addPreview" style="display:none;padding:10px;background:var(--bg3);border-radius:var(--rm);margin-bottom:10px;font-size:12px">
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--muted)">Total investido</span>
+        <span id="addTotInv" style="font-family:var(--mono);font-weight:600">—</span>
+      </div>
+    </div>
+    <button class="btn-pri" style="width:100%" onclick="confirmarAddAtivo()">＋ Adicionar à carteira</button>
+    <p style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center">
+      O ativo será adicionado localmente e salvo no Supabase se conectado.
+    </p>
+  </div>
+</div>
+
 <div class="mbg" id="mod" onclick="if(event.target===this)closeMod()">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="m-title"><span>Configurações</span><button class="m-close" onclick="closeMod()">×</button></div>
@@ -806,6 +861,13 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v12.0",d:"Jun/2026",items:[
+    "Token Brapi lido do localStorage direto no refreshPrices — não depende do campo de input estar visível",
+    "TODAS as vírgulas: brl() com 2 casas em hero, alloc cards, totais",
+    "IBOV, S&P e IFIX via Brapi (um único request) — funciona com token free",
+    "Modal 'Adicionar ativo' com preview de total investido — botão nas abas Ações BR e FIIs",
+    "Novo ativo entra na carteira sem reload, cotação buscada no próximo refresh",
+  ]},
   {v:"v11.0",d:"Jun/2026",items:[
     "Token Brapi salvo no localStorage — persiste entre sessões",
     "Avatar e nome de perfil salvos localmente e no Supabase Storage",
@@ -1067,7 +1129,7 @@ function mkSetores(data,id,pctFn){
 function setLdStatus(txt){ const el=document.getElementById("ldStatus"); if(el) el.textContent=txt; }
 
 async function refreshPrices(){
-  const tok=(document.getElementById("brapiTok")||{}).value||"";
+  const tok=localStorage.getItem("brapiToken")||(document.getElementById("brapiTok")||{}).value||"";
   const ts=tok?`&token=${tok}`:"";
   setLdStatus("Buscando cotações…");
   document.getElementById("lastUpd").textContent="Buscando cotações…";
@@ -1111,47 +1173,32 @@ async function refreshPrices(){
       }
     }catch(e){}
 
-    /* IBOV — Yahoo Finance (sem token, sem CORS) */
+    /* ── IBOV, S&P, IFIX via Brapi (com ou sem token) ── */
     try{
-      const rB=await fetch('https://query1.finance.yahoo.com/v8/finance/chart/%5EBVSP?interval=1m&range=1d');
-      const jB=await rB.json();
-      const qB=jB.chart?.result?.[0]?.meta;
-      if(qB?.regularMarketPrice){
-        const chB=qB.regularMarketChangePercent||0;
-        updMkt("ibov",(qB.regularMarketPrice/1000).toFixed(2)+"k",chB);
-      } else { updMktErr("ibov"); }
-    }catch(e){ updMktErr("ibov"); console.warn("IBOV Yahoo:",e.message); }
-
-    /* S&P 500 — Yahoo Finance (sem token) */
-    try{
-      const rS=await fetch('https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1m&range=1d');
-      const jS=await rS.json();
-      const qS=jS.chart?.result?.[0]?.meta;
-      if(qS?.regularMarketPrice){
-        const chS=qS.regularMarketChangePercent||0;
-        updMkt("sp",qS.regularMarketPrice.toFixed(0),chS);
-      } else { updMktErr("sp"); }
-    }catch(e){ updMktErr("sp"); console.warn("SP Yahoo:",e.message); }
-
-    /* IFIX — Brapi (precisa de token no plano free) */
-    try{
-      if(ts){ // só tenta com token
-        const r5=await fetch(`https://brapi.dev/api/quote/IFIX11?range=1d&interval=1d${ts}`);
-        const j5=await r5.json();
-        if(j5.results&&j5.results[0]){
-          updMkt("ifix",j5.results[0].regularMarketPrice.toFixed(0),j5.results[0].regularMarketChangePercent);
-        } else updMktErr("ifix");
+      const rIdx=await fetch(`https://brapi.dev/api/quote/%5EBVSP,%5EGSPC,IFIX11?range=1d&interval=1d${ts}`);
+      const jIdx=await rIdx.json();
+      if(jIdx.results){
+        jIdx.results.forEach(q=>{
+          if(!q.regularMarketPrice) return;
+          const chg=q.regularMarketChangePercent||0;
+          if(q.symbol==="^BVSP"||q.symbol==="BVSP")
+            updMkt("ibov",(q.regularMarketPrice/1000).toFixed(2)+"k",chg);
+          else if(q.symbol==="^GSPC"||q.symbol==="GSPC")
+            updMkt("sp",q.regularMarketPrice.toFixed(0),chg);
+          else if(q.symbol==="IFIX11")
+            updMkt("ifix",q.regularMarketPrice.toFixed(0),chg);
+        });
+        // marca o que não veio
+        if(!jIdx.results.find(q=>q.symbol==="^BVSP"||q.symbol==="BVSP")) updMktErr("ibov");
+        if(!jIdx.results.find(q=>q.symbol==="^GSPC"||q.symbol==="GSPC")) updMktErr("sp");
+        if(!jIdx.results.find(q=>q.symbol==="IFIX11")) updMktErr("ifix");
       } else {
-        // sem token: tenta Yahoo para IFIX11
-        try{
-          const rI=await fetch('https://query1.finance.yahoo.com/v8/finance/chart/IFIX11.SA?interval=1m&range=1d');
-          const jI=await rI.json();
-          const qI=jI.chart?.result?.[0]?.meta;
-          if(qI?.regularMarketPrice) updMkt("ifix",qI.regularMarketPrice.toFixed(0),qI.regularMarketChangePercent||0);
-          else updMktErr("ifix");
-        }catch(e2){ updMktErr("ifix"); }
+        updMktErr("ibov"); updMktErr("sp"); updMktErr("ifix");
       }
-    }catch(e){ updMktErr("ifix"); }
+    }catch(e){
+      updMktErr("ibov"); updMktErr("sp"); updMktErr("ifix");
+      console.warn("Índices Brapi:",e.message);
+    }
 
     pricesArelife=true;
     // busca logos em lote após cotações carregarem
@@ -1216,20 +1263,20 @@ function render(){
   /* hero */
   g("hPatr").textContent=brl(totalInvest,2);
   g("hSub").textContent="Meta: "+brl(meta);
-  g("hFalta").textContent="Faltam "+brl(falta);
+  g("hFalta").textContent="Faltam "+brl(falta,2);
   g("hAcoes").textContent=brl(totAcoes,2);
-  setHS("hAcoesSub",lucroAcoes);
+  setHS("hAcoesSub",lucroAcoes,true);
   g("hFiis").textContent=brl(totFiis,2);
-  setHS("hFiisSub",lucroFiis);
+  setHS("hFiisSub",lucroFiis,true);
   g("hEUA").textContent=brl(totETF+totSTK,2);
   setHS("hEUASub",lucroETF+lucroSTK,true);
-  const lEl=g("hLucro"); lEl.textContent=sgn(lucroAcoes)+brl(Math.abs(lucroAcoes));
+  const lEl=g("hLucro"); lEl.textContent=sgn(lucroAcoes)+brl(Math.abs(lucroAcoes),2);
   lEl.className="hv "+(lucroAcoes>=0?"pos":"neg");
   const lucroTotal=lucroAcoes+lucroFiis+lucroETF+lucroSTK;
-  const ltEl=g("hLucroTotal"); ltEl.textContent=sgn(lucroTotal)+brl(Math.abs(lucroTotal));
+  const ltEl=g("hLucroTotal"); ltEl.textContent=sgn(lucroTotal)+brl(Math.abs(lucroTotal),2);
   ltEl.className="hv "+(lucroTotal>=0?"pos":"neg");
   g("metaPct").textContent=pct.toFixed(1)+"%";
-  g("metaLbl").textContent=brl(meta);
+  g("metaLbl").textContent=brl(meta,0);
 
   /* meta bar */
   const bar=g("metaBar"); bar.innerHTML="";
@@ -1298,8 +1345,8 @@ function renderAllocSec(gid,arr){
       <span class="ac-pct">${pct.toFixed(0)}%</span></div>
     <div class="ac-track"><div class="ac-fill" style="width:${pct}%;background:${c.c}"></div></div>
     <div class="ac-bot">
-      <span class="ac-cur">${brl(c.v)}</span>
-      ${falta>0?`<span class="ac-falta">faltam ${brl(falta)}</span>`:'<span class="ac-ok">✓ meta</span>'}
+      <span class="ac-cur">${brl(c.v,2)}</span>
+      ${falta>0?`<span class="ac-falta">faltam ${brl(falta,2)}</span>`:'<span class="ac-ok">✓ meta</span>'}
     </div>`;
     g2.appendChild(el);
   });
@@ -1432,7 +1479,7 @@ function renderETFs(sc,sd){
       <td class="r" style="${eLive?`color:${eLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`:"color:var(--muted)"}">${eLive?usd(eLive):"—"}</td>
       <td class="r">${usd(e.atual)}</td><td class="r" style="color:var(--muted)">${brl(e.atual*usdBRL,2)}</td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
-        ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),0)}</div></td>
+        ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),2)}</div></td>
       <td class="r">${e.dy.toFixed(2)}%</td><td><span class="pill core">CORE</span></td>`;
     tb.appendChild(tr);
   });
@@ -1442,7 +1489,7 @@ function renderETFs(sc,sd){
     {val:usd(tI),r:true},{val:brl(tI*usdBRL,2),r:true},
     {val:usd(tA),r:true},{val:brl(tA*usdBRL,2),r:true},
     {val:"",r:true},
-    {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usd(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brl(Math.abs(tL*usdBRL),0)}</div></span>`,r:true},
+    {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usd(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brl(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
     {val:"",r:true},{val:"",r:true}
   ]);
   mkHBars(rows.map(e=>({label:e.tk,v:e.atual,pct:tot>0?e.atual/tot*100:0})),"et-hbars","#38BDF8");
@@ -1466,7 +1513,7 @@ function renderStocks(sc,sd){
       <td class="r" style="${sLive?`color:${sLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`:"color:var(--muted)"}">${sLive?usd(sLive):"—"}</td>
       <td class="r">${usd(s.atual)}</td><td class="r" style="color:var(--muted)">${brl(s.atual*usdBRL,2)}</td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
-        ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),0)}</div></td>
+        ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
       <td class="r">${s.dy.toFixed(2)}%</td>
       <td><select class="sel" onchange="saveObj('${s.tk}',this.value)">${opts}</select></td>`;
     tb.appendChild(tr);
@@ -1477,7 +1524,7 @@ function renderStocks(sc,sd){
     {val:usd(tI),r:true},{val:brl(tI*usdBRL,2),r:true},
     {val:usd(tA),r:true},{val:brl(tA*usdBRL,2),r:true},
     {val:"",r:true},
-    {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usd(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brl(Math.abs(tL*usdBRL),0)}</div></span>`,r:true},
+    {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usd(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brl(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
     {val:"",r:true},{val:"",r:true}
   ]);
   mkHBars(rows.map(s=>({label:s.tk,v:s.atual,pct:tot>0?s.atual/tot*100:0})),"sk-hbars","#818CF8");
@@ -1610,6 +1657,60 @@ async function saveObj(tk, val){
     try{ await SB.upsert('objetivos',{ticker:tk,objetivo:val,updated_at:new Date().toISOString()}); }
     catch(e){ console.warn('saveObj error:',e); }
   }
+}
+
+/* ── Adicionar ativo ─────────────────────── */
+let addAtivoTipo = 'acoes';
+function openAddAtivo(tipo){
+  addAtivoTipo=tipo;
+  document.getElementById("addModalTitle").textContent=
+    tipo==="acoes"?"Adicionar Ação":tipo==="fiis"?"Adicionar FII":"Adicionar Ativo EUA";
+  document.getElementById("addTicker").value="";
+  document.getElementById("addPM").value="";
+  document.getElementById("addCotas").value="";
+  document.getElementById("addDY").value="";
+  document.getElementById("addPreview").style.display="none";
+  document.getElementById("modAdd").classList.add("open");
+}
+function closeAddAtivo(){ document.getElementById("modAdd").classList.remove("open"); }
+
+// preview ao preencher
+["addPM","addCotas"].forEach(id=>{
+  document.getElementById(id)?.addEventListener("input", ()=>{
+    const pm=parseFloat(document.getElementById("addPM").value)||0;
+    const cotas=parseInt(document.getElementById("addCotas").value)||0;
+    if(pm&&cotas){
+      document.getElementById("addTotInv").textContent=brl(pm*cotas,2);
+      document.getElementById("addPreview").style.display="block";
+    }
+  });
+});
+
+async function confirmarAddAtivo(){
+  const tk=document.getElementById("addTicker").value.toUpperCase().trim();
+  const pm=parseFloat(document.getElementById("addPM").value)||0;
+  const cotas=parseInt(document.getElementById("addCotas").value)||0;
+  const setor=document.getElementById("addSetor").value;
+  const dy=parseFloat(document.getElementById("addDY").value)||0;
+  if(!tk||!pm||!cotas){ alert("Preencha Ticker, Preço médio e Cotas."); return; }
+
+  if(addAtivoTipo==="acoes"){
+    const teto={"Financeiro":35,"Energia":25,"Indústria":20,"Saneamento":15,"Serviços":5}[setor]||20;
+    D.acoes.push({tk,co:tk,st:setor,pm,cotas,dy,teto,obj:"Manter"});
+  } else if(addAtivoTipo==="fiis"){
+    D.fiis.push({tk,seg:setor,pm,cotas,dy,prov:0,st:"NEUTRO"});
+  }
+
+  // salva no Supabase se conectado (tabela futura)
+  if(sbOK){
+    try{
+      await SB.upsert("objetivos",{ticker:tk,objetivo:"Manter",updated_at:new Date().toISOString()});
+    }catch(e){}
+  }
+
+  closeAddAtivo();
+  render(); // re-renderiza com novo ativo
+  alert(`${tk} adicionado! Cotação será buscada no próximo refresh.`);
 }
 
 /* Sort */
