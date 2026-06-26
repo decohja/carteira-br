@@ -405,7 +405,7 @@ tr.total-row:hover td{background:var(--bg4)}
       <div class="patr-sub">
         <span id="hSub">Meta: —</span>
         <span class="falta-pill" id="hFalta">—</span>
-        <span class="snap-chip" id="snapChip">snapshot</span>
+        <span class="snap-chip" id="snapChip" title="Clique para ver fonte dos preços">aguardando…</span>
       </div>
     </div>
     <div class="hstats">
@@ -437,6 +437,7 @@ tr.total-row:hover td{background:var(--bg4)}
   <div class="refbar">
     <span id="lastUpd">—</span>
     <button class="refbtn" onclick="refreshPrices()">↻ Atualizar cotações</button>
+    <button class="refbtn" onclick="window.location.reload()" style="margin-left:4px">⟳ Recarregar página</button>
   </div>
   <div class="st">Alocação por classe (excl. Reserva e Caixa)</div>
   <div class="agrid" id="allocGrid"></div>
@@ -538,6 +539,7 @@ tr.total-row:hover td{background:var(--bg4)}
             <th class="sort" data-col="tk" data-t="et">ETF</th>
             <th class="r sort" data-col="inv" data-t="et">Inv. (USD)</th><th class="r">Inv. (BRL)</th>
             <th class="r sort" data-col="atual" data-t="et">Atual (USD)</th><th class="r">Atual (BRL)</th>
+            <th class="r">Cotação</th>
             <th class="r sort" data-col="lucro" data-t="et">Lucro</th>
             <th class="r">DY%</th><th>Papel</th>
           </tr></thead>
@@ -563,6 +565,7 @@ tr.total-row:hover td{background:var(--bg4)}
             <th class="sort" data-col="tk" data-t="sk">Stock</th>
             <th class="r sort" data-col="inv" data-t="sk">Inv. (USD)</th><th class="r">Inv. (BRL)</th>
             <th class="r sort" data-col="atual" data-t="sk">Atual (USD)</th><th class="r">Atual (BRL)</th>
+            <th class="r">Cotação</th>
             <th class="r sort" data-col="lucro" data-t="sk">Lucro</th>
             <th class="r">DY%</th><th>Objetivo</th>
           </tr></thead>
@@ -802,6 +805,22 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v10.0",d:"Jun/2026",items:[
+    "COTAÇÕES REAIS: Brapi para BR (com token = sem delay), Yahoo Finance para ETFs/Stocks EUA",
+    "Snapshot não é mais exibido como dado real — é apenas fallback de emergência",
+    "Coluna Cotação adicionada em ETFs e Stocks com preço ao vivo do Yahoo Finance",
+    "Auto-refresh a cada 60s (era 5min)",
+    "fetchLogosEmLote corrigido e funcional",
+    "dcard (faixa superior) ativo destacado ao navegar entre abas",
+  ]},
+  {v:"v9.0",d:"Jun/2026",items:[
+    "CENTAVOS em todos os valores: hero, donuts, tabelas, totais",
+    "Dcard ativo destaque: card da faixa superior fica aceso ao navegar para a aba",
+    "goTab registra tab ativa com data-tab para sincronizar dcard",
+    "Índices: fallback visível 'sem dados' e console.warn para debug",
+    "Logos: busca em lote via Brapi na inicialização (fetchLogosEmLote)",
+    "Botão 'Recarregar página' na barra de status — sem precisar de F5",
+  ]},
   {v:"v8.0",d:"Jun/2026",items:[
     "Tema claro por padrão, automático por horário (claro até 18h, escuro depois), preferência salva",
     "Loading screen esmaecido com blur — mostra a página atrás enquanto carrega",
@@ -939,8 +958,10 @@ const usd=(n,d=2)=>"$ "+Math.abs(+n).toLocaleString("en-US",{minimumFractionDigi
 const sgn=n=>n>=0?"+":"−";
 let usdBRL=5.80, sortSt={}, pricesArelive=false;
 
-/* prices começa com SNAPSHOT — lucro correto desde o primeiro frame */
-let prices={...SNAPSHOT_PRICES};
+/* prices: começa vazio, Brapi/Yahoo preenche.
+   SNAPSHOT_PRICES é usado APENAS se ambas as fontes falharem. */
+let prices={};
+let pricesSource="aguardando";
 
 /* ── TOTALS ROW ─────────────────────── */
 function addTotals(tbodyId, cols){
@@ -1038,16 +1059,36 @@ async function refreshPrices(){
   const tok=(document.getElementById("brapiTok")||{}).value||"";
   const ts=tok?`&token=${tok}`:"";
   setLdStatus("Buscando cotações…");
-  document.getElementById("lastUpd").textContent="Buscando cotações ao vivo…";
+  document.getElementById("lastUpd").textContent="Buscando cotações…";
 
-  const tks=[...D.acoes.map(a=>a.tk),...D.fiis.map(f=>f.tk)].join(",");
+  const tksBR=[...D.acoes.map(a=>a.tk),...D.fiis.map(f=>f.tk)].join(",");
   try{
-    /* cotações BR */
-    const r1=await fetch(`https://brapi.dev/api/quote/${tks}?range=1d&interval=1d${ts}`);
+    /* ── BR via Brapi ── */
+    const r1=await fetch(`https://brapi.dev/api/quote/${tksBR}?range=1d&interval=1d${ts}`);
     if(!r1.ok) throw new Error("HTTP "+r1.status);
     const j1=await r1.json();
     if(j1.results) j1.results.forEach(q=>{ if(q.regularMarketPrice) prices[q.symbol]=q.regularMarketPrice; });
-    pricesArelife=true; setLdStatus("Ações e FIIs OK…");
+    pricesArelife=true; setLdStatus("BR OK, buscando EUA…");
+
+    /* ── EUA via Yahoo Finance (sem token, funciona no browser) ── */
+    const tksEUA=[...D.etfs.map(e=>e.tk),...D.stocks.map(s=>s.tk)];
+    await Promise.allSettled(tksEUA.map(async tk=>{
+      try{
+        const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${tk}?interval=1m&range=1d`);
+        if(!r.ok) return;
+        const j=await r.json();
+        const price=j.chart?.result?.[0]?.meta?.regularMarketPrice;
+        const prev =j.chart?.result?.[0]?.meta?.previousClose;
+        const chPct=j.chart?.result?.[0]?.meta?.regularMarketChangePercent;
+        if(price){ 
+          prices[tk]=price;
+          // atualiza cotação EUA em tempo real nos campos
+          D.etfs.filter(e=>e.tk===tk).forEach(e=>{ e.priceUSD=price; e.prevClose=prev; });
+          D.stocks.filter(s=>s.tk===tk).forEach(s=>{ s.priceUSD=price; s.prevClose=prev; });
+        }
+      }catch(e){}
+    }));
+    setLdStatus("EUA OK…");
 
     /* USD/BRL */
     try{
@@ -1066,8 +1107,8 @@ async function refreshPrices(){
       if(j2.results&&j2.results[0]){
         const q=j2.results[0];
         updMkt("ibov",(q.regularMarketPrice/1000).toFixed(1)+"k",q.regularMarketChangePercent);
-      }
-    }catch(e){}
+      } else { updMktErr("ibov"); }
+    }catch(e){ updMktErr("ibov"); console.warn("IBOV:",e.message); }
 
     /* S&P 500 */
     try{
@@ -1076,8 +1117,8 @@ async function refreshPrices(){
       if(j4.results&&j4.results[0]){
         const q=j4.results[0];
         updMkt("sp",q.regularMarketPrice.toFixed(0),q.regularMarketChangePercent);
-      }
-    }catch(e){}
+      } else { updMktErr("sp"); }
+    }catch(e){ updMktErr("sp"); console.warn("SP500:",e.message); }
 
     /* IFIX */
     try{
@@ -1086,14 +1127,17 @@ async function refreshPrices(){
       if(j5.results&&j5.results[0]){
         const q=j5.results[0];
         updMkt("ifix",q.regularMarketPrice.toFixed(0),q.regularMarketChangePercent);
-      }
-    }catch(e){}
+      } else { updMktErr("ifix"); }
+    }catch(e){ updMktErr("ifix"); console.warn("IFIX:",e.message); }
 
     pricesArelife=true;
+    // busca logos em lote após cotações carregarem
+    fetchLogosEmLote();
     const nowTs=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
     document.getElementById("lastUpd").textContent=`Cotações ao vivo — ${nowTs} · Brapi.dev`;
     const chip=document.getElementById("snapChip");
-    chip.textContent="ao vivo "+nowTs; chip.className="snap-chip live";
+    chip.textContent=tok?"Brapi (token) "+nowTs:"Brapi free 15min "+nowTs;
+    chip.className="snap-chip live";
     const src1=document.getElementById("ac-src"), src2=document.getElementById("fi-src");
     if(src1) src1.textContent="ao vivo"; if(src2) src2.textContent="ao vivo";
   }catch(e){
@@ -1112,13 +1156,25 @@ function updMkt(key,val,chPct){
   cEl.className="mk-chg "+(up?"up":"dn");
   cEl.textContent=(up?"▲":"▼")+" "+Math.abs(ch).toFixed(2)+"%";
 }
+function updMktErr(key){
+  const vEl=document.getElementById("mk-"+key+"-v");
+  const cEl=document.getElementById("mk-"+key+"-c");
+  if(!vEl||!cEl) return;
+  if(vEl.textContent==="—"||vEl.textContent.includes("·")) vEl.textContent="—";
+  cEl.className="mk-chg neu";
+  cEl.textContent="sem dados";
+}
 
 /* ═══════════════════ RENDER ══════════════════════ */
+// Helper global — preço ao vivo ou fallback snapshot
+function px(tk){ return prices[tk]||SNAPSHOT_PRICES[tk]||0; }
+
 function render(){
-  const totAcoes=D.acoes.reduce((s,a)=>s+(prices[a.tk]||a.pm)*a.cotas,0);
-  const totFiis= D.fiis.reduce((s,f)=>s+(prices[f.tk]||f.pm)*f.cotas,0);
-  const lucroAcoes=D.acoes.reduce((s,a)=>s+((prices[a.tk]||a.pm)-a.pm)*a.cotas,0);
-  const lucroFiis= D.fiis.reduce((s,f)=>s+((prices[f.tk]||f.pm)-f.pm)*f.cotas,0);
+  // fallback via px() global
+  const totAcoes=D.acoes.reduce((s,a)=>s+px(a.tk)*a.cotas,0);
+  const totFiis= D.fiis.reduce((s,f)=>s+px(f.tk)*f.cotas,0);
+  const lucroAcoes=D.acoes.reduce((s,a)=>s+(px(a.tk)-a.pm)*a.cotas,0);
+  const lucroFiis= D.fiis.reduce((s,f)=>s+(px(f.tk)-f.pm)*f.cotas,0);
   const totETF=D.etfs.reduce((s,e)=>s+e.atual,0)*usdBRL;
   const totSTK=D.stocks.reduce((s,s2)=>s+s2.atual,0)*usdBRL;
   const lucroETF=D.etfs.reduce((s,e)=>s+e.lucro,0)*usdBRL;
@@ -1135,15 +1191,15 @@ function render(){
   const pct=totalInvest/meta*100;
 
   /* hero */
-  g("hPatr").textContent=brl(totalInvest);
+  g("hPatr").textContent=brl(totalInvest,2);
   g("hSub").textContent="Meta: "+brl(meta);
   g("hFalta").textContent="Faltam "+brl(falta);
   g("hAcoes").textContent=brl(totAcoes,2);
   setHS("hAcoesSub",lucroAcoes);
   g("hFiis").textContent=brl(totFiis,2);
   setHS("hFiisSub",lucroFiis);
-  g("hEUA").textContent=brl(totETF+totSTK);
-  setHS("hEUASub",lucroETF+lucroSTK);
+  g("hEUA").textContent=brl(totETF+totSTK,2);
+  setHS("hEUASub",lucroETF+lucroSTK,true);
   const lEl=g("hLucro"); lEl.textContent=sgn(lucroAcoes)+brl(Math.abs(lucroAcoes));
   lEl.className="hv "+(lucroAcoes>=0?"pos":"neg");
   const lucroTotal=lucroAcoes+lucroFiis+lucroETF+lucroSTK;
@@ -1171,18 +1227,18 @@ function render(){
 }
 
 function g(id){return document.getElementById(id)}
-function setHS(id,v){const el=g(id);if(el){el.textContent=sgn(v)+brl(Math.abs(v),0);el.className="hs "+(v>=0?"pos":"neg")}}
+function setHS(id,v,dec2){const el=g(id);if(el){el.textContent=sgn(v)+brl(Math.abs(v),dec2?2:0);el.className="hs "+(v>=0?"pos":"neg")}}
 
 /* donuts strip */
 function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK){
   const strip=g("dstrip"); strip.innerHTML="";
   const items=[
     {name:"Carteira Total",val:brl(D.invest.reduce((s,c)=>s+c.v,0)),sub:pct.toFixed(1)+"% da meta",pct,c:"var(--gold)",tab:"visao",subCls:"gold"},
-    {name:"Ações BR",   val:brl(totAcoes),  sub:"",pct:totAcoes/meta*100,  c:"#F59E0B",tab:"acoes",  subCls:""},
-    {name:"FIIs",       val:brl(totFiis),   sub:"",pct:totFiis/meta*100,   c:"#A78BFA",tab:"fiis",   subCls:""},
+    {name:"Ações BR",   val:brl(totAcoes,2),sub:"",pct:totAcoes/meta*100,  c:"#F59E0B",tab:"acoes",  subCls:""},
+    {name:"FIIs",       val:brl(totFiis,2), sub:"",pct:totFiis/meta*100,   c:"#A78BFA",tab:"fiis",   subCls:""},
     {name:"Renda Fixa", val:"R$ 7.183",     sub:"",pct:7183/meta*100,      c:"#3B82F6",tab:"rf",     subCls:""},
-    {name:"ETFs",       val:usd(D.etfs.reduce((s,e)=>s+e.atual,0)),sub:brl(totETF,0),pct:totETF/meta*100,c:"#38BDF8",tab:"etfs",subCls:""},
-    {name:"Stocks",     val:usd(D.stocks.reduce((s,s2)=>s+s2.atual,0)),sub:brl(totSTK,0),pct:totSTK/meta*100,c:"#818CF8",tab:"stocks",subCls:""},
+    {name:"ETFs",       val:usd(D.etfs.reduce((s,e)=>s+e.atual,0)),sub:brl(totETF,2),pct:totETF/meta*100,c:"#38BDF8",tab:"etfs",subCls:""},
+    {name:"Stocks",     val:usd(D.stocks.reduce((s,s2)=>s+s2.atual,0)),sub:brl(totSTK,2),pct:totSTK/meta*100,c:"#818CF8",tab:"stocks",subCls:""},
   ];
   items.forEach(it=>{
     const p=Math.min(100,it.pct), R=22, circ=2*Math.PI*R, dash=circ*p/100, gap=circ-dash, sz=R*2+8, cxy=R+4;
@@ -1194,6 +1250,7 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK){
         font-family="IBM Plex Mono,monospace" font-size="6.5" font-weight="500" fill="${it.c}">${p.toFixed(0)}%</text>
     </svg>`;
     const card=document.createElement("div"); card.className="dcard";
+    card.dataset.tab=it.tab;
     card.onclick=()=>{const btn=document.querySelector(`.ntab[onclick*="'${it.tab}'"]`);if(btn)goTab(it.tab,btn)};
     card.innerHTML=svg+`<div><div class="dn-name">${it.name}</div><div class="dn-val">${it.val}</div>${it.sub?`<div class="dn-sub ${it.subCls}">${it.sub}</div>`:""}</div>`;
     strip.appendChild(card);
@@ -1229,7 +1286,7 @@ function renderAllocSec(gid,arr){
 function renderAcoes(totAcoes,sc,sd){
   const objs=["Comprar","Manter","Vender"];
   let rows=D.acoes.map(a=>{
-    const p=prices[a.tk]||a.pm;
+    const p=px(a.tk);
     const tot=+(a.pm*a.cotas).toFixed(2), totb3=+(p*a.cotas).toFixed(2), lucro=+(totb3-tot).toFixed(2);
     return{...a,price:p,tot,totb3,lucro,pctCart:totAcoes>0?totb3/totAcoes*100:0};
   });
@@ -1273,7 +1330,7 @@ function renderAcoes(totAcoes,sc,sd){
 function renderFiis(totFiis,sc,sd){
   const sts=["CARO","NEUTRO","BARATO"];
   let rows=D.fiis.filter(f=>f.cotas>0).map(f=>{
-    const p=prices[f.tk]||f.pm;
+    const p=px(f.tk);
     const tot=+(f.pm*f.cotas).toFixed(2), totb3=+(p*f.cotas).toFixed(2), lucro=+(totb3-tot).toFixed(2);
     return{...f,price:p,tot,totb3,lucro};
   });
@@ -1345,9 +1402,11 @@ function renderETFs(sc,sd){
   const tot=rows.reduce((s,e)=>s+e.atual,0);
   rows.forEach(e=>{
     const tr=document.createElement("tr");
+    const eLive=e.priceUSD||e.atual; // usa preço ao vivo se disponível
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
       <td class="r">${usd(e.inv)}</td><td class="r" style="color:var(--muted)">${brl(e.inv*usdBRL,2)}</td>
       <td class="r">${usd(e.atual)}</td><td class="r" style="color:var(--muted)">${brl(e.atual*usdBRL,2)}</td>
+      <td class="r" style="color:${eLive>=(e.prevClose||eLive)?"var(--pos)":"var(--neg)"}">${usd(eLive)}</td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),0)}</div></td>
       <td class="r">${e.dy.toFixed(2)}%</td><td><span class="pill core">CORE</span></td>`;
@@ -1358,6 +1417,7 @@ function renderETFs(sc,sd){
     {label:"TOTAL"},
     {val:usd(tI),r:true},{val:brl(tI*usdBRL,2),r:true},
     {val:usd(tA),r:true},{val:brl(tA*usdBRL,2),r:true},
+    {val:"",r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usd(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brl(Math.abs(tL*usdBRL),0)}</div></span>`,r:true},
     {val:"",r:true},{val:"",r:true}
   ]);
@@ -1375,9 +1435,11 @@ function renderStocks(sc,sd){
   rows.forEach(s=>{
     const opts=objs.map(o=>`<option${o===s.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
+    const sLive=s.priceUSD||s.atual;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
       <td class="r">${usd(s.inv)}</td><td class="r" style="color:var(--muted)">${brl(s.inv*usdBRL,2)}</td>
       <td class="r">${usd(s.atual)}</td><td class="r" style="color:var(--muted)">${brl(s.atual*usdBRL,2)}</td>
+      <td class="r" style="color:${sLive>=(s.prevClose||sLive)?"var(--pos)":"var(--neg)"}">${usd(sLive)}</td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),0)}</div></td>
       <td class="r">${s.dy.toFixed(2)}%</td>
@@ -1389,6 +1451,7 @@ function renderStocks(sc,sd){
     {label:"TOTAL"},
     {val:usd(tI),r:true},{val:brl(tI*usdBRL,2),r:true},
     {val:usd(tA),r:true},{val:brl(tA*usdBRL,2),r:true},
+    {val:"",r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usd(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brl(Math.abs(tL*usdBRL),0)}</div></span>`,r:true},
     {val:"",r:true},{val:"",r:true}
   ]);
@@ -1448,6 +1511,27 @@ async function addProv(){
   const fi=D.fiis.find(f=>f.tk===tk); if(fi) fi.prov=+(fi.prov+total).toFixed(2);
   g("pTk").value="";g("pDt").value="";g("pVc").value="";g("pCt").value="";g("pTot").textContent="R$ 0,00";
   renderProv();
+}
+
+/* Busca logos em lote via Brapi — roda após cotações carregarem */
+async function fetchLogosEmLote(){
+  const tks=[...D.acoes.map(a=>a.tk),...D.fiis.map(f=>f.tk),...D.etfs.map(e=>e.tk),...D.stocks.map(s=>s.tk)];
+  const tok=(document.getElementById("brapiTok")||{}).value||"";
+  const ts2=tok?`&token=${tok}`:"";
+  try{
+    const r=await fetch(`https://brapi.dev/api/quote/${tks.join(",")}?fundamental=true${ts2}`);
+    if(!r.ok) throw new Error(r.status);
+    const j=await r.json();
+    if(j.results) j.results.forEach(q=>{
+      if(q.logourl&&q.symbol){
+        LOGOS[q.symbol]=q.logourl;
+        document.querySelectorAll(`[id="li-${q.symbol}"]`).forEach(el=>{
+          el.outerHTML=`<img src="${q.logourl}" class="ativo-logo" data-tk="${q.symbol}" alt="${q.symbol}" onerror="this.style.display='none'"/>`;
+        });
+      }
+    });
+    console.log("Logos:",Object.keys(LOGOS).length,"tickers");
+  }catch(e){ console.warn("fetchLogosEmLote:",e.message); }
 }
 
 /* Salva objetivo no Supabase e localmente */
@@ -1511,8 +1595,8 @@ document.querySelectorAll("th.sort").forEach(th=>{
     document.querySelectorAll(`th[data-t="${t}"]`).forEach(x=>x.classList.remove("sa","sd"));
     if(sortSt[key]) th.classList.add(sortSt[key]==="asc"?"sa":"sd");
     const sc=sortSt[key]?col:null, sd=sortSt[key]||"desc";
-    const tA=D.acoes.reduce((s,a)=>s+(prices[a.tk]||a.pm)*a.cotas,0);
-    const tF=D.fiis.reduce((s,f)=>s+(prices[f.tk]||f.pm)*f.cotas,0);
+    const tA=D.acoes.reduce((s,a)=>s+px(a.tk)*a.cotas,0);
+    const tF=D.fiis.reduce((s,f)=>s+px(f.tk)*f.cotas,0);
     if(t==="ac") renderAcoes(tA,sc,sd);
     if(t==="fi") renderFiis(tF,sc,sd);
     if(t==="et") renderETFs(sc,sd);
@@ -1526,9 +1610,12 @@ function goTab(id,btn){
   document.querySelectorAll(".ntab").forEach(t=>t.classList.remove("on"));
   document.getElementById("p-"+id).classList.add("on");
   if(btn) btn.classList.add("on");
+  // marca dcard ativo
+  document.querySelectorAll(".dcard").forEach(c=>c.classList.remove("on"));
+  const dc = document.querySelector(`.dcard[data-tab="${id}"]`);
+  if(dc) dc.classList.add("on");
 }
 function goHome(){
-  // Ativa a primeira aba (Visão geral) pelo seu onclick
   const btn = document.querySelector('.ntab[onclick*="visao"]');
   goTab('visao', btn);
 }
@@ -1627,9 +1714,20 @@ async function setMeta(i){
 })();
 
 (async function init(){
-  /* 1. Renderiza com snapshot imediatamente */
-  setLdStatus("Calculando posições…");
+  // Garante que o loading some SEMPRE, mesmo com erro
+  const hideLoading = () => {
+    const ld = document.getElementById("loading");
+    if(ld) ld.classList.add("out");
+  };
+  // Safety net: some em 5s no máximo
+  setTimeout(hideLoading, 5000);
+
+  try{
+  /* 1. Renderiza com snapshot como estimativa inicial */
+  setLdStatus("Preparando dados…");
+  Object.assign(prices, SNAPSHOT_PRICES);
   render();
+  Object.keys(SNAPSHOT_PRICES).forEach(k => delete prices[k]);
 
   /* 2. Carrega dados do Supabase */
   setLdStatus("Conectando ao banco…");
@@ -1683,17 +1781,23 @@ async function setMeta(i){
   }
 
   /* 3. Loading screen some */
-  setTimeout(()=>{
-    document.getElementById("loading").classList.add("out");
-  }, 1400);
+  setTimeout(hideLoading, 1400);
 
-  /* 4. Brapi em background */
-  setLdStatus("Buscando cotações ao vivo…");
-  document.getElementById("lastUpd").textContent="Snapshot carregado · buscando Brapi…";
+  /* 4. Brapi + Yahoo em background */
+  setLdStatus("Buscando cotações…");
+  document.getElementById("lastUpd").textContent="Buscando cotações…";
   await refreshPrices();
 
-  /* 5. Auto-refresh a cada 5 min */
-  setInterval(refreshPrices, 5*60*1000);
+  /* 5. Auto-refresh a cada 60s */
+  setInterval(refreshPrices, 60*1000);
+
+  } catch(fatalErr) {
+    console.error("INIT ERRO:", fatalErr);
+    hideLoading();
+    const el = document.getElementById("lastUpd");
+    if(el) el.textContent = "Erro ao inicializar: " + fatalErr.message;
+    render(); // tenta renderizar mesmo com erro
+  }
 })();
 </script>
 </body>
