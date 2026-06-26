@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -38,11 +38,13 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 /* ─── LOADING SCREEN ─────────────────── */
 #loading{
   position:fixed;inset:0;z-index:9999;
-  background:var(--bg);
+  background:rgba(0,0,0,.45);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
-  transition:opacity .7s ease, visibility .7s ease;
+  transition:opacity .8s ease, visibility .8s ease;
 }
-#loading.out{opacity:0;visibility:hidden}
+[data-theme="light"] #loading{background:rgba(255,255,255,.55);}
+#loading.out{opacity:0;visibility:hidden;pointer-events:none}
 .ld-logo{
   width:56px;height:56px;border-radius:16px;
   background:linear-gradient(135deg,var(--gold-l),var(--gold),#8B5E0A);
@@ -192,6 +194,9 @@ tr.total-row:hover td{background:var(--bg4)}
 .co{font-size:11px;color:var(--muted);margin-top:1px}
 .ativo-logo{width:22px;height:22px;border-radius:5px;object-fit:contain;background:var(--bg3);
   border:1px solid var(--border);flex-shrink:0;vertical-align:middle}
+.ativo-initials{width:22px;height:22px;border-radius:5px;background:var(--gold-bg);
+  border:1px solid var(--gold-dim);flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:8px;font-weight:700;color:var(--gold);letter-spacing:-.02em}
 .ativo-cell{display:flex;align-items:center;gap:8px}
 .usd2{font-size:10px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
 
@@ -349,7 +354,7 @@ tr.total-row:hover td{background:var(--bg4)}
 
 <!-- HEADER -->
 <header class="hdr">
-  <a class="logo" href="#" onclick="goTab('visao',document.querySelector('.ntab'));return false;" title="Voltar para home">
+  <a class="logo" href="#" onclick="goHome();return false;" title="Voltar para início">
     <div class="logo-m">A</div>ativo<em>·br</em>
   </a>
   <nav class="nav">
@@ -743,23 +748,28 @@ async function fetchLogo(tk){
   if(LOGOS[tk]) return LOGOS[tk];
   try{
     const r = await fetch(`https://brapi.dev/api/quote/${tk}?range=1d&interval=1d`);
+    if(!r.ok) throw new Error(r.status);
     const j = await r.json();
-    if(j.results&&j.results[0]&&j.results[0].logourl){
-      LOGOS[tk] = j.results[0].logourl;
-      // atualiza todas as imagens desse ticker na tela
+    const logo = j.results&&j.results[0]&&j.results[0].logourl;
+    if(logo){
+      LOGOS[tk] = logo;
+      // substitui span de iniciais por imagem real
+      document.querySelectorAll(`[id="li-${tk}"]`).forEach(el=>{
+        el.outerHTML = `<img src="${logo}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="this.style.display='none'"/>`;
+      });
+      // atualiza imgs já existentes
       document.querySelectorAll(`img[data-tk="${tk}"]`).forEach(el=>{
-        el.src = LOGOS[tk];
-        el.style.background = 'transparent';
+        el.src = logo;
       });
     }
-  }catch(e){}
+  }catch(e){} // silencioso — mantém iniciais
   return LOGOS[tk]||null;
 }
 function logoImg(tk){
-  if(LOGOS[tk]) return `<img src="${LOGOS[tk]}" class="ativo-logo" data-tk="${tk}" alt="${tk}"/>`;
-  // placeholder enquanto carrega
-  setTimeout(()=>fetchLogo(tk),100);
-  return `<img src="" class="ativo-logo" data-tk="${tk}" alt="${tk}" style="background:var(--bg3)"/>`;
+  if(LOGOS[tk]) return `<img src="${LOGOS[tk]}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"/><span class="ativo-initials" style="display:none">${tk.slice(0,2)}</span>`;
+  // placeholder com iniciais enquanto carrega
+  setTimeout(()=>fetchLogo(tk), 50 + Math.random()*200);
+  return `<span class="ativo-initials" id="li-${tk}">${tk.slice(0,2)}</span>`;
 }
 
 // Lista de tickers B3 para dropdown (top ativos + FIIs comuns)
@@ -792,6 +802,15 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v8.0",d:"Jun/2026",items:[
+    "Tema claro por padrão, automático por horário (claro até 18h, escuro depois), preferência salva",
+    "Loading screen esmaecido com blur — mostra a página atrás enquanto carrega",
+    "Centavos em todos os valores BRL (Total inv., Total B3, Lucro, BRL convertido)",
+    "Tab ativa corrigida — ponto verde pulsante permanece enquanto na aba",
+    "Logo clicável vai para Visão Geral via goHome()",
+    "Logos dos ativos com fallback de iniciais douradas — funciona sem Brapi",
+    "Logos substituídos em tempo real quando Brapi responde",
+  ]},
   {v:"v7.0",d:"Jun/2026",items:[
     "Lucro Total (BR + FIIs + EUA) no hero, ao lado do Lucro BR",
     "Logos dos ativos via Brapi — exibidos automaticamente nas tabelas",
@@ -1119,9 +1138,9 @@ function render(){
   g("hPatr").textContent=brl(totalInvest);
   g("hSub").textContent="Meta: "+brl(meta);
   g("hFalta").textContent="Faltam "+brl(falta);
-  g("hAcoes").textContent=brl(totAcoes);
+  g("hAcoes").textContent=brl(totAcoes,2);
   setHS("hAcoesSub",lucroAcoes);
-  g("hFiis").textContent=brl(totFiis);
+  g("hFiis").textContent=brl(totFiis,2);
   setHS("hFiisSub",lucroFiis);
   g("hEUA").textContent=brl(totETF+totSTK);
   setHS("hEUASub",lucroETF+lucroSTK);
@@ -1221,9 +1240,9 @@ function renderAcoes(totAcoes,sc,sd){
     const opts=objs.map(o=>`<option${o===a.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(a.tk)}<div><div class="tk">${a.tk}</div><div class="co">${a.co}</div></div></div></td>
-      <td class="r">${brl(a.tot,0)}</td>
-      <td class="r">${brl(a.totb3,0)}</td>
-      <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(a.lucro)}${brl(Math.abs(a.lucro),0)}</td>
+      <td class="r">${brl(a.tot,2)}</td>
+      <td class="r">${brl(a.totb3,2)}</td>
+      <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(a.lucro)}${brl(Math.abs(a.lucro),2)}</td>
       <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"}">${brl(a.price,2)}</td>
       <td class="r">${a.cotas}</td>
       <td><div class="tbar">
@@ -1236,8 +1255,8 @@ function renderAcoes(totAcoes,sc,sd){
   });
   const totI=rows.reduce((s,a)=>s+a.tot,0), totB=rows.reduce((s,a)=>s+a.totb3,0), totL=rows.reduce((s,a)=>s+a.lucro,0);
   addTotals("acTbl",[
-    {label:"TOTAL"},{val:brl(totI,0),r:true},{val:brl(totB,0),r:true},
-    {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brl(Math.abs(totL),0)}</span>`,r:true},
+    {label:"TOTAL"},{val:brl(totI,2),r:true},{val:brl(totB,2),r:true},
+    {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brl(Math.abs(totL),2)}</span>`,r:true},
     {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   /* charts */
@@ -1264,8 +1283,8 @@ function renderFiis(totFiis,sc,sd){
     const opts=sts.map(o=>`<option${o===f.st?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(f.tk)}<div><div class="tk">${f.tk}</div><div class="co">${f.seg}</div></div></div></td>
-      <td class="r">${brl(f.tot,0)}</td><td class="r">${brl(f.totb3,0)}</td>
-      <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(f.lucro)}${brl(Math.abs(f.lucro),0)}</td>
+      <td class="r">${brl(f.tot,2)}</td><td class="r">${brl(f.totb3,2)}</td>
+      <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(f.lucro)}${brl(Math.abs(f.lucro),2)}</td>
       <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"}">${brl(f.price,2)}</td>
       <td class="r">${f.cotas}</td>
       <td class="r" style="color:var(--gold);font-weight:600">${f.dy.toFixed(2)}%</td>
@@ -1274,8 +1293,8 @@ function renderFiis(totFiis,sc,sd){
   });
   const totI=rows.reduce((s,f)=>s+f.tot,0), totB=rows.reduce((s,f)=>s+f.totb3,0), totL=rows.reduce((s,f)=>s+f.lucro,0);
   addTotals("fiTbl",[
-    {label:"TOTAL"},{val:brl(totI,0),r:true},{val:brl(totB,0),r:true},
-    {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brl(Math.abs(totL),0)}</span>`,r:true},
+    {label:"TOTAL"},{val:brl(totI,2),r:true},{val:brl(totB,2),r:true},
+    {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brl(Math.abs(totL),2)}</span>`,r:true},
     {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   const tot=rows.reduce((s,f)=>s+f.totb3,0);
@@ -1327,8 +1346,8 @@ function renderETFs(sc,sd){
   rows.forEach(e=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
-      <td class="r">${usd(e.inv)}</td><td class="r" style="color:var(--muted)">${brl(e.inv*usdBRL,0)}</td>
-      <td class="r">${usd(e.atual)}</td><td class="r" style="color:var(--muted)">${brl(e.atual*usdBRL,0)}</td>
+      <td class="r">${usd(e.inv)}</td><td class="r" style="color:var(--muted)">${brl(e.inv*usdBRL,2)}</td>
+      <td class="r">${usd(e.atual)}</td><td class="r" style="color:var(--muted)">${brl(e.atual*usdBRL,2)}</td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),0)}</div></td>
       <td class="r">${e.dy.toFixed(2)}%</td><td><span class="pill core">CORE</span></td>`;
@@ -1337,8 +1356,8 @@ function renderETFs(sc,sd){
   const tI=rows.reduce((s,e)=>s+e.inv,0), tA=rows.reduce((s,e)=>s+e.atual,0), tL=rows.reduce((s,e)=>s+e.lucro,0);
   addTotals("etTbl",[
     {label:"TOTAL"},
-    {val:usd(tI),r:true},{val:brl(tI*usdBRL,0),r:true},
-    {val:usd(tA),r:true},{val:brl(tA*usdBRL,0),r:true},
+    {val:usd(tI),r:true},{val:brl(tI*usdBRL,2),r:true},
+    {val:usd(tA),r:true},{val:brl(tA*usdBRL,2),r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usd(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brl(Math.abs(tL*usdBRL),0)}</div></span>`,r:true},
     {val:"",r:true},{val:"",r:true}
   ]);
@@ -1357,8 +1376,8 @@ function renderStocks(sc,sd){
     const opts=objs.map(o=>`<option${o===s.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
-      <td class="r">${usd(s.inv)}</td><td class="r" style="color:var(--muted)">${brl(s.inv*usdBRL,0)}</td>
-      <td class="r">${usd(s.atual)}</td><td class="r" style="color:var(--muted)">${brl(s.atual*usdBRL,0)}</td>
+      <td class="r">${usd(s.inv)}</td><td class="r" style="color:var(--muted)">${brl(s.inv*usdBRL,2)}</td>
+      <td class="r">${usd(s.atual)}</td><td class="r" style="color:var(--muted)">${brl(s.atual*usdBRL,2)}</td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),0)}</div></td>
       <td class="r">${s.dy.toFixed(2)}%</td>
@@ -1368,8 +1387,8 @@ function renderStocks(sc,sd){
   const tI=rows.reduce((s,s2)=>s+s2.inv,0), tA=rows.reduce((s,s2)=>s+s2.atual,0), tL=rows.reduce((s,s2)=>s+s2.lucro,0);
   addTotals("skTbl",[
     {label:"TOTAL"},
-    {val:usd(tI),r:true},{val:brl(tI*usdBRL,0),r:true},
-    {val:usd(tA),r:true},{val:brl(tA*usdBRL,0),r:true},
+    {val:usd(tI),r:true},{val:brl(tI*usdBRL,2),r:true},
+    {val:usd(tA),r:true},{val:brl(tA*usdBRL,2),r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usd(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brl(Math.abs(tL*usdBRL),0)}</div></span>`,r:true},
     {val:"",r:true},{val:"",r:true}
   ]);
@@ -1506,13 +1525,20 @@ function goTab(id,btn){
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
   document.querySelectorAll(".ntab").forEach(t=>t.classList.remove("on"));
   document.getElementById("p-"+id).classList.add("on");
-  btn.classList.add("on");
+  if(btn) btn.classList.add("on");
+}
+function goHome(){
+  // Ativa a primeira aba (Visão geral) pelo seu onclick
+  const btn = document.querySelector('.ntab[onclick*="visao"]');
+  goTab('visao', btn);
 }
 
 /* Tema */
 function toggleTheme(){
-  document.documentElement.dataset.theme=document.documentElement.dataset.theme==="dark"?"light":"dark";
-  document.getElementById("themeBtn").textContent=document.documentElement.dataset.theme==="dark"?"🌙":"☀️";
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('tema', next);
+  document.getElementById("themeBtn").textContent = next === 'dark' ? '🌙' : '☀️';
 }
 
 /* Modal */
@@ -1586,6 +1612,20 @@ async function setMeta(i){
 }
 
 /* ═══════════════════ INIT ════════════════════════ */
+
+// Tema automático: claro até 18h, escuro depois
+(function setAutoTheme(){
+  const saved = localStorage.getItem('tema');
+  if(saved){
+    document.documentElement.dataset.theme = saved;
+  } else {
+    const h = new Date().getHours();
+    document.documentElement.dataset.theme = (h >= 18 || h < 6) ? 'dark' : 'light';
+  }
+  const btn = document.getElementById('themeBtn');
+  if(btn) btn.textContent = document.documentElement.dataset.theme === 'dark' ? '🌙' : '☀️';
+})();
+
 (async function init(){
   /* 1. Renderiza com snapshot imediatamente */
   setLdStatus("Calculando posições…");
