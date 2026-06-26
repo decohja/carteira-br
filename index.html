@@ -84,6 +84,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;
   cursor:pointer;white-space:nowrap;height:100%;transition:color .15s;}
 .ntab:hover{color:var(--text)}.ntab.on{color:var(--text);border-bottom-color:var(--gold)}
+.ntab.on .ndot{background:var(--pos);box-shadow:0 0 6px var(--pos);animation:dotpulse 3s ease infinite}
+@keyframes dotpulse{0%,100%{opacity:1}50%{opacity:.5}}
 .ndot{width:5px;height:5px;border-radius:50%;background:var(--faint)}
 .ntab.on .ndot{background:var(--pos);box-shadow:0 0 5px var(--pos)}
 
@@ -188,6 +190,9 @@ tr.total-row td{background:var(--bg3);border-top:2px solid var(--border2);font-w
 tr.total-row:hover td{background:var(--bg4)}
 .tk{font-weight:600;font-size:13px}
 .co{font-size:11px;color:var(--muted);margin-top:1px}
+.ativo-logo{width:22px;height:22px;border-radius:5px;object-fit:contain;background:var(--bg3);
+  border:1px solid var(--border);flex-shrink:0;vertical-align:middle}
+.ativo-cell{display:flex;align-items:center;gap:8px}
 .usd2{font-size:10px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
 
 /* teto mini bar */
@@ -344,7 +349,9 @@ tr.total-row:hover td{background:var(--bg4)}
 
 <!-- HEADER -->
 <header class="hdr">
-  <a class="logo" href="#"><div class="logo-m">A</div>ativo<em>·br</em></a>
+  <a class="logo" href="#" onclick="goTab('visao',document.querySelector('.ntab'));return false;" title="Voltar para home">
+    <div class="logo-m">A</div>ativo<em>·br</em>
+  </a>
   <nav class="nav">
     <button class="ntab on" onclick="goTab('visao',this)"><span class="ndot"></span>Visão geral</button>
     <button class="ntab" onclick="goTab('acoes',this)"><span class="ndot"></span>Ações BR</button>
@@ -403,6 +410,7 @@ tr.total-row:hover td{background:var(--bg4)}
       <div class="hst"><div class="hl">EUA Total</div><div class="hv" id="hEUA">—</div><div class="hs" id="hEUASub"></div></div>
       <div class="hst"><div class="hl">Proventos FIIs</div><div class="hv gold">R$ 682</div><div class="hs" style="color:var(--gold)">acumulado</div></div>
       <div class="hst"><div class="hl">Lucro BR</div><div class="hv" id="hLucro">—</div></div>
+      <div class="hst"><div class="hl">Lucro total</div><div class="hv" id="hLucroTotal">—</div></div>
     </div>
   </div>
   <div class="meta-row">
@@ -577,7 +585,11 @@ tr.total-row:hover td{background:var(--bg4)}
       <div class="st">Lançar provento</div>
       <div class="pform">
         <div class="frow3">
-          <div><label class="flbl">Ativo</label><input class="finp" id="pTk" placeholder="BTLG11" style="font-family:var(--mono)"/></div>
+          <div><label class="flbl">Ativo</label>
+            <input class="finp" id="pTk" placeholder="Digite ou selecione…" style="font-family:var(--mono)" 
+              list="tickerList" autocomplete="off"/>
+            <datalist id="tickerList"></datalist>
+          </div>
           <div><label class="flbl">Data pagamento</label><input class="finp" id="pDt" type="date"/></div>
           <div><label class="flbl">Tipo</label><select class="fsel" id="pTipo"><option>Dividendos</option><option>JSCP</option><option>Rendimento</option></select></div>
         </div>
@@ -610,7 +622,8 @@ tr.total-row:hover td{background:var(--bg4)}
     <span class="f-ver" onclick="openMod('changelog')">📋 v5.0</span>
   </div>
   <div class="f-note">
-    Cotações: Brapi.dev (snapshot + ao vivo) · Dados: Google Sheets<br/>
+    <span id="sbStatus" style="margin-right:8px;font-size:10px">○ conectando…</span>
+    Cotações: Brapi.dev · Banco: Supabase<br/>
     Painel pessoal — não constitui recomendação de investimento.
   </div>
 </footer>
@@ -667,14 +680,139 @@ tr.total-row:hover td{background:var(--bg4)}
 </div>
 
 <script>
+/* ═══════════════════ SUPABASE ════════════════════
+   Conexão direta via REST API — sem biblioteca externa.
+   Funciona em qualquer HTML estático (GitHub Pages etc).
+════════════════════════════════════════════════════ */
+const SB_URL = 'https://pojzzwxuawpqvrethncz.supabase.co';
+const SB_KEY = 'sb_publishable_I3WoWXxxvEpGdwBmiDppjQ_RWKSkUTZ';
+
+const SB = {
+  headers(extra){
+    return {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      ...extra
+    };
+  },
+  async get(table, params){
+    const qs = params ? '?' + new URLSearchParams(params) : '';
+    const r = await fetch(SB_URL+'/rest/v1/'+table+qs, {headers: this.headers()});
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async post(table, body){
+    const r = await fetch(SB_URL+'/rest/v1/'+table, {
+      method:'POST', headers: this.headers({'Prefer':'return=representation'}),
+      body: JSON.stringify(body)
+    });
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async upsert(table, body){
+    const r = await fetch(SB_URL+'/rest/v1/'+table, {
+      method:'POST',
+      headers: this.headers({'Prefer':'return=representation,resolution=merge-duplicates'}),
+      body: JSON.stringify(body)
+    });
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async patch(table, match, body){
+    const qs = '?' + new URLSearchParams(match);
+    const r = await fetch(SB_URL+'/rest/v1/'+table+qs, {
+      method:'PATCH', headers: this.headers({'Prefer':'return=representation'}),
+      body: JSON.stringify(body)
+    });
+    if(!r.ok) throw new Error(await r.text());
+    return r.json();
+  },
+  async del(table, match){
+    const qs = '?' + new URLSearchParams(match);
+    const r = await fetch(SB_URL+'/rest/v1/'+table+qs, {
+      method:'DELETE', headers: this.headers()
+    });
+    if(!r.ok) throw new Error(await r.text());
+  }
+};
+
+// Cache de logos por ticker
+const LOGOS = {};
+async function fetchLogo(tk){
+  if(LOGOS[tk]) return LOGOS[tk];
+  try{
+    const r = await fetch(`https://brapi.dev/api/quote/${tk}?range=1d&interval=1d`);
+    const j = await r.json();
+    if(j.results&&j.results[0]&&j.results[0].logourl){
+      LOGOS[tk] = j.results[0].logourl;
+      // atualiza todas as imagens desse ticker na tela
+      document.querySelectorAll(`img[data-tk="${tk}"]`).forEach(el=>{
+        el.src = LOGOS[tk];
+        el.style.background = 'transparent';
+      });
+    }
+  }catch(e){}
+  return LOGOS[tk]||null;
+}
+function logoImg(tk){
+  if(LOGOS[tk]) return `<img src="${LOGOS[tk]}" class="ativo-logo" data-tk="${tk}" alt="${tk}"/>`;
+  // placeholder enquanto carrega
+  setTimeout(()=>fetchLogo(tk),100);
+  return `<img src="" class="ativo-logo" data-tk="${tk}" alt="${tk}" style="background:var(--bg3)"/>`;
+}
+
+// Lista de tickers B3 para dropdown (top ativos + FIIs comuns)
+const TICKERS_BR = [
+  'ABEV3','ALSO3','ARZZ3','ASAI3','AZUL4','B3SA3','BBAS3','BBDC3','BBDC4','BBSE3',
+  'BEEF3','BPAC11','BRAP4','BRFS3','BRKM5','BRML3','CCRO3','CIEL3','CMIG4','COGN3',
+  'CPFE3','CPLE3','CSAN3','CSMG3','CSNA3','CXSE3','CYRE3','DXCO3','ECOR3','EGIE3',
+  'ELET3','ELET6','EMBR3','ENEV3','ENGI11','EQTL3','ESPA3','FLRY3','GGBR4','GGPS3',
+  'GOAU4','GOLL4','HAPV3','HYPE3','IGTI11','IRBR3','ITSA4','ITUB4','JBSS3','JHSF3',
+  'KLBN11','LREN3','LWSA3','MGLU3','MRFG3','MRVE3','MULT3','MYPK3','NTCO3','PCAR3',
+  'PETR3','PETR4','PETZ3','POSI3','PRIO3','QUAL3','RADL3','RAIL3','RDOR3','RENT3',
+  'RRRP3','SAPR4','SBFG3','SBSP3','SIMH3','SLCE3','SMFT3','SOMA3','SUZB3','TAEE11',
+  'TIMS3','TOTS3','UGPA3','USIM5','VALE3','VBBR3','VIVT3','WEGE3','WIZC3','YDUQ3',
+  // FIIs comuns
+  'BCFF11','BCIA11','BCRI11','BTCI11','BTLG11','CPTS11','FEXC11','FIIB11','FLCR11',
+  'GGRC11','GARE11','HGLG11','HGRU11','HGBS11','HSLG11','HSML11','IFIX11','ITLG11',
+  'JSAF11','JSRE11','KFOF11','KINP11','KNCT11','KNRI11','KNSC11','LVBI11','MCCI11',
+  'MXRF11','OUJP11','PATL11','PVBI11','RBCO11','RBRF11','RBRP11','RECR11','RZAK11',
+  'SNAG11','SNEL11','TGAR11','TPFT11','TRXF11','URPR11','VGIR11','VILG11','VISC11',
+  'VOTS11','VRTA11','VTLT11','XPML11','XPLG11','XPPR11',
+];
+function setSbStatus(ok){
+  sbOK = ok;
+  const el = document.getElementById('sbStatus');
+  if(el){
+    el.textContent = ok ? '● Banco conectado' : '○ Offline (local)';
+    el.style.color = ok ? 'var(--pos)' : 'var(--muted)';
+  }
+}
+
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v7.0",d:"Jun/2026",items:[
+    "Lucro Total (BR + FIIs + EUA) no hero, ao lado do Lucro BR",
+    "Logos dos ativos via Brapi — exibidos automaticamente nas tabelas",
+    "Índices de mercado com estado de carregamento visível (· · · buscando)",
+    "Aba ativa com ponto verde pulsante permanente",
+    "Logo/home clicável volta para Visão Geral",
+    "Upload de foto de perfil salvo no Supabase Storage (bucket avatars)",
+    "Avatar carregado do servidor na inicialização",
+    "Dropdown com lista de tickers B3 e FIIs no formulário de proventos",
+  ]},
+  {v:"v6.0",d:"Jun/2026",items:[
+    "Integração com Supabase — proventos, metas e objetivos salvos permanentemente no banco",
+    "Lançamentos de proventos persistem entre sessões e dispositivos",
+    "Campo Objetivo (Comprar/Manter/Vender) salvo por ativo no banco",
+    "Indicador de status do banco no rodapé (● conectado / ○ offline)",
+  ]},
   {v:"v5.0",d:"Jun/2026",items:[
     "Loading screen animado (Carregando seus investimentos…)",
-    "CORREÇÃO CRÍTICA: lucro não depende mais do fetch da Brapi — preços snapshot embutidos garantem lucro correto na abertura",
-    "Índices de mercado (USD, IBOV, S&P, IFIX) em caixinhas no canto direito do header",
-    "Indicador snapshot/ao vivo no hero — mostra se preços são snapshot ou Brapi ao vivo",
-    "Brapi atualiza os preços por cima do snapshot quando disponível (não trava a renderização)",
+    "CORREÇÃO CRÍTICA: lucro calculado com preços snapshot — não depende do fetch da Brapi",
+    "Índices de mercado (USD, IBOV, S&P, IFIX) em caixinhas no header direito",
+    "Brapi atualiza os preços por cima do snapshot quando disponível",
   ]},
   {v:"v4",d:"Jun/2026",items:["Linha de totais nas tabelas","ETFs e Stocks em abas separadas","Conversão USD→BRL","Reserva separada da meta","Cards clicáveis","Gráficos na coluna direita"]},
   {v:"v3",d:"Jun/2026",items:["Tema claro/escuro","Donuts por classe","Modal de configurações e metas","Lançamento de proventos","Sortable columns"]},
@@ -989,6 +1127,9 @@ function render(){
   setHS("hEUASub",lucroETF+lucroSTK);
   const lEl=g("hLucro"); lEl.textContent=sgn(lucroAcoes)+brl(Math.abs(lucroAcoes));
   lEl.className="hv "+(lucroAcoes>=0?"pos":"neg");
+  const lucroTotal=lucroAcoes+lucroFiis+lucroETF+lucroSTK;
+  const ltEl=g("hLucroTotal"); ltEl.textContent=sgn(lucroTotal)+brl(Math.abs(lucroTotal));
+  ltEl.className="hv "+(lucroTotal>=0?"pos":"neg");
   g("metaPct").textContent=pct.toFixed(1)+"%";
   g("metaLbl").textContent=brl(meta);
 
@@ -1079,7 +1220,7 @@ function renderAcoes(totAcoes,sc,sd){
     const ov=a.pctCart>a.teto, w=Math.min(100,a.pctCart/a.teto*100);
     const opts=objs.map(o=>`<option${o===a.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td><div class="tk">${a.tk}</div><div class="co">${a.co}</div></td>
+    tr.innerHTML=`<td><div class="ativo-cell">${logoImg(a.tk)}<div><div class="tk">${a.tk}</div><div class="co">${a.co}</div></div></div></td>
       <td class="r">${brl(a.tot,0)}</td>
       <td class="r">${brl(a.totb3,0)}</td>
       <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(a.lucro)}${brl(Math.abs(a.lucro),0)}</td>
@@ -1090,7 +1231,7 @@ function renderAcoes(totAcoes,sc,sd){
         <div class="tline" style="left:100%"></div></div>
         <span class="ttxt${ov?" ov":"ok"}">${a.pctCart.toFixed(1)}%/${a.teto}%</span>
       </div></td>
-      <td><select class="sel" onchange="D.acoes.find(x=>x.tk==='${a.tk}').obj=this.value">${opts}</select></td>`;
+      <td><select class="sel" onchange="saveObj('${a.tk}',this.value)">${opts}</select></td>`;
     tb.appendChild(tr);
   });
   const totI=rows.reduce((s,a)=>s+a.tot,0), totB=rows.reduce((s,a)=>s+a.totb3,0), totL=rows.reduce((s,a)=>s+a.lucro,0);
@@ -1122,13 +1263,13 @@ function renderFiis(totFiis,sc,sd){
   rows.forEach(f=>{
     const opts=sts.map(o=>`<option${o===f.st?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td><div class="tk">${f.tk}</div><div class="co">${f.seg}</div></td>
+    tr.innerHTML=`<td><div class="ativo-cell">${logoImg(f.tk)}<div><div class="tk">${f.tk}</div><div class="co">${f.seg}</div></div></div></td>
       <td class="r">${brl(f.tot,0)}</td><td class="r">${brl(f.totb3,0)}</td>
       <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(f.lucro)}${brl(Math.abs(f.lucro),0)}</td>
       <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"}">${brl(f.price,2)}</td>
       <td class="r">${f.cotas}</td>
       <td class="r" style="color:var(--gold);font-weight:600">${f.dy.toFixed(2)}%</td>
-      <td><select class="sel" onchange="D.fiis.find(x=>x.tk==='${f.tk}').st=this.value">${opts}</select></td>`;
+      <td><select class="sel" onchange="saveObj('${f.tk}',this.value)">${opts}</select></td>`;
     tb.appendChild(tr);
   });
   const totI=rows.reduce((s,f)=>s+f.tot,0), totB=rows.reduce((s,f)=>s+f.totb3,0), totL=rows.reduce((s,f)=>s+f.lucro,0);
@@ -1185,7 +1326,7 @@ function renderETFs(sc,sd){
   const tot=rows.reduce((s,e)=>s+e.atual,0);
   rows.forEach(e=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></td>
+    tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
       <td class="r">${usd(e.inv)}</td><td class="r" style="color:var(--muted)">${brl(e.inv*usdBRL,0)}</td>
       <td class="r">${usd(e.atual)}</td><td class="r" style="color:var(--muted)">${brl(e.atual*usdBRL,0)}</td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
@@ -1215,13 +1356,13 @@ function renderStocks(sc,sd){
   rows.forEach(s=>{
     const opts=objs.map(o=>`<option${o===s.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td><div class="tk">${s.tk}</div><div class="co">${s.co}</div></td>
+    tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
       <td class="r">${usd(s.inv)}</td><td class="r" style="color:var(--muted)">${brl(s.inv*usdBRL,0)}</td>
       <td class="r">${usd(s.atual)}</td><td class="r" style="color:var(--muted)">${brl(s.atual*usdBRL,0)}</td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),0)}</div></td>
       <td class="r">${s.dy.toFixed(2)}%</td>
-      <td><select class="sel" onchange="D.stocks.find(x=>x.tk==='${s.tk}').obj=this.value">${opts}</select></td>`;
+      <td><select class="sel" onchange="saveObj('${s.tk}',this.value)">${opts}</select></td>`;
     tb.appendChild(tr);
   });
   const tI=rows.reduce((s,s2)=>s+s2.inv,0), tA=rows.reduce((s,s2)=>s+s2.atual,0), tL=rows.reduce((s,s2)=>s+s2.lucro,0);
@@ -1269,15 +1410,78 @@ function calcPrev(){
   const vc=parseFloat(g("pVc").value)||0, ct=parseInt(g("pCt").value)||0;
   g("pTot").textContent=brl(vc*ct,2);
 }
-function addProv(){
+async function addProv(){
   const tk=g("pTk").value.toUpperCase().trim(), dt=g("pDt").value;
   const tipo=g("pTipo").value, vc=parseFloat(g("pVc").value)||0, ct=parseInt(g("pCt").value)||0;
   if(!tk||!dt||!vc||!ct){alert("Preencha todos os campos.");return;}
   const total=+(vc*ct).toFixed(2);
-  D.provLog.unshift({tk,tipo,pg:dt.split("-").reverse().join("/"),vc,cotas:ct,total});
+  const row={tk,tipo,pg:dt.split("-").reverse().join("/"),vc,cotas:ct,total};
+  // salva no Supabase
+  if(sbOK){
+    try{
+      await SB.post('proventos',{
+        ticker:tk, tipo, data_pagamento:dt,
+        valor_por_cota:vc, quantidade_cotas:ct, total
+      });
+    }catch(e){ console.warn('Supabase provento error:',e); }
+  }
+  D.provLog.unshift(row);
   const fi=D.fiis.find(f=>f.tk===tk); if(fi) fi.prov=+(fi.prov+total).toFixed(2);
   g("pTk").value="";g("pDt").value="";g("pVc").value="";g("pCt").value="";g("pTot").textContent="R$ 0,00";
   renderProv();
+}
+
+/* Salva objetivo no Supabase e localmente */
+/* Upload avatar para Supabase Storage */
+const AVATAR_PATH = 'perfil/avatar.jpg';
+const AVATAR_URL  = `${SB_URL}/storage/v1/object/public/avatars/${AVATAR_PATH}`;
+
+async function uploadAvatar_SB(file){
+  const res = await fetch(`${SB_URL}/storage/v1/object/avatars/${AVATAR_PATH}`, {
+    method: 'POST',
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': file.type || 'image/jpeg',
+      'x-upsert': 'true'
+    },
+    body: file
+  });
+  if(!res.ok) throw new Error(await res.text());
+  // adiciona cache-bust para forçar reload
+  return AVATAR_URL + '?t=' + Date.now();
+}
+
+async function loadAvatar_SB(){
+  // Tenta carregar avatar salvo do Supabase
+  try{
+    const testUrl = AVATAR_URL + '?t=' + Date.now();
+    const r = await fetch(testUrl, {method:'HEAD'});
+    if(r.ok){
+      const btn = document.getElementById('avtBtn');
+      if(btn && !btn.querySelector('img')){
+        btn.innerHTML = `<img src="${testUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+      }
+      const up = document.getElementById('avtUp');
+      if(up){
+        up.style.backgroundImage = `url(${testUrl})`;
+        up.style.backgroundSize = 'cover';
+        up.textContent = '';
+      }
+    }
+  }catch(e){}
+}
+
+async function saveObj(tk, val){
+  // atualiza local
+  const a=D.acoes.find(x=>x.tk===tk); if(a) a.obj=val;
+  const f=D.fiis.find(x=>x.tk===tk);  if(f) f.st=val;
+  const s=D.stocks.find(x=>x.tk===tk);if(s) s.obj=val;
+  // salva no banco
+  if(sbOK){
+    try{ await SB.upsert('objetivos',{ticker:tk,objetivo:val,updated_at:new Date().toISOString()}); }
+    catch(e){ console.warn('saveObj error:',e); }
+  }
 }
 
 /* Sort */
@@ -1350,32 +1554,105 @@ function renderMetasList(){
     el.appendChild(div);
   });
 }
-function addMeta(){
+async function addMeta(){
   const v=parseFloat(g("nMV").value), l=g("nML").value.trim()||`Meta ${D.metas.length+1}`;
   if(!v||isNaN(v)) return;
-  D.metas.push({v,lbl:l}); g("nMV").value=""; g("nML").value="";
+  const nova={v,lbl:l};
+  if(sbOK){
+    try{
+      const res=await SB.post('metas',{label:l,valor:v,ativa:false});
+      if(res&&res[0]) nova.id=res[0].id;
+    }catch(e){console.warn('meta save error:',e);}
+  }
+  D.metas.push(nova); g("nMV").value=""; g("nML").value="";
   renderMetasList();
 }
-function delMeta(i){D.metas.splice(i,1);if(D.activeMeta>=D.metas.length)D.activeMeta=0;renderMetasList();render();}
-function setMeta(i){D.activeMeta=i;renderMetasList();render();closeMod();}
+async function delMeta(i){
+  const m=D.metas[i];
+  if(sbOK&&m.id){
+    try{ await SB.del('metas',{'id':'eq.'+m.id}); }catch(e){}
+  }
+  D.metas.splice(i,1);if(D.activeMeta>=D.metas.length)D.activeMeta=0;renderMetasList();render();
+}
+async function setMeta(i){
+  D.activeMeta=i;
+  if(sbOK){
+    try{
+      await SB.patch('metas',{'ativa':'eq.true'},{ativa:false});
+      const m=D.metas[i]; if(m.id) await SB.patch('metas',{'id':'eq.'+m.id},{ativa:true});
+    }catch(e){}
+  }
+  renderMetasList();render();closeMod();
+}
 
 /* ═══════════════════ INIT ════════════════════════ */
 (async function init(){
-  /* 1. Renderiza imediatamente com snapshot — lucro já aparece correto */
+  /* 1. Renderiza com snapshot imediatamente */
   setLdStatus("Calculando posições…");
   render();
 
-  /* 2. Loading screen some após render visual */
+  /* 2. Carrega dados do Supabase */
+  setLdStatus("Conectando ao banco…");
+  try{
+    // proventos
+    const provs = await SB.get('proventos','order=created_at.desc');
+    if(provs && provs.length){
+      D.provLog = provs.map(p=>({
+        tk:p.ticker, tipo:p.tipo,
+        pg: p.data_pagamento ? p.data_pagamento.split('-').reverse().join('/') : '—',
+        vc: p.valor_por_cota, cotas: p.quantidade_cotas, total: p.total
+      }));
+      // recalcula prov acumulado por FII
+      D.fiis.forEach(f=>{ f.prov=0; });
+      D.provLog.forEach(p=>{
+        const fi=D.fiis.find(f=>f.tk===p.tk);
+        if(fi) fi.prov=+(fi.prov+p.total).toFixed(2);
+      });
+    }
+
+    // metas
+    const mts = await SB.get('metas','order=id.asc');
+    if(mts && mts.length){
+      D.metas = mts.map(m=>({id:m.id, v:parseFloat(m.valor), lbl:m.label}));
+      const ativaIdx = mts.findIndex(m=>m.ativa);
+      D.activeMeta = ativaIdx >= 0 ? ativaIdx : 0;
+    }
+
+    // objetivos
+    const objs = await SB.get('objetivos','select=ticker,objetivo');
+    if(objs && objs.length){
+      objs.forEach(o=>{
+        const a=D.acoes.find(x=>x.tk===o.ticker); if(a) a.obj=o.objetivo;
+        const f=D.fiis.find(x=>x.tk===o.ticker);  if(f) f.st=o.objetivo;
+        const s=D.stocks.find(x=>x.tk===o.ticker);if(s) s.obj=o.objetivo;
+      });
+    }
+
+    setSbStatus(true);
+    setLdStatus("Banco OK…");
+    // carrega avatar salvo
+    loadAvatar_SB();
+    // popula datalist de tickers
+    const dl = document.getElementById('tickerList');
+    if(dl) TICKERS_BR.forEach(t=>{ const o=document.createElement('option'); o.value=t; dl.appendChild(o); });
+    render(); // re-renderiza com dados do banco
+  } catch(e){
+    console.warn('Supabase init error:', e);
+    setSbStatus(false);
+    setLdStatus("Banco offline — usando local");
+  }
+
+  /* 3. Loading screen some */
   setTimeout(()=>{
     document.getElementById("loading").classList.add("out");
-  }, 1200);
+  }, 1400);
 
-  /* 3. Tenta Brapi em background — atualiza por cima se funcionar */
+  /* 4. Brapi em background */
   setLdStatus("Buscando cotações ao vivo…");
   document.getElementById("lastUpd").textContent="Snapshot carregado · buscando Brapi…";
   await refreshPrices();
 
-  /* 4. Auto-refresh a cada 5 min */
+  /* 5. Auto-refresh a cada 5 min */
   setInterval(refreshPrices, 5*60*1000);
 })();
 </script>
