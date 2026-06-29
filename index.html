@@ -470,13 +470,6 @@ tr.total-row:hover td{background:var(--bg4)}
 
 <!-- VISÃO GERAL -->
 <section class="panel on" id="p-visao">
-  <div id="tokenWarn" style="display:none;background:var(--neg-bg);border:1px solid var(--neg-dim);
-    border-radius:var(--rm);padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--neg);
-    display:flex;align-items:center;justify-content:space-between;gap:12px">
-    <span>⚠ <strong>Token Brapi não configurado.</strong> As cotações não serão atualizadas.</span>
-    <button class="refbtn" onclick="openMod('app')" style="border-color:var(--neg);color:var(--neg)">
-      ⚙ Configurar token</button>
-  </div>
   <div class="refbar">
     <span id="lastUpd">—</span>
     <button class="refbtn" onclick="refreshPrices()">↻ Atualizar cotações</button>
@@ -486,6 +479,27 @@ tr.total-row:hover td{background:var(--bg4)}
   <div class="agrid" id="allocGrid"></div>
   <div class="st" style="margin-top:4px">Reserva e caixa — não entram na meta de investimentos</div>
   <div class="agrid" id="allocExtra"></div>
+
+  <!-- METAS DE ALOCAÇÃO -->
+  <div class="st" style="margin-top:16px;display:flex;align-items:center;justify-content:space-between">
+    <span>Metas de alocação</span>
+    <button class="refbtn" onclick="saveMetas()" style="color:var(--pos)">💾 Salvar metas</button>
+  </div>
+  <div style="overflow-x:auto;margin-top:6px">
+    <table class="atab" style="width:100%">
+      <thead>
+        <tr>
+          <th class="l" style="font-size:11px">Classe</th>
+          <th class="r" style="font-size:11px">Atual (R$)</th>
+          <th class="r" style="font-size:11px">% Atual</th>
+          <th class="r" style="font-size:11px">% Meta</th>
+          <th class="r" style="font-size:11px">Deveria Ter</th>
+          <th class="r" style="font-size:11px">Gap</th>
+        </tr>
+      </thead>
+      <tbody id="metasAlocTbody"></tbody>
+    </table>
+  </div>
 </section>
 
 <!-- AÇÕES BR -->
@@ -766,13 +780,10 @@ tr.total-row:hover td{background:var(--bg4)}
     </div>
 
     <div id="mt-app" style="display:none">
-      <label class="flbl">Token Brapi (opcional — tempo real)</label>
-      <input class="finp" id="brapiTok" placeholder="brapi.dev/dashboard" style="margin-bottom:4px"/>
-      <p style="font-size:10px;color:var(--muted);margin-bottom:12px">Sem token: snapshot + 15 min delay. Com token: tempo real.</p>
-      <div class="sep"></div>
-      <p style="font-size:11px;color:var(--muted);line-height:1.7"><strong>API B3 (futuro)</strong><br/>
-      Integração via OAuth da B3/CEI é possível com backend (Supabase + servidor). Custo: infraestrutura ~R$50/mês. A B3 não cobra taxa de API para PF.</p>
-      <button class="btn-pri" style="width:100%;margin-top:12px" onclick="saveAppSettings()">Salvar configurações</button>
+      <div style="padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
+        <p style="font-size:12px;color:var(--pos);font-weight:600;margin-bottom:6px">✓ Cotações via Yahoo Finance</p>
+        <p style="font-size:11px;color:var(--muted);line-height:1.6">Sem necessidade de token. Preços atualizados automaticamente a cada 60s para todas as classes de ativos.</p>
+      </div>
     </div>
 
     <div id="mt-changelog" style="display:none">
@@ -839,71 +850,45 @@ const SB = {
   }
 };
 
-// ─── LOGOS ───────────────────────────────────────────────────────────
+// ─── LOGOS via Clearbit ──────────────────────────────────────────────
+// Carrega direto via <img> — sem CORS, sem API, sem token
+// Funciona em file:// e GitHub Pages
+const LOGO_DOMAINS = {
+  'WEGE3':'weg.net','BBSE3':'bb.com.br','CPLE3':'copel.com',
+  'ITSA4':'itausa.com.br','SAPR4':'sanepar.com.br','EQTL3':'equatorialenergia.com.br',
+  'BBAS3':'bb.com.br','GGPS3':'grupogps.com.br','CXSE3':'caixaseguridade.com.br',
+  'BTLG11':'btgpactual.com','KNSC11':'kinea.com.br','XPML11':'xpinvestimentos.com.br',
+  'GGRC11':'grupogps.com.br','GARE11':'guardianfii.com.br','TRXF11':'trxre.com.br',
+  'HSLG11':'hsicapital.com.br','SNEL11':'sunoenergia.com.br','BTCI11':'btgpactual.com',
+  'VOO':'vanguard.com','XLI':'ssga.com','XLV':'ssga.com',
+  'AVGO':'broadcom.com','GOOGL':'google.com','JNJ':'jnj.com',
+  'KO':'coca-cola.com','JPM':'jpmorganchase.com','V':'visa.com',
+  'ACN':'accenture.com','NU':'nubank.com.br',
+};
 const LOGOS = {};
 
-// Helper: fetch com fallback CORS (direct → allorigins → corsproxy.io)
-async function corsGetJSON(url){
-  // 1. Direto (funciona no GitHub Pages com https://)
-  try{
-    const r=await fetch(url,{headers:{Accept:'application/json'}});
-    if(r.ok) return await r.json();
-  }catch{}
-  // 2. allorigins.win
-  try{
-    const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url));
-    const j=await r.json();
-    return JSON.parse(j.contents||'{}');
-  }catch{}
-  // 3. corsproxy.io
-  try{
-    const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url));
-    if(r.ok) return await r.json();
-  }catch{}
-  throw new Error('Todos os proxies falharam para '+url);
-}
-
-// Substitui placeholder de iniciais pela logo real
-function applyLogo(tk, logoUrl){
-  LOGOS[tk]=logoUrl;
-  document.querySelectorAll(`[id="logo-${tk}"]`).forEach(el=>{
-    const img=document.createElement('img');
-    img.src=logoUrl; img.className='ativo-logo'; img.dataset.tk=tk; img.alt=tk;
-    img.onerror=()=>{ img.outerHTML='<span class="ativo-initials">'+tk.slice(0,2)+'</span>'; };
-    el.replaceWith(img);
-  });
-  // atualiza imgs já existentes (re-renders)
-  document.querySelectorAll(`img[data-tk="${tk}"]`).forEach(el=>{ el.src=logoUrl; });
-}
+function logoErr(el,tk){ el.outerHTML='<span class="ativo-initials">'+tk.slice(0,2)+'</span>'; }
 
 function logoImg(tk){
-  if(LOGOS[tk]) return `<img src="${LOGOS[tk]}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="this.outerHTML='<span class=\\'ativo-initials\\'>${tk.slice(0,2)}</span>'"/>`;
-  // Placeholder com iniciais — será substituído por fetchLogosEmLote
-  return `<span class="ativo-initials" id="logo-${tk}" data-tk="${tk}">${tk.slice(0,2)}</span>`;
-}
-
-async function fetchLogosEmLote(){
-  const tks=[...D.acoes.map(a=>a.tk),...D.fiis.map(f=>f.tk)];
-  // Filtra tickers que já têm logo no cache
-  const needed=tks.filter(t=>!LOGOS[t]);
-  if(!needed.length) return;
-
-  const tok=localStorage.getItem('brapiToken')||'';
-  const ts=tok?`&token=${tok}`:'';
-  const url=`https://brapi.dev/api/quote/${needed.join(',')}?${ts}`;
-
-  try{
-    const data=await corsGetJSON(url);
-    if(!data.results){ console.warn('fetchLogosEmLote: sem results'); return; }
-    let loaded=0;
-    data.results.forEach(q=>{
-      if(q.logourl&&q.symbol){ applyLogo(q.symbol,q.logourl); loaded++; }
-    });
-    console.log(`Logos: ${loaded}/${needed.length} carregados via Brapi`);
-  }catch(e){
-    console.warn('fetchLogosEmLote falhou:',e.message);
+  const cached=LOGOS[tk];
+  if(cached) return `<img src="${cached}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="logoErr(this,'${tk}')"/>`;
+  const domain=LOGO_DOMAINS[tk];
+  if(domain){
+    const url=`https://logo.clearbit.com/${domain}`;
+    LOGOS[tk]=url;
+    return `<img src="${url}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="logoErr(this,'${tk}')"/>`;
   }
+  return `<span class="ativo-initials">${tk.slice(0,2)}</span>`;
 }
+
+// ─── CORS helper para fetches de dados (cotações) ────────────────────
+async function corsGetJSON(url){
+  try{ const r=await fetch(url,{headers:{Accept:'application/json'}}); if(r.ok) return await r.json(); }catch{}
+  try{ const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url)); const j=await r.json(); return JSON.parse(j.contents||'{}'); }catch{}
+  try{ const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url)); if(r.ok) return await r.json(); }catch{}
+  throw new Error('Todos os proxies falharam');
+}
+
 
 // Lista de tickers B3 para dropdown (top ativos + FIIs comuns)
 const TICKERS_BR = [
@@ -1222,97 +1207,97 @@ function mkSetores(data,id,pctFn){
 /* ═══════════════════ BRAPI FETCH ═════════════════ */
 function setLdStatus(txt){ const el=document.getElementById("ldStatus"); if(el) el.textContent=txt; }
 
-/* ─── ÍNDICES ──────────────────────────────────────────────────────── */
-async function refreshIndices(ts){
-  // IBOV + IFIX via Brapi (corsGetJSON = direct → allorigins → corsproxy)
-  try{
-    const d=await corsGetJSON(`https://brapi.dev/api/quote/%5EBVSP,IFIX11?range=1d&interval=1d${ts}`);
-    (d.results||[]).forEach(q=>{
-      const chg=q.regularMarketChangePercent||0;
-      if((q.symbol==="^BVSP"||q.symbol==="BVSP")&&q.regularMarketPrice)
-        updMkt("ibov",(q.regularMarketPrice/1000).toFixed(2)+"k",chg);
-      if(q.symbol==="IFIX11"&&q.regularMarketPrice)
-        updMkt("ifix",q.regularMarketPrice.toFixed(0),chg);
-    });
-  }catch(e){ updMktErr("ibov"); updMktErr("ifix"); console.warn("IBOV/IFIX:",e.message); }
-  // S&P 500 via Yahoo Finance
-  try{
-    const d=await corsGetJSON("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1m&range=1d");
-    const m=d?.chart?.result?.[0]?.meta;
-    if(m?.regularMarketPrice) updMkt("sp",m.regularMarketPrice.toFixed(0),m.regularMarketChangePercent||0);
-    else updMktErr("sp");
-  }catch(e){ updMktErr("sp"); console.warn("S&P:",e.message); }
-  // USD/BRL via Brapi → fallback Yahoo
-  try{
-    const d=await corsGetJSON(`https://brapi.dev/api/v2/currency?currency=USD-BRL${ts}`);
-    if(d.currency?.[0]){
-      usdBRL=parseFloat(d.currency[0].bidPrice)||5.80;
-      updMkt("usd","R$\u00a0"+usdBRL.toFixed(2),d.currency[0].percentageChange||0);
-    } else throw new Error("sem dados");
-  }catch(e){
-    try{
-      const d=await corsGetJSON("https://query1.finance.yahoo.com/v8/finance/chart/BRL%3DX?interval=1m&range=1d");
-      const m=d?.chart?.result?.[0]?.meta;
-      if(m?.regularMarketPrice){ usdBRL=m.regularMarketPrice; updMkt("usd","R$\u00a0"+usdBRL.toFixed(2),m.regularMarketChangePercent||0); }
-      else updMktErr("usd");
-    }catch(e2){ updMktErr("usd"); }
-  }
-}
-
-/* ─── PREÇOS PRINCIPAIS ────────────────────────────────────────────── */
+/* ─── COTAÇÕES: Yahoo Finance batch ─────────────────────────────────── */
 async function refreshPrices(){
-  const tok=localStorage.getItem("brapiToken")||"";
-  const ts=tok?`&token=${tok}`:"";
+  const tksAcoes=D.acoes.map(a=>a.tk);
+  const tksFiis =D.fiis.map(f=>f.tk);
+  const tksUS   =[...new Set([...D.etfs.map(e=>e.tk),...D.stocks.map(s=>s.tk)])];
+  const allBR   =[...tksAcoes,...tksFiis].map(t=>t+'.SA');
+  const idxSyms =['^BVSP','^GSPC','IFIX11.SA','BRL=X'];
+  const allSyms =[...allBR,...tksUS,...idxSyms];
 
-  /* 1. BR: Ações + FIIs via Brapi — corsGetJSON garante fallback de proxy */
-  const tksBR=[...D.acoes.map(a=>a.tk),...D.fiis.map(f=>f.tk)].join(",");
+  // Constrói URL preservando vírgulas, encode só ^ e =
+  const symStr=allSyms.map(s=>s.replace(/\^/g,'%5E').replace(/=/g,'%3D')).join(',');
+  const batchUrl=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symStr}`;
+
+  let brOK=0;
+  let batchWorked=false;
+
   try{
-    const j1=await corsGetJSON(`https://brapi.dev/api/quote/${tksBR}?range=1d&interval=1d${ts}`);
-    if(!j1.results) throw new Error("sem results");
-    let count=0;
-    j1.results.forEach(q=>{ if(q.regularMarketPrice){ prices[q.symbol]=q.regularMarketPrice; count++; } });
-    if(!count) throw new Error("nenhum preço retornado");
-    pricesArelive=true;
-    const nowTs=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-    document.getElementById("lastUpd").textContent=`Ao vivo — ${nowTs}`;
-    document.getElementById("lastUpd").style.color="";
-    const chip=document.getElementById("snapChip");
-    if(chip){ chip.textContent=tok?`Token — ${nowTs}`:`Brapi — ${nowTs}`; chip.className="snap-chip live"; }
-    const src1=document.getElementById("ac-src"), src2=document.getElementById("fi-src");
-    if(src1) src1.textContent="ao vivo"; if(src2) src2.textContent="ao vivo";
-    console.log(`Brapi OK: ${count} preços`);
-  }catch(eBR){
-    console.warn("Brapi BR:",eBR.message);
-    const chip=document.getElementById("snapChip");
-    if(chip&&!chip.classList.contains("live")){ chip.textContent="Snapshot"; chip.className="snap-chip"; }
-    if(Object.keys(prices).length===0){
-      document.getElementById("lastUpd").textContent="Brapi offline: "+eBR.message;
-      document.getElementById("lastUpd").style.color="var(--neg)";
+    const j=await corsGetJSON(batchUrl);
+    const results=j?.quoteResponse?.result;
+    if(results&&results.length>0){
+      batchWorked=true;
+      results.forEach(q=>{
+        const p=q.regularMarketPrice, chg=q.regularMarketChangePercent||0;
+        if(!p) return;
+        const sym=q.symbol;
+        if(sym.endsWith('.SA')){
+          const tk=sym.slice(0,-3); prices[tk]=p; brOK++;
+        } else if(tksUS.includes(sym)){
+          prices[sym]=p;
+          const prev=q.regularMarketPreviousClose||0;
+          D.etfs.filter(e=>e.tk===sym).forEach(e=>{e.priceUSD=p;e.prevClose=prev;});
+          D.stocks.filter(s=>s.tk===sym).forEach(s=>{s.priceUSD=p;s.prevClose=prev;});
+        } else if(sym==='^BVSP')   updMkt('ibov',(p/1000).toFixed(2)+'k',chg);
+        else if(sym==='^GSPC')     updMkt('sp',p.toFixed(0),chg);
+        else if(sym==='IFIX11.SA') updMkt('ifix',p.toFixed(0),chg);
+        else if(sym==='BRL=X')     { usdBRL=p; updMkt('usd','R$\u00a0'+p.toFixed(2),chg); }
+      });
     }
+    console.log(`Batch Yahoo: ${results?.length||0} símbolos, ${brOK} BR OK`);
+  }catch(e){ console.warn('Yahoo batch falhou:',e.message); }
+
+  // Fallback individual se batch falhou (4 chamadas simultâneas via corsGetJSON)
+  if(!batchWorked){
+    console.log('Usando fallback individual…');
+    // BR em grupos de 5 para não sobrecarregar proxy
+    for(let i=0;i<allBR.length;i+=5){
+      await Promise.allSettled(allBR.slice(i,i+5).map(async sym=>{
+        try{
+          const j=await corsGetJSON(`https://query1.finance.yahoo.com/v8/finance/chart/${sym.replace('^','%5E')}?interval=1m&range=1d`);
+          const m=j?.chart?.result?.[0]?.meta;
+          if(m?.regularMarketPrice){ prices[sym.slice(0,-3)]=m.regularMarketPrice; brOK++; }
+        }catch(e){}
+      }));
+    }
+    // US
+    await Promise.allSettled(tksUS.map(async tk=>{
+      try{
+        const j=await corsGetJSON(`https://query1.finance.yahoo.com/v8/finance/chart/${tk}?interval=1m&range=1d`);
+        const m=j?.chart?.result?.[0]?.meta;
+        if(m?.regularMarketPrice){
+          const p=m.regularMarketPrice,prev=m.chartPreviousClose||0;
+          prices[tk]=p;
+          D.etfs.filter(e=>e.tk===tk).forEach(e=>{e.priceUSD=p;e.prevClose=prev;});
+          D.stocks.filter(s=>s.tk===tk).forEach(s=>{s.priceUSD=p;s.prevClose=prev;});
+        }
+      }catch(e){}
+    }));
+    // Índices
+    await Promise.allSettled([
+      corsGetJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EBVSP?interval=1m&range=1d').then(j=>{const m=j?.chart?.result?.[0]?.meta;if(m?.regularMarketPrice)updMkt('ibov',(m.regularMarketPrice/1000).toFixed(2)+'k',m.regularMarketChangePercent||0);}).catch(()=>updMktErr('ibov')),
+      corsGetJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1m&range=1d').then(j=>{const m=j?.chart?.result?.[0]?.meta;if(m?.regularMarketPrice)updMkt('sp',m.regularMarketPrice.toFixed(0),m.regularMarketChangePercent||0);}).catch(()=>updMktErr('sp')),
+      corsGetJSON('https://query1.finance.yahoo.com/v8/finance/chart/IFIX11.SA?interval=1m&range=1d').then(j=>{const m=j?.chart?.result?.[0]?.meta;if(m?.regularMarketPrice)updMkt('ifix',m.regularMarketPrice.toFixed(0),m.regularMarketChangePercent||0);}).catch(()=>updMktErr('ifix')),
+      corsGetJSON('https://query1.finance.yahoo.com/v8/finance/chart/BRL%3DX?interval=1m&range=1d').then(j=>{const m=j?.chart?.result?.[0]?.meta;if(m?.regularMarketPrice){usdBRL=m.regularMarketPrice;updMkt('usd','R$\u00a0'+usdBRL.toFixed(2),m.regularMarketChangePercent||0);}}).catch(()=>updMktErr('usd')),
+    ]);
   }
-  render();
 
-  /* 2. EUA: ETFs + Stocks via Yahoo Finance — corsGetJSON garante fallback */
-  const tksEUA=[...new Set([...D.etfs.map(e=>e.tk),...D.stocks.map(s=>s.tk)])];
-  await Promise.allSettled(tksEUA.map(async tk=>{
-    try{
-      const j=await corsGetJSON(`https://query1.finance.yahoo.com/v8/finance/chart/${tk}?interval=1m&range=1d`);
-      const meta=j?.chart?.result?.[0]?.meta;
-      if(meta?.regularMarketPrice){
-        const price=meta.regularMarketPrice, prev=meta.chartPreviousClose||meta.previousClose||0;
-        prices[tk]=price;
-        D.etfs.filter(e=>e.tk===tk).forEach(e=>{e.priceUSD=price;e.prevClose=prev;});
-        D.stocks.filter(s=>s.tk===tk).forEach(s=>{s.priceUSD=price;s.prevClose=prev;});
-      }
-    }catch(e){ console.warn("Yahoo",tk,":",e.message); }
-  }));
-
-  /* 3. Índices + USD/BRL */
-  await refreshIndices(ts);
-
-  /* 4. Render final com tudo */
-  const nowFinal=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-  document.getElementById("lastUpd").textContent=`Ao vivo — ${nowFinal}`;
+  // Status
+  const nowTs=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  if(brOK>0){
+    pricesArelive=true;
+    document.getElementById('lastUpd').textContent=`Yahoo Finance — ${nowTs}`;
+    document.getElementById('lastUpd').style.color='';
+    const chip=document.getElementById('snapChip');
+    if(chip){chip.textContent=`Yahoo — ${nowTs}`;chip.className='snap-chip live';}
+    const s1=document.getElementById('ac-src'),s2=document.getElementById('fi-src');
+    if(s1)s1.textContent='ao vivo';if(s2)s2.textContent='ao vivo';
+  } else {
+    const chip=document.getElementById('snapChip');
+    if(chip&&!chip.classList.contains('live')){chip.textContent='Snapshot';chip.className='snap-chip';}
+    document.getElementById('lastUpd').textContent='Yahoo indisponível — snapshot';
+  }
   render();
 }
 
@@ -1332,7 +1317,94 @@ function updMktErr(key){
   vEl.textContent="—"; cEl.textContent="—"; cEl.className="mk-c neu";
 }
 
-/* ═══════════════════ RENDER ══════════════════════ */
+/* ─── METAS DE ALOCAÇÃO ─────────────────────────────────────────────── */
+const METAS_KEY = "aloc_metas";
+const METAS_DEFAULT = {acoes:20, fiis:22, etfs:20, stocks:15, rf:18};
+
+function getMetasAloc(){
+  try{ return {...METAS_DEFAULT,...JSON.parse(localStorage.getItem(METAS_KEY)||"{}")}; }
+  catch(e){ return {...METAS_DEFAULT}; }
+}
+
+function renderMetasAloc(){
+  const tbody = document.getElementById("metasAlocTbody");
+  if(!tbody) return;
+  const metas = getMetasAloc();
+  const rfVal = D.rf && D.rf.length ? D.rf.reduce((s,r)=>s+(r.bruto||r.inv||0),0) : 7183.30;
+  const classes = [
+    {id:"acoes",  name:"Ações BR",     val: D.acoes.reduce((s,a)=>s+posVal(a),0)},
+    {id:"fiis",   name:"FIIs",         val: D.fiis.reduce((s,f)=>s+posVal(f),0)},
+    {id:"etfs",   name:"ETFs EUA",     val: D.etfs.reduce((s,e)=>s+(e.priceUSD||e.atual/usdBRL)*e.inv/e.atual*usdBRL||e.atual*usdBRL,0)},
+    {id:"stocks", name:"Stocks EUA",   val: D.stocks.reduce((s,s2)=>s+(s2.priceUSD?s2.atual*(s2.priceUSD/s2.prevClose||1):s2.atual)*usdBRL,0)||D.stocks.reduce((s,s2)=>s+s2.atual,0)*usdBRL},
+    {id:"rf",     name:"Renda Fixa",   val: rfVal},
+  ];
+  // Usa valor simples sem tentar recalcular pelo priceUSD (ETFs/Stocks não têm cotas)
+  classes[2].val = D.etfs.reduce((s,e)=>s+e.atual,0)*usdBRL;
+  classes[3].val = D.stocks.reduce((s,s2)=>s+s2.atual,0)*usdBRL;
+
+  const total = classes.reduce((s,c)=>s+c.val,0);
+  let totalMeta = 0;
+
+  tbody.innerHTML = classes.map(c=>{
+    const pct = total>0 ? c.val/total*100 : 0;
+    const meta = metas[c.id]||0;
+    totalMeta += meta;
+    const devia = total*meta/100;
+    const gap = c.val - devia;
+    const gapColor = gap>200?"var(--neg)":gap<-200?"var(--pos)":"var(--muted)";
+    return `<tr>
+      <td class="l" style="font-weight:500">${c.name}</td>
+      <td class="r" style="font-family:var(--mono)">${brl(c.val,0)}</td>
+      <td class="r" style="font-family:var(--mono)">${pct.toFixed(1)}%</td>
+      <td class="r">
+        <input type="number" class="meta-inp" data-id="${c.id}" data-val="${c.val}" data-total="${total}"
+          value="${meta}" min="0" max="100" step="0.5"
+          style="width:54px;text-align:right;font-family:var(--mono);font-size:12px;
+            border:1px solid var(--border);border-radius:4px;padding:2px 4px;
+            background:var(--bg2);color:var(--text)"
+          oninput="recalcMetaRow(this)"/>%
+      </td>
+      <td class="r meta-devia" style="font-family:var(--mono)">${brl(devia,0)}</td>
+      <td class="r meta-gap" style="font-family:var(--mono);color:${gapColor}">${gap>=0?"+":""}${brl(gap,0)}</td>
+    </tr>`;
+  }).join("") + `<tr style="border-top:1px solid var(--border);font-weight:600">
+    <td class="l" style="color:var(--muted);font-size:11px">TOTAL</td>
+    <td class="r" style="font-family:var(--mono)">${brl(total,0)}</td>
+    <td class="r" style="font-family:var(--mono)">100%</td>
+    <td class="r" id="totalMetaPct" style="font-family:var(--mono);color:${Math.abs(totalMeta-100)>0.1?"var(--neg)":"var(--pos)"}">${totalMeta.toFixed(1)}%</td>
+    <td></td><td></td>
+  </tr>`;
+}
+
+function recalcMetaRow(inp){
+  const row = inp.closest("tr");
+  const total = parseFloat(inp.dataset.total)||0;
+  const val = parseFloat(inp.dataset.val)||0;
+  const meta = parseFloat(inp.value)||0;
+  const devia = total*meta/100;
+  const gap = val - devia;
+  const gapColor = gap>200?"var(--neg)":gap<-200?"var(--pos)":"var(--muted)";
+  row.querySelector(".meta-devia").textContent = brl(devia,0);
+  const gapEl = row.querySelector(".meta-gap");
+  gapEl.textContent = (gap>=0?"+":"")+brl(gap,0);
+  gapEl.style.color = gapColor;
+  // atualiza total %
+  let totalMeta = 0;
+  document.querySelectorAll(".meta-inp").forEach(i=>{ totalMeta += parseFloat(i.value)||0; });
+  const tm = document.getElementById("totalMetaPct");
+  if(tm){ tm.textContent = totalMeta.toFixed(1)+"%"; tm.style.color = Math.abs(totalMeta-100)>0.1?"var(--neg)":"var(--pos)"; }
+}
+
+function saveMetas(){
+  const metas = {};
+  document.querySelectorAll(".meta-inp").forEach(inp=>{
+    metas[inp.dataset.id] = parseFloat(inp.value)||0;
+  });
+  localStorage.setItem(METAS_KEY, JSON.stringify(metas));
+  // Feedback visual
+  const btn = document.querySelector('[onclick="saveMetas()"]');
+  if(btn){ const orig=btn.textContent; btn.textContent="✓ Salvo!"; btn.style.color="var(--pos)"; setTimeout(()=>{btn.textContent=orig;btn.style.color="";},1500); }
+}
 // Helper global — preço ao vivo ou fallback snapshot
 function px(tk){ return prices[tk]||0; }
 function hasPrice(tk){ return !!prices[tk]; }
@@ -1343,11 +1415,6 @@ function posVal(ativo){
 }
 
 function render(){
-  // Aviso se sem token
-  const hasTok = !!(localStorage.getItem("brapiToken")||"");
-  const warnEl = document.getElementById("tokenWarn");
-  if(warnEl) warnEl.style.display = hasTok ? "none" : "flex";
-  // fallback via px() global
   // usa preço ao vivo se disponível, senão PM (mostra valor investido)
   const totAcoes=D.acoes.reduce((s,a)=>s+posVal(a),0);
   const totFiis= D.fiis.reduce((s,f)=>s+posVal(f),0);
@@ -1397,6 +1464,7 @@ function render(){
 
   renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis);
   renderAlloc();
+  renderMetasAloc();
   renderAcoes(totAcoes);
   renderFiis(totFiis);
   renderRF();
@@ -1722,8 +1790,6 @@ async function addProv(){
 }
 
 /* Busca logos em lote via Brapi — roda após cotações carregarem */
-// fetchLogosEmLote definido no bloco de logos acima
-
 /* Salva objetivo no Supabase e localmente */
 /* Upload avatar para Supabase Storage */
 const AVATAR_PATH = 'perfil/avatar.jpg';
@@ -1746,23 +1812,21 @@ async function uploadAvatar_SB(file){
 }
 
 async function loadAvatar_SB(){
-  // Tenta carregar avatar salvo do Supabase
+  function applyAvatar(src){
+    const btn=document.getElementById('avtBtn');
+    const up=document.getElementById('avtUp');
+    if(btn) btn.innerHTML=`<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+    if(up){ up.style.backgroundImage=`url(${src})`; up.style.backgroundSize='cover'; up.textContent=''; }
+  }
+  // 1. localStorage cache — instantâneo, nunca some
+  const cached=localStorage.getItem("avatar");
+  if(cached) applyAvatar(cached);
+  // 2. Supabase — confirma/atualiza se disponível
   try{
-    const testUrl = AVATAR_URL + '?t=' + Date.now();
-    const r = await fetch(testUrl, {method:'HEAD'});
-    if(r.ok){
-      const btn = document.getElementById('avtBtn');
-      if(btn && !btn.querySelector('img')){
-        btn.innerHTML = `<img src="${testUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-      }
-      const up = document.getElementById('avtUp');
-      if(up){
-        up.style.backgroundImage = `url(${testUrl})`;
-        up.style.backgroundSize = 'cover';
-        up.textContent = '';
-      }
-    }
-  }catch(e){}
+    const testUrl=AVATAR_URL+'?t='+Date.now();
+    const r=await fetch(testUrl,{method:'HEAD'});
+    if(r.ok) applyAvatar(testUrl);
+  }catch(e){ /* usa cache local */ }
 }
 
 async function saveObj(tk, val){
@@ -1952,21 +2016,9 @@ function saveUser(){
   closeMod();
 }
 
-function saveAppSettings(){
-  const tokEl = document.getElementById("brapiTok");
-  const tok = (tokEl||{}).value||"";
-  if(tok){
-    localStorage.setItem("brapiToken", tok);
-  }
-  // se campo vazio, não apaga token existente
-  closeMod();
-  refreshPrices();
-}
+function saveAppSettings(){ closeMod(); }
 
 function loadSettings(){
-  const tok=localStorage.getItem("brapiToken")||"";
-  const tokEl=document.getElementById("brapiTok");
-  if(tokEl&&tok) tokEl.value=tok;
   const nome=localStorage.getItem("userName")||"Denys";
   const nEl=document.getElementById("uName");
   if(nEl) nEl.value=nome;
@@ -2118,10 +2170,7 @@ function applyTVTheme(){ /* TradingView removido — mkt-strip estático */ }
   document.getElementById("lastUpd").textContent="Buscando cotações…";
   await refreshPrices();
 
-  /* 5. Logos em background — via CDN (logoImg já usa) + fallback Brapi API */
-  fetchLogosEmLote(); // melhora logos que já apareceram via CDN
-
-  /* 6. Auto-refresh a cada 60s */
+  /* 5. Auto-refresh a cada 60s */
   setInterval(refreshPrices, 60*1000);
 
   } catch(fatalErr) {
