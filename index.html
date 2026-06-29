@@ -71,6 +71,42 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   display:flex;align-items:center;padding:0 18px;gap:0;
 }
+.ham-btn{
+  width:34px;height:34px;background:none;border:none;cursor:pointer;
+  display:flex;flex-direction:column;justify-content:center;gap:5px;
+  padding:6px;border-radius:8px;transition:background .15s;flex-shrink:0;margin-right:4px;
+}
+.ham-btn:hover{background:var(--bg3)}
+.ham-btn span{display:block;height:2px;background:var(--muted);border-radius:2px;
+  transition:all .25s}
+.ham-btn.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.ham-btn.open span:nth-child(2){opacity:0}
+.ham-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.side-menu{
+  position:fixed;top:0;left:-260px;width:240px;height:100vh;
+  background:var(--bg2);border-right:1px solid var(--border2);
+  z-index:999;transition:left .25s cubic-bezier(.2,.8,.2,1);
+  display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,.2);
+}
+.side-menu.open{left:0}
+.side-menu-head{
+  padding:18px 16px 12px;font-size:12px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
+  border-bottom:1px solid var(--border);
+}
+.side-nav{display:flex;flex-direction:column;padding:8px 0;overflow-y:auto;flex:1}
+.side-nav button{
+  display:flex;align-items:center;gap:10px;padding:10px 16px;
+  background:none;border:none;color:var(--text);font-family:var(--font);
+  font-size:13px;cursor:pointer;text-align:left;transition:background .12s;
+}
+.side-nav button:hover{background:var(--bg3)}
+.side-sep{height:1px;background:var(--border);margin:6px 12px}
+.side-overlay{
+  position:fixed;inset:0;z-index:998;background:rgba(0,0,0,.35);
+  display:none;backdrop-filter:blur(2px);
+}
+.side-overlay.open{display:block}
 .logo{display:flex;align-items:center;gap:8px;padding-right:16px;
   border-right:1px solid var(--border);font-size:15px;font-weight:600;
   letter-spacing:-.025em;color:var(--text);text-decoration:none;flex-shrink:0;}
@@ -91,19 +127,15 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .ndot{width:5px;height:5px;border-radius:50%;background:var(--faint)}
 .ntab.on .ndot{background:var(--pos);box-shadow:0 0 5px var(--pos)}
 
-/* market boxes — right side of header */
-.mkt-panel{display:flex;align-items:center;gap:5px;padding:0 10px;border-left:1px solid var(--border);flex-shrink:0}
-.mkt-box{
-  display:flex;flex-direction:column;align-items:flex-end;gap:0;
-  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
-  padding:5px 10px;cursor:default;transition:border-color .15s,background .15s;min-width:82px;
-}
-.mkt-box:hover{border-color:var(--border3);background:var(--bg4)}
-.mk-name{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
-  color:var(--muted);align-self:flex-start}
-.mk-val{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);line-height:1.2}
-.mk-chg{font-size:10px;font-family:var(--mono);display:flex;align-items:center;gap:2px;line-height:1.2}
-.mk-chg.up{color:var(--pos)}.mk-chg.dn{color:var(--neg)}.mk-chg.neu{color:var(--faint)}
+/* market boxes — direita do header */
+.mkt-strip{display:flex;align-items:stretch;border-left:1px solid var(--border);flex-shrink:0}
+.mkt-item{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:0 10px;border-right:1px solid var(--border);min-width:76px;cursor:default}
+.mkt-item:last-child{border-right:none}
+.mk-n{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.mk-v{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
+.mk-c{font-size:10px;font-family:var(--mono);line-height:1.2}
+.mk-c.up{color:var(--pos)}.mk-c.dn{color:var(--neg)}.mk-c.neu{color:var(--faint)}
+@media(max-width:860px){.mkt-item:nth-child(n+3){display:none}}
 
 .hdr-r{display:flex;align-items:center;gap:6px;padding-left:8px;flex-shrink:0}
 .ibtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);
@@ -131,14 +163,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   color:var(--muted);background:var(--bg3);white-space:nowrap}
 .snap-chip.live{border-color:var(--pos-dim);color:var(--pos);background:var(--pos-bg)}
 
-.hstats{display:flex;flex:1;border-left:1px solid var(--border);padding-left:14px;flex-wrap:wrap}
-.hst{padding:0 14px;border-right:1px solid var(--border)}
-.hst:last-child{border-right:none}
-.hl{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:2px;font-weight:500}
-.hv{font-family:var(--mono);font-size:18px;font-weight:500;line-height:1.1}
-.hs{font-size:10px;color:var(--faint);margin-top:2px;font-family:var(--mono)}
-.hv.pos{color:var(--pos)}.hv.neg{color:var(--neg)}.hv.gold{color:var(--gold)}
-.hs.pos{color:var(--pos)}.hs.neg{color:var(--neg)}
+/* hstats inline removido */
 
 .meta-row{display:flex;align-items:center;gap:9px;margin-top:11px;padding-top:11px;border-top:1px solid var(--border);flex-wrap:wrap}
 .meta-lbl{font-size:11px;color:var(--muted);white-space:nowrap}
@@ -155,17 +180,26 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .meta-cog:hover{border-color:var(--gold);color:var(--gold)}
 
 /* ─── DONUT STRIP ────────────────────── */
-.dstrip{display:flex;gap:8px;overflow-x:auto;padding:12px 18px 10px;
-  border-bottom:1px solid var(--border);background:var(--bg2);scrollbar-width:none}
-.dstrip::-webkit-scrollbar{display:none}
+.dstrip{
+  display:flex;gap:8px;padding:12px 18px 10px;
+  border-bottom:1px solid var(--border);background:var(--bg2);
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scroll-snap-type:x mandatory;scrollbar-width:thin;
+  scrollbar-color:var(--border2) transparent;
+}
+.dstrip::-webkit-scrollbar{height:3px}
+.dstrip::-webkit-scrollbar-track{background:transparent}
+.dstrip::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 .dcard{flex-shrink:0;background:var(--bg3);border:1px solid var(--border);
   border-radius:var(--r);padding:10px 12px;display:flex;align-items:center;gap:10px;
-  cursor:pointer;transition:border-color .15s,transform .15s;min-width:155px}
+  cursor:pointer;transition:border-color .15s,transform .15s;
+  min-width:155px;scroll-snap-align:start;}
 .dcard:hover,.dcard.on{border-color:var(--gold);background:var(--gold-bg);transform:translateY(-1px)}
 .dn-name{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 .dn-val{font-family:var(--mono);font-size:15px;font-weight:500;margin-top:2px}
 .dn-sub{font-size:10px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
 .dn-sub.pos{color:var(--pos)}.dn-sub.neg{color:var(--neg)}.dn-sub.gold{color:var(--gold)}
+.dcard-info .dn-sub+.dn-sub{margin-top:1px}
 
 /* ─── CONTENT ────────────────────────── */
 .content{max-width:1300px;margin:0 auto;padding:16px 18px 80px}
@@ -342,7 +376,6 @@ tr.total-row:hover td{background:var(--bg4)}
   .two,.two.eq{grid-template-columns:1fr}
   .hstats{border-left:none;padding-left:0;margin-top:10px}
   .hst{padding:5px 12px 5px 0;border-right:none}
-  .mkt-panel{display:none}
 }
 </style>
 </head>
@@ -359,40 +392,40 @@ tr.total-row:hover td{background:var(--bg4)}
 
 <!-- HEADER -->
 <header class="hdr">
+  <button class="ham-btn" id="hamBtn" title="Menu">
+    <span></span><span></span><span></span>
+  </button>
   <a class="logo" href="#" onclick="goHome();return false;" title="Voltar para início">
     <div class="logo-m">A</div>ativo<em>·br</em>
   </a>
-  <nav class="nav">
-    <button class="ntab on" onclick="goTab('visao',this)"><span class="ndot"></span>Visão geral</button>
-    <button class="ntab" onclick="goTab('acoes',this)"><span class="ndot"></span>Ações BR</button>
-    <button class="ntab" onclick="goTab('fiis',this)"><span class="ndot"></span>FIIs</button>
-    <button class="ntab" onclick="goTab('rf',this)"><span class="ndot"></span>Renda Fixa</button>
-    <button class="ntab" onclick="goTab('etfs',this)"><span class="ndot"></span>ETFs</button>
-    <button class="ntab" onclick="goTab('stocks',this)"><span class="ndot"></span>Stocks</button>
-    <button class="ntab" onclick="goTab('prov',this)"><span class="ndot"></span>Proventos</button>
-  </nav>
-  <!-- market boxes: direita do header -->
-  <div class="mkt-panel">
-    <div class="mkt-box" id="mkUSD">
-      <span class="mk-name">USD/BRL</span>
-      <span class="mk-val" id="mk-usd-v">R$ 5,80</span>
-      <span class="mk-chg neu" id="mk-usd-c">— —%</span>
-    </div>
-    <div class="mkt-box" id="mkIBOV">
-      <span class="mk-name">IBOV</span>
-      <span class="mk-val" id="mk-ibov-v">—</span>
-      <span class="mk-chg neu" id="mk-ibov-c">—</span>
-    </div>
-    <div class="mkt-box" id="mkSP">
-      <span class="mk-name">S&P 500</span>
-      <span class="mk-val" id="mk-sp-v">—</span>
-      <span class="mk-chg neu" id="mk-sp-c">—</span>
-    </div>
-    <div class="mkt-box" id="mkIFIX">
-      <span class="mk-name">IFIX</span>
-      <span class="mk-val" id="mk-ifix-v">—</span>
-      <span class="mk-chg neu" id="mk-ifix-c">—</span>
-    </div>
+  <!-- Menu lateral -->
+  <div id="sideMenu" class="side-menu">
+    <div class="side-menu-head">Menu</div>
+    <nav class="side-nav">
+      <button onclick="closeMenu();goHome()">🏠 Início</button>
+      <button onclick="closeMenu();goTab('acoes')">📈 Ações BR</button>
+      <button onclick="closeMenu();goTab('fiis')">🏢 FIIs</button>
+      <button onclick="closeMenu();goTab('rf')">💰 Renda Fixa</button>
+      <button onclick="closeMenu();goTab('etfs')">🌎 ETFs</button>
+      <button onclick="closeMenu();goTab('stocks')">📊 Stocks</button>
+      <button onclick="closeMenu();goTab('prov')">💵 Proventos</button>
+      <div class="side-sep"></div>
+      <button onclick="closeMenu();openMod('metas')">🎯 Metas</button>
+      <button onclick="closeMenu();openMod('app')">⚙️ Configurações</button>
+      <button onclick="closeMenu();openMod('login')">👤 Perfil</button>
+      <button onclick="closeMenu();openMod('changelog')">📋 Versões</button>
+      <div class="side-sep"></div>
+      <button onclick="refreshPrices();toggleMenu()">↻ Atualizar cotações</button>
+      <button onclick="window.location.reload()">⟳ Recarregar página</button>
+    </nav>
+  </div>
+  <div id="sideOverlay" class="side-overlay" onclick="closeMenu()"></div>
+  <div style="flex:1;min-width:0"></div>
+  <div class="mkt-strip" id="mktStrip">
+    <div class="mkt-item"><div class="mk-n">IBOV</div><div class="mk-v" id="mk-ibov-v">—</div><div class="mk-c neu" id="mk-ibov-c">—</div></div>
+    <div class="mkt-item"><div class="mk-n">S&P 500</div><div class="mk-v" id="mk-sp-v">—</div><div class="mk-c neu" id="mk-sp-c">—</div></div>
+    <div class="mkt-item"><div class="mk-n">IFIX</div><div class="mk-v" id="mk-ifix-v">—</div><div class="mk-c neu" id="mk-ifix-c">—</div></div>
+    <div class="mkt-item"><div class="mk-n">USD/BRL</div><div class="mk-v" id="mk-usd-v">—</div><div class="mk-c neu" id="mk-usd-c">—</div></div>
   </div>
   <div class="hdr-r">
     <button class="ibtn" onclick="toggleTheme()" id="themeBtn">🌙</button>
@@ -413,14 +446,12 @@ tr.total-row:hover td{background:var(--bg4)}
         <span class="snap-chip" id="snapChip" title="Clique para ver fonte dos preços">aguardando…</span>
       </div>
     </div>
-    <div class="hstats">
-      <div class="hst"><div class="hl">Ações BR</div><div class="hv" id="hAcoes">—</div><div class="hs" id="hAcoesSub"></div></div>
-      <div class="hst"><div class="hl">FIIs</div><div class="hv" id="hFiis">—</div><div class="hs" id="hFiisSub"></div></div>
-      <div class="hst"><div class="hl">Renda Fixa</div><div class="hv">R$ 7.183</div><div class="hs pos">+R$ 133</div></div>
-      <div class="hst"><div class="hl">EUA Total</div><div class="hv" id="hEUA">—</div><div class="hs" id="hEUASub"></div></div>
-      <div class="hst"><div class="hl">Proventos FIIs</div><div class="hv gold">R$ 682</div><div class="hs" style="color:var(--gold)">acumulado</div></div>
-      <div class="hst"><div class="hl">Lucro BR</div><div class="hv" id="hLucro">—</div></div>
-      <div class="hst"><div class="hl">Lucro total</div><div class="hv" id="hLucroTotal">—</div></div>
+    <!-- hstats removido — dados nos cards abaixo -->
+    <div style="display:none">
+      <span id="hAcoes"></span><span id="hAcoesSub"></span>
+      <span id="hFiis"></span><span id="hFiisSub"></span>
+      <span id="hEUA"></span><span id="hEUASub"></span>
+      <span id="hLucro"></span><span id="hLucroTotal"></span>
     </div>
   </div>
   <div class="meta-row">
@@ -439,6 +470,13 @@ tr.total-row:hover td{background:var(--bg4)}
 
 <!-- VISÃO GERAL -->
 <section class="panel on" id="p-visao">
+  <div id="tokenWarn" style="display:none;background:var(--neg-bg);border:1px solid var(--neg-dim);
+    border-radius:var(--rm);padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--neg);
+    display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <span>⚠ <strong>Token Brapi não configurado.</strong> As cotações não serão atualizadas.</span>
+    <button class="refbtn" onclick="openMod('app')" style="border-color:var(--neg);color:var(--neg)">
+      ⚙ Configurar token</button>
+  </div>
   <div class="refbar">
     <span id="lastUpd">—</span>
     <button class="refbtn" onclick="refreshPrices()">↻ Atualizar cotações</button>
@@ -801,34 +839,70 @@ const SB = {
   }
 };
 
-// Cache de logos por ticker
+// ─── LOGOS ───────────────────────────────────────────────────────────
 const LOGOS = {};
-async function fetchLogo(tk){
-  if(LOGOS[tk]) return LOGOS[tk];
+
+// Helper: fetch com fallback CORS (direct → allorigins → corsproxy.io)
+async function corsGetJSON(url){
+  // 1. Direto (funciona no GitHub Pages com https://)
   try{
-    const r = await fetch(`https://brapi.dev/api/quote/${tk}?range=1d&interval=1d`);
-    if(!r.ok) throw new Error(r.status);
-    const j = await r.json();
-    const logo = j.results&&j.results[0]&&j.results[0].logourl;
-    if(logo){
-      LOGOS[tk] = logo;
-      // substitui span de iniciais por imagem real
-      document.querySelectorAll(`[id="li-${tk}"]`).forEach(el=>{
-        el.outerHTML = `<img src="${logo}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="this.style.display='none'"/>`;
-      });
-      // atualiza imgs já existentes
-      document.querySelectorAll(`img[data-tk="${tk}"]`).forEach(el=>{
-        el.src = logo;
-      });
-    }
-  }catch(e){} // silencioso — mantém iniciais
-  return LOGOS[tk]||null;
+    const r=await fetch(url,{headers:{Accept:'application/json'}});
+    if(r.ok) return await r.json();
+  }catch{}
+  // 2. allorigins.win
+  try{
+    const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url));
+    const j=await r.json();
+    return JSON.parse(j.contents||'{}');
+  }catch{}
+  // 3. corsproxy.io
+  try{
+    const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url));
+    if(r.ok) return await r.json();
+  }catch{}
+  throw new Error('Todos os proxies falharam para '+url);
 }
+
+// Substitui placeholder de iniciais pela logo real
+function applyLogo(tk, logoUrl){
+  LOGOS[tk]=logoUrl;
+  document.querySelectorAll(`[id="logo-${tk}"]`).forEach(el=>{
+    const img=document.createElement('img');
+    img.src=logoUrl; img.className='ativo-logo'; img.dataset.tk=tk; img.alt=tk;
+    img.onerror=()=>{ img.outerHTML='<span class="ativo-initials">'+tk.slice(0,2)+'</span>'; };
+    el.replaceWith(img);
+  });
+  // atualiza imgs já existentes (re-renders)
+  document.querySelectorAll(`img[data-tk="${tk}"]`).forEach(el=>{ el.src=logoUrl; });
+}
+
 function logoImg(tk){
-  if(LOGOS[tk]) return `<img src="${LOGOS[tk]}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"/><span class="ativo-initials" style="display:none">${tk.slice(0,2)}</span>`;
-  // placeholder com iniciais enquanto carrega
-  setTimeout(()=>fetchLogo(tk), 50 + Math.random()*200);
-  return `<span class="ativo-initials" id="li-${tk}">${tk.slice(0,2)}</span>`;
+  if(LOGOS[tk]) return `<img src="${LOGOS[tk]}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="this.outerHTML='<span class=\\'ativo-initials\\'>${tk.slice(0,2)}</span>'"/>`;
+  // Placeholder com iniciais — será substituído por fetchLogosEmLote
+  return `<span class="ativo-initials" id="logo-${tk}" data-tk="${tk}">${tk.slice(0,2)}</span>`;
+}
+
+async function fetchLogosEmLote(){
+  const tks=[...D.acoes.map(a=>a.tk),...D.fiis.map(f=>f.tk)];
+  // Filtra tickers que já têm logo no cache
+  const needed=tks.filter(t=>!LOGOS[t]);
+  if(!needed.length) return;
+
+  const tok=localStorage.getItem('brapiToken')||'';
+  const ts=tok?`&token=${tok}`:'';
+  const url=`https://brapi.dev/api/quote/${needed.join(',')}?${ts}`;
+
+  try{
+    const data=await corsGetJSON(url);
+    if(!data.results){ console.warn('fetchLogosEmLote: sem results'); return; }
+    let loaded=0;
+    data.results.forEach(q=>{
+      if(q.logourl&&q.symbol){ applyLogo(q.symbol,q.logourl); loaded++; }
+    });
+    console.log(`Logos: ${loaded}/${needed.length} carregados via Brapi`);
+  }catch(e){
+    console.warn('fetchLogosEmLote falhou:',e.message);
+  }
 }
 
 // Lista de tickers B3 para dropdown (top ativos + FIIs comuns)
@@ -861,6 +935,26 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v15.0",d:"Jun/2026",items:[
+    "MENU CORRIGIDO: Abas de navegação voltaram ao header (Visão Geral | Ações BR | FIIs | ...)",
+    "goTab() auto-encontra a aba por data-tab — funciona do hamburguer E dos cards sem perder highlight",
+    "ÍNDICES CORRIGIDOS: IBOV e S&P 500 via Yahoo Finance + allorigins (sem token, sem CORS)",
+    "USD/BRL com fallback Yahoo Finance quando Brapi falha",
+    "LUCRO FIIs CORRIGIDO: sem cotação mostra Total Investido (não zero), lucro=0 (não prejuízo falso)",
+    "Preços pré-carregados do snapshot → lucro aparece ANTES do Brapi responder",
+    "IDs duplicados removidos do header (causavam atualização do elemento errado)",
+    "fetchLogosEmLote agora lê token do localStorage (não do campo de input)",
+    "Typo pricesArelife → pricesArelive corrigido",
+  ]},
+  {v:"v13.0",d:"Jun/2026",items:[
+    "COTAÇÕES FIXAS RESOLVIDO: removido SNAPSHOT como fallback — preços vêm APENAS da Brapi",
+    "Aviso vermelho visível quando token Brapi não está configurado",
+    "Hero superior removido (repetição) — dados consolidados nos cards da faixa",
+    "Cards (dstrip) agora mostram LUCRO/PREJUÍZO de cada classe em verde/vermelho",
+    "Card de Proventos FIIs adicionado na faixa de cards",
+    "Menu hamburguer (3 barras) com navegação completa e acesso a configurações",
+    "Cotação EUA com fallback para proxy CORS quando Yahoo bloqueia",
+  ]},
   {v:"v12.0",d:"Jun/2026",items:[
     "Token Brapi lido do localStorage direto no refreshPrices — não depende do campo de input estar visível",
     "TODAS as vírgulas: brl() com 2 casas em hero, alloc cards, totais",
@@ -1031,10 +1125,10 @@ const usd=(n,d=2)=>"$ "+Math.abs(+n).toLocaleString("en-US",{minimumFractionDigi
 const sgn=n=>n>=0?"+":"−";
 let usdBRL=5.80, sortSt={}, pricesArelive=false;
 
-/* prices: começa vazio, Brapi/Yahoo preenche.
-   SNAPSHOT_PRICES é usado APENAS se ambas as fontes falharem. */
-let prices={};
-let pricesSource="aguardando";
+/* prices: pré-preenchido com snapshot para lucro aparecer imediatamente.
+   Brapi/Yahoo sobrescreve com preços ao vivo quando disponível. */
+let prices={...SNAPSHOT_PRICES};
+let pricesSource="snapshot";
 
 /* ── TOTALS ROW ─────────────────────── */
 function addTotals(tbodyId, cols){
@@ -1128,92 +1222,97 @@ function mkSetores(data,id,pctFn){
 /* ═══════════════════ BRAPI FETCH ═════════════════ */
 function setLdStatus(txt){ const el=document.getElementById("ldStatus"); if(el) el.textContent=txt; }
 
-async function refreshPrices(){
-  const tok=localStorage.getItem("brapiToken")||(document.getElementById("brapiTok")||{}).value||"";
-  const ts=tok?`&token=${tok}`:"";
-  setLdStatus("Buscando cotações…");
-  document.getElementById("lastUpd").textContent="Buscando cotações…";
+/* ─── ÍNDICES ──────────────────────────────────────────────────────── */
+async function refreshIndices(ts){
+  // IBOV + IFIX via Brapi (corsGetJSON = direct → allorigins → corsproxy)
+  try{
+    const d=await corsGetJSON(`https://brapi.dev/api/quote/%5EBVSP,IFIX11?range=1d&interval=1d${ts}`);
+    (d.results||[]).forEach(q=>{
+      const chg=q.regularMarketChangePercent||0;
+      if((q.symbol==="^BVSP"||q.symbol==="BVSP")&&q.regularMarketPrice)
+        updMkt("ibov",(q.regularMarketPrice/1000).toFixed(2)+"k",chg);
+      if(q.symbol==="IFIX11"&&q.regularMarketPrice)
+        updMkt("ifix",q.regularMarketPrice.toFixed(0),chg);
+    });
+  }catch(e){ updMktErr("ibov"); updMktErr("ifix"); console.warn("IBOV/IFIX:",e.message); }
+  // S&P 500 via Yahoo Finance
+  try{
+    const d=await corsGetJSON("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1m&range=1d");
+    const m=d?.chart?.result?.[0]?.meta;
+    if(m?.regularMarketPrice) updMkt("sp",m.regularMarketPrice.toFixed(0),m.regularMarketChangePercent||0);
+    else updMktErr("sp");
+  }catch(e){ updMktErr("sp"); console.warn("S&P:",e.message); }
+  // USD/BRL via Brapi → fallback Yahoo
+  try{
+    const d=await corsGetJSON(`https://brapi.dev/api/v2/currency?currency=USD-BRL${ts}`);
+    if(d.currency?.[0]){
+      usdBRL=parseFloat(d.currency[0].bidPrice)||5.80;
+      updMkt("usd","R$\u00a0"+usdBRL.toFixed(2),d.currency[0].percentageChange||0);
+    } else throw new Error("sem dados");
+  }catch(e){
+    try{
+      const d=await corsGetJSON("https://query1.finance.yahoo.com/v8/finance/chart/BRL%3DX?interval=1m&range=1d");
+      const m=d?.chart?.result?.[0]?.meta;
+      if(m?.regularMarketPrice){ usdBRL=m.regularMarketPrice; updMkt("usd","R$\u00a0"+usdBRL.toFixed(2),m.regularMarketChangePercent||0); }
+      else updMktErr("usd");
+    }catch(e2){ updMktErr("usd"); }
+  }
+}
 
+/* ─── PREÇOS PRINCIPAIS ────────────────────────────────────────────── */
+async function refreshPrices(){
+  const tok=localStorage.getItem("brapiToken")||"";
+  const ts=tok?`&token=${tok}`:"";
+
+  /* 1. BR: Ações + FIIs via Brapi — corsGetJSON garante fallback de proxy */
   const tksBR=[...D.acoes.map(a=>a.tk),...D.fiis.map(f=>f.tk)].join(",");
   try{
-    /* ── BR via Brapi ── */
-    const r1=await fetch(`https://brapi.dev/api/quote/${tksBR}?range=1d&interval=1d${ts}`);
-    if(!r1.ok) throw new Error("HTTP "+r1.status);
-    const j1=await r1.json();
-    if(j1.results) j1.results.forEach(q=>{ if(q.regularMarketPrice) prices[q.symbol]=q.regularMarketPrice; });
-    pricesArelife=true; setLdStatus("BR OK, buscando EUA…");
-
-    /* ── EUA via Yahoo Finance (sem token, funciona no browser) ── */
-    const tksEUA=[...D.etfs.map(e=>e.tk),...D.stocks.map(s=>s.tk)];
-    await Promise.allSettled(tksEUA.map(async tk=>{
-      try{
-        const r=await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${tk}?interval=1m&range=1d`);
-        if(!r.ok) return;
-        const j=await r.json();
-        const price=j.chart?.result?.[0]?.meta?.regularMarketPrice;
-        const prev =j.chart?.result?.[0]?.meta?.previousClose;
-        const chPct=j.chart?.result?.[0]?.meta?.regularMarketChangePercent;
-        if(price){ 
-          prices[tk]=price;
-          // atualiza cotação EUA em tempo real nos campos
-          D.etfs.filter(e=>e.tk===tk).forEach(e=>{ e.priceUSD=price; e.prevClose=prev; });
-          D.stocks.filter(s=>s.tk===tk).forEach(s=>{ s.priceUSD=price; s.prevClose=prev; });
-        }
-      }catch(e){}
-    }));
-    setLdStatus("EUA OK…");
-
-    /* USD/BRL */
-    try{
-      const r3=await fetch(`https://brapi.dev/api/v2/currency?currency=USD-BRL${ts}`);
-      const j3=await r3.json();
-      if(j3.currency&&j3.currency[0]){
-        usdBRL=parseFloat(j3.currency[0].bidPrice)||5.80;
-        updMkt("usd","R$ "+usdBRL.toFixed(2),j3.currency[0].percentageChange);
-      }
-    }catch(e){}
-
-    /* ── IBOV, S&P, IFIX via Brapi (com ou sem token) ── */
-    try{
-      const rIdx=await fetch(`https://brapi.dev/api/quote/%5EBVSP,%5EGSPC,IFIX11?range=1d&interval=1d${ts}`);
-      const jIdx=await rIdx.json();
-      if(jIdx.results){
-        jIdx.results.forEach(q=>{
-          if(!q.regularMarketPrice) return;
-          const chg=q.regularMarketChangePercent||0;
-          if(q.symbol==="^BVSP"||q.symbol==="BVSP")
-            updMkt("ibov",(q.regularMarketPrice/1000).toFixed(2)+"k",chg);
-          else if(q.symbol==="^GSPC"||q.symbol==="GSPC")
-            updMkt("sp",q.regularMarketPrice.toFixed(0),chg);
-          else if(q.symbol==="IFIX11")
-            updMkt("ifix",q.regularMarketPrice.toFixed(0),chg);
-        });
-        // marca o que não veio
-        if(!jIdx.results.find(q=>q.symbol==="^BVSP"||q.symbol==="BVSP")) updMktErr("ibov");
-        if(!jIdx.results.find(q=>q.symbol==="^GSPC"||q.symbol==="GSPC")) updMktErr("sp");
-        if(!jIdx.results.find(q=>q.symbol==="IFIX11")) updMktErr("ifix");
-      } else {
-        updMktErr("ibov"); updMktErr("sp"); updMktErr("ifix");
-      }
-    }catch(e){
-      updMktErr("ibov"); updMktErr("sp"); updMktErr("ifix");
-      console.warn("Índices Brapi:",e.message);
-    }
-
-    pricesArelife=true;
-    // busca logos em lote após cotações carregarem
-    fetchLogosEmLote();
+    const j1=await corsGetJSON(`https://brapi.dev/api/quote/${tksBR}?range=1d&interval=1d${ts}`);
+    if(!j1.results) throw new Error("sem results");
+    let count=0;
+    j1.results.forEach(q=>{ if(q.regularMarketPrice){ prices[q.symbol]=q.regularMarketPrice; count++; } });
+    if(!count) throw new Error("nenhum preço retornado");
+    pricesArelive=true;
     const nowTs=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-    document.getElementById("lastUpd").textContent=`Cotações ao vivo — ${nowTs} · Brapi.dev`;
+    document.getElementById("lastUpd").textContent=`Ao vivo — ${nowTs}`;
+    document.getElementById("lastUpd").style.color="";
     const chip=document.getElementById("snapChip");
-    chip.textContent=tok?"Brapi (token) "+nowTs:"Brapi free 15min "+nowTs;
-    chip.className="snap-chip live";
+    if(chip){ chip.textContent=tok?`Token — ${nowTs}`:`Brapi — ${nowTs}`; chip.className="snap-chip live"; }
     const src1=document.getElementById("ac-src"), src2=document.getElementById("fi-src");
     if(src1) src1.textContent="ao vivo"; if(src2) src2.textContent="ao vivo";
-  }catch(e){
-    document.getElementById("lastUpd").textContent="Usando snapshot (Brapi indisponível ou CORS)";
-    setLdStatus("Usando snapshot");
+    console.log(`Brapi OK: ${count} preços`);
+  }catch(eBR){
+    console.warn("Brapi BR:",eBR.message);
+    const chip=document.getElementById("snapChip");
+    if(chip&&!chip.classList.contains("live")){ chip.textContent="Snapshot"; chip.className="snap-chip"; }
+    if(Object.keys(prices).length===0){
+      document.getElementById("lastUpd").textContent="Brapi offline: "+eBR.message;
+      document.getElementById("lastUpd").style.color="var(--neg)";
+    }
   }
+  render();
+
+  /* 2. EUA: ETFs + Stocks via Yahoo Finance — corsGetJSON garante fallback */
+  const tksEUA=[...new Set([...D.etfs.map(e=>e.tk),...D.stocks.map(s=>s.tk)])];
+  await Promise.allSettled(tksEUA.map(async tk=>{
+    try{
+      const j=await corsGetJSON(`https://query1.finance.yahoo.com/v8/finance/chart/${tk}?interval=1m&range=1d`);
+      const meta=j?.chart?.result?.[0]?.meta;
+      if(meta?.regularMarketPrice){
+        const price=meta.regularMarketPrice, prev=meta.chartPreviousClose||meta.previousClose||0;
+        prices[tk]=price;
+        D.etfs.filter(e=>e.tk===tk).forEach(e=>{e.priceUSD=price;e.prevClose=prev;});
+        D.stocks.filter(s=>s.tk===tk).forEach(s=>{s.priceUSD=price;s.prevClose=prev;});
+      }
+    }catch(e){ console.warn("Yahoo",tk,":",e.message); }
+  }));
+
+  /* 3. Índices + USD/BRL */
+  await refreshIndices(ts);
+
+  /* 4. Render final com tudo */
+  const nowFinal=new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  document.getElementById("lastUpd").textContent=`Ao vivo — ${nowFinal}`;
   render();
 }
 
@@ -1222,29 +1321,39 @@ function updMkt(key,val,chPct){
   const cEl=document.getElementById("mk-"+key+"-c");
   if(!vEl||!cEl) return;
   vEl.textContent=val;
-  const ch=parseFloat(chPct)||0, up=ch>=0;
-  cEl.className="mk-chg "+(up?"up":"dn");
-  cEl.textContent=(up?"▲":"▼")+" "+Math.abs(ch).toFixed(2)+"%";
+  const ch=parseFloat(chPct)||0, up=ch>0, dn=ch<0;
+  cEl.className="mk-c "+(up?"up":dn?"dn":"neu");
+  cEl.textContent=(up?"▲ ":dn?"▼ ":"")+Math.abs(ch).toFixed(2)+"%";
 }
 function updMktErr(key){
   const vEl=document.getElementById("mk-"+key+"-v");
   const cEl=document.getElementById("mk-"+key+"-c");
   if(!vEl||!cEl) return;
-  vEl.textContent="—";
-  cEl.className="mk-chg neu";
-  cEl.textContent="indisponível";
+  vEl.textContent="—"; cEl.textContent="—"; cEl.className="mk-c neu";
 }
 
 /* ═══════════════════ RENDER ══════════════════════ */
 // Helper global — preço ao vivo ou fallback snapshot
-function px(tk){ return prices[tk]||SNAPSHOT_PRICES[tk]||0; }
+function px(tk){ return prices[tk]||0; }
+function hasPrice(tk){ return !!prices[tk]; }
+// valor da posição: se tem preço ao vivo usa, senão usa PM (valor investido)
+function posVal(ativo){
+  if(prices[ativo.tk]) return prices[ativo.tk]*ativo.cotas;
+  return ativo.pm*ativo.cotas; // fallback = total investido
+}
 
 function render(){
+  // Aviso se sem token
+  const hasTok = !!(localStorage.getItem("brapiToken")||"");
+  const warnEl = document.getElementById("tokenWarn");
+  if(warnEl) warnEl.style.display = hasTok ? "none" : "flex";
   // fallback via px() global
-  const totAcoes=D.acoes.reduce((s,a)=>s+px(a.tk)*a.cotas,0);
-  const totFiis= D.fiis.reduce((s,f)=>s+px(f.tk)*f.cotas,0);
-  const lucroAcoes=D.acoes.reduce((s,a)=>s+(px(a.tk)-a.pm)*a.cotas,0);
-  const lucroFiis= D.fiis.reduce((s,f)=>s+(px(f.tk)-f.pm)*f.cotas,0);
+  // usa preço ao vivo se disponível, senão PM (mostra valor investido)
+  const totAcoes=D.acoes.reduce((s,a)=>s+posVal(a),0);
+  const totFiis= D.fiis.reduce((s,f)=>s+posVal(f),0);
+  // lucro só faz sentido com preço ao vivo — 0 quando sem dados
+  const lucroAcoes=D.acoes.reduce((s,a)=>s+(prices[a.tk]?(prices[a.tk]-a.pm)*a.cotas:0),0);
+  const lucroFiis= D.fiis.reduce((s,f)=>s+(prices[f.tk]?(prices[f.tk]-f.pm)*f.cotas:0),0);
   const totETF=D.etfs.reduce((s,e)=>s+e.atual,0)*usdBRL;
   const totSTK=D.stocks.reduce((s,s2)=>s+s2.atual,0)*usdBRL;
   const lucroETF=D.etfs.reduce((s,e)=>s+e.lucro,0)*usdBRL;
@@ -1286,7 +1395,7 @@ function render(){
   });
   const gh=document.createElement("div"); gh.className="mghost"; gh.style.flexGrow=falta; bar.appendChild(gh);
 
-  renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK);
+  renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis);
   renderAlloc();
   renderAcoes(totAcoes);
   renderFiis(totFiis);
@@ -1300,15 +1409,32 @@ function g(id){return document.getElementById(id)}
 function setHS(id,v,dec2){const el=g(id);if(el){el.textContent=sgn(v)+brl(Math.abs(v),dec2?2:0);el.className="hs "+(v>=0?"pos":"neg")}}
 
 /* donuts strip */
-function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK){
+function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis){
   const strip=g("dstrip"); strip.innerHTML="";
+  const lucroETF2=D.etfs.reduce((s,e)=>s+e.lucro,0)*usdBRL;
+  const lucroSTK2=D.stocks.reduce((s,s2)=>s+s2.lucro,0)*usdBRL;
+  const totProvFII=D.fiis.reduce((s,f)=>s+f.prov,0);
+  const lucroTotal2=lucroAcoes+lucroFiis+lucroETF2+lucroSTK2;
   const items=[
-    {name:"Carteira Total",val:brl(D.invest.reduce((s,c)=>s+c.v,0)),sub:pct.toFixed(1)+"% da meta",pct,c:"var(--gold)",tab:"visao",subCls:"gold"},
-    {name:"Ações BR",   val:brl(totAcoes,2),sub:"",pct:totAcoes/meta*100,  c:"#F59E0B",tab:"acoes",  subCls:""},
-    {name:"FIIs",       val:brl(totFiis,2), sub:"",pct:totFiis/meta*100,   c:"#A78BFA",tab:"fiis",   subCls:""},
-    {name:"Renda Fixa", val:"R$ 7.183",     sub:"",pct:7183/meta*100,      c:"#3B82F6",tab:"rf",     subCls:""},
-    {name:"ETFs",       val:usd(D.etfs.reduce((s,e)=>s+e.atual,0)),sub:brl(totETF,2),pct:totETF/meta*100,c:"#38BDF8",tab:"etfs",subCls:""},
-    {name:"Stocks",     val:usd(D.stocks.reduce((s,s2)=>s+s2.atual,0)),sub:brl(totSTK,2),pct:totSTK/meta*100,c:"#818CF8",tab:"stocks",subCls:""},
+    {name:"Carteira Total",val:brl(D.invest.reduce((s,c)=>s+c.v,0),2),
+      sub:pct.toFixed(1)+"% da meta",sub2:sgn(lucroTotal2)+brl(Math.abs(lucroTotal2),2),
+      sub2cls:lucroTotal2>=0?"pos":"neg",pct,c:"var(--gold)",tab:"visao"},
+    {name:"Ações BR",val:brl(totAcoes,2),
+      sub2:sgn(lucroAcoes)+brl(Math.abs(lucroAcoes),2),sub2cls:lucroAcoes>=0?"pos":"neg",
+      pct:totAcoes/meta*100,c:"#F59E0B",tab:"acoes"},
+    {name:"FIIs",val:brl(totFiis,2),
+      sub2:sgn(lucroFiis)+brl(Math.abs(lucroFiis),2),sub2cls:lucroFiis>=0?"pos":"neg",
+      pct:totFiis/meta*100,c:"#A78BFA",tab:"fiis"},
+    {name:"Renda Fixa",val:brl(7183,2),
+      sub2:"+R$ 132,97",sub2cls:"pos",pct:7183/meta*100,c:"#3B82F6",tab:"rf"},
+    {name:"ETFs",val:usd(D.etfs.reduce((s,e)=>s+e.atual,0)),
+      sub:brl(totETF,2),sub2:sgn(lucroETF2)+brl(Math.abs(lucroETF2),2),sub2cls:lucroETF2>=0?"pos":"neg",
+      pct:totETF/meta*100,c:"#38BDF8",tab:"etfs"},
+    {name:"Stocks",val:usd(D.stocks.reduce((s,s2)=>s+s2.atual,0)),
+      sub:brl(totSTK,2),sub2:sgn(lucroSTK2)+brl(Math.abs(lucroSTK2),2),sub2cls:lucroSTK2>=0?"pos":"neg",
+      pct:totSTK/meta*100,c:"#818CF8",tab:"stocks"},
+    {name:"Proventos",val:brl(totProvFII,2),
+      sub:"acumulado FIIs",sub2cls:"gold",pct:Math.min(100,totProvFII/500*100),c:"var(--gold)",tab:"prov"},
   ];
   items.forEach(it=>{
     const p=Math.min(100,it.pct), R=22, circ=2*Math.PI*R, dash=circ*p/100, gap=circ-dash, sz=R*2+8, cxy=R+4;
@@ -1321,8 +1447,13 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK){
     </svg>`;
     const card=document.createElement("div"); card.className="dcard";
     card.dataset.tab=it.tab;
-    card.onclick=()=>{const btn=document.querySelector(`.ntab[onclick*="'${it.tab}'"]`);if(btn)goTab(it.tab,btn)};
-    card.innerHTML=svg+`<div><div class="dn-name">${it.name}</div><div class="dn-val">${it.val}</div>${it.sub?`<div class="dn-sub ${it.subCls}">${it.sub}</div>`:""}</div>`;
+    card.onclick=()=>{ goTab(it.tab); };
+    card.innerHTML=svg+`<div>
+      <div class="dn-name">${it.name}</div>
+      <div class="dn-val">${it.val}</div>
+      ${it.sub?`<div class="dn-sub">${it.sub}</div>`:""}
+      ${it.sub2?`<div class="dn-sub ${it.sub2cls||""}" style="font-weight:600">${it.sub2}</div>`:""}
+    </div>`;
     strip.appendChild(card);
   });
 }
@@ -1339,7 +1470,7 @@ function renderAllocSec(gid,arr){
     const falta=Math.max(0,c.m-c.v), pct=Math.min(100,c.v/c.m*100);
     const tag=c.fonte==="calc"?'<span class="tag-sm calc">CALC</span>':c.fonte==="planilha"?'<span class="tag-sm plan">PLAN</span>':"";
     const el=document.createElement("div"); el.className="acard";
-    el.onclick=()=>{const t=tabMap[c.n];if(t){const btn=document.querySelector(`.ntab[onclick*="'${t}'"]`);if(btn)goTab(t,btn)}};
+    el.onclick=()=>{const t=tabMap[c.n];if(t) goTab(t);};
     el.innerHTML=`<div class="ac-top">
       <div class="ac-name"><span class="ac-sw" style="background:${c.c}"></span>${c.n}${tag}</div>
       <span class="ac-pct">${pct.toFixed(0)}%</span></div>
@@ -1356,8 +1487,10 @@ function renderAllocSec(gid,arr){
 function renderAcoes(totAcoes,sc,sd){
   const objs=["Comprar","Manter","Vender"];
   let rows=D.acoes.map(a=>{
-    const p=px(a.tk);
-    const tot=+(a.pm*a.cotas).toFixed(2), totb3=+(p*a.cotas).toFixed(2), lucro=+(totb3-tot).toFixed(2);
+    const p=prices[a.tk]||0;  // preço ao vivo ou 0
+    const tot=+(a.pm*a.cotas).toFixed(2);
+    const totb3=p>0 ? +(p*a.cotas).toFixed(2) : tot; // sem cotação = mostra investido
+    const lucro=p>0 ? +(totb3-tot).toFixed(2) : 0;
     return{...a,price:p,tot,totb3,lucro,pctCart:totAcoes>0?totb3/totAcoes*100:0};
   });
   if(sc) rows.sort((x,y)=>{let a=x[sc],b=y[sc];if(typeof a==="string"){a=a.toLowerCase();b=b.toLowerCase();}return sd==="asc"?(a>b?1:-1):(a<b?1:-1)});
@@ -1370,7 +1503,8 @@ function renderAcoes(totAcoes,sc,sd){
       <td class="r">${brl(a.tot,2)}</td>
       <td class="r">${brl(a.totb3,2)}</td>
       <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(a.lucro)}${brl(Math.abs(a.lucro),2)}</td>
-      <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"}">${brl(a.price,2)}</td>
+      <td class="r" style="color:${hasPrice(a.tk)?a.lucro>=0?"var(--pos)":"var(--neg)":"var(--muted)"}">
+        ${hasPrice(a.tk)?brl(a.price,2):"aguard."}</td>
       <td class="r">${a.cotas}</td>
       <td><div class="tbar">
         <div class="ttrack"><div class="tfill" style="width:${w.toFixed(0)}%;background:${ov?"var(--neg)":"var(--blue)"}"></div>
@@ -1400,8 +1534,10 @@ function renderAcoes(totAcoes,sc,sd){
 function renderFiis(totFiis,sc,sd){
   const sts=["CARO","NEUTRO","BARATO"];
   let rows=D.fiis.filter(f=>f.cotas>0).map(f=>{
-    const p=px(f.tk);
-    const tot=+(f.pm*f.cotas).toFixed(2), totb3=+(p*f.cotas).toFixed(2), lucro=+(totb3-tot).toFixed(2);
+    const p=prices[f.tk]||0;
+    const tot=+(f.pm*f.cotas).toFixed(2);
+    const totb3=p>0 ? +(p*f.cotas).toFixed(2) : tot; // sem cotação = mostra investido
+    const lucro=p>0 ? +(totb3-tot).toFixed(2) : 0;   // sem cotação = lucro 0 (não mostra perda falsa)
     return{...f,price:p,tot,totb3,lucro};
   });
   if(sc) rows.sort((x,y)=>{let a=x[sc],b=y[sc];if(typeof a==="string"){a=a.toLowerCase();b=b.toLowerCase();}return sd==="asc"?(a>b?1:-1):(a<b?1:-1)});
@@ -1586,25 +1722,7 @@ async function addProv(){
 }
 
 /* Busca logos em lote via Brapi — roda após cotações carregarem */
-async function fetchLogosEmLote(){
-  const tks=[...D.acoes.map(a=>a.tk),...D.fiis.map(f=>f.tk),...D.etfs.map(e=>e.tk),...D.stocks.map(s=>s.tk)];
-  const tok=(document.getElementById("brapiTok")||{}).value||"";
-  const ts2=tok?`&token=${tok}`:"";
-  try{
-    const r=await fetch(`https://brapi.dev/api/quote/${tks.join(",")}?fundamental=true${ts2}`);
-    if(!r.ok) throw new Error(r.status);
-    const j=await r.json();
-    if(j.results) j.results.forEach(q=>{
-      if(q.logourl&&q.symbol){
-        LOGOS[q.symbol]=q.logourl;
-        document.querySelectorAll(`[id="li-${q.symbol}"]`).forEach(el=>{
-          el.outerHTML=`<img src="${q.logourl}" class="ativo-logo" data-tk="${q.symbol}" alt="${q.symbol}" onerror="this.style.display='none'"/>`;
-        });
-      }
-    });
-    console.log("Logos:",Object.keys(LOGOS).length,"tickers");
-  }catch(e){ console.warn("fetchLogosEmLote:",e.message); }
-}
+// fetchLogosEmLote definido no bloco de logos acima
 
 /* Salva objetivo no Supabase e localmente */
 /* Upload avatar para Supabase Storage */
@@ -1721,30 +1839,65 @@ document.querySelectorAll("th.sort").forEach(th=>{
     document.querySelectorAll(`th[data-t="${t}"]`).forEach(x=>x.classList.remove("sa","sd"));
     if(sortSt[key]) th.classList.add(sortSt[key]==="asc"?"sa":"sd");
     const sc=sortSt[key]?col:null, sd=sortSt[key]||"desc";
-    const tA=D.acoes.reduce((s,a)=>s+px(a.tk)*a.cotas,0);
-    const tF=D.fiis.reduce((s,f)=>s+px(f.tk)*f.cotas,0);
+    const tA=D.acoes.reduce((s,a)=>s+posVal(a),0);
+    const tF=D.fiis.reduce((s,f)=>s+posVal(f),0);
     if(t==="ac") renderAcoes(tA,sc,sd);
     if(t==="fi") renderFiis(tF,sc,sd);
     if(t==="et") renderETFs(sc,sd);
     if(t==="sk") renderStocks(sc,sd);
   });
 });
-
-/* Tabs */
 function goTab(id,btn){
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("on"));
-  document.querySelectorAll(".ntab").forEach(t=>t.classList.remove("on"));
-  document.getElementById("p-"+id).classList.add("on");
-  if(btn) btn.classList.add("on");
+  const panel=document.getElementById("p-"+id);
+  if(panel) panel.classList.add("on");
   // marca dcard ativo
   document.querySelectorAll(".dcard").forEach(c=>c.classList.remove("on"));
-  const dc = document.querySelector(`.dcard[data-tab="${id}"]`);
-  if(dc) dc.classList.add("on");
+  const dc=document.querySelector(`.dcard[data-tab="${id}"]`);
+  if(dc){ dc.classList.add("on"); dc.scrollIntoView({behavior:"smooth",inline:"nearest",block:"nearest"}); }
 }
-function goHome(){
-  const btn = document.querySelector('.ntab[onclick*="visao"]');
-  goTab('visao', btn);
+function goHome(){ goTab('visao'); }
+function closeMenu(){
+  const btn=document.getElementById("hamBtn");
+  const menu=document.getElementById("sideMenu");
+  const ov=document.getElementById("sideOverlay");
+  if(btn) btn.classList.remove("open");
+  if(menu) menu.classList.remove("open");
+  if(ov) ov.classList.remove("open");
 }
+function toggleMenu(){
+  const menu=document.getElementById("sideMenu");
+  if(!menu) return;
+  if(menu.classList.contains("open")) closeMenu();
+  else openMenu();
+}
+function openMenu(){
+  clearTimeout(window._menuTimer);
+  document.getElementById("hamBtn")?.classList.add("open");
+  document.getElementById("sideMenu")?.classList.add("open");
+  document.getElementById("sideOverlay")?.classList.add("open");
+}
+function scheduleClose(){
+  window._menuTimer=setTimeout(closeMenu,280);
+}
+
+// Configura hover no hamburguer e no menu
+(function setupHoverMenu(){
+  const btn=document.getElementById("hamBtn");
+  const menu=document.getElementById("sideMenu");
+  if(!btn||!menu) return;
+  // Hover abre, saída agenda fechamento com delay
+  btn.addEventListener("mouseenter", openMenu);
+  btn.addEventListener("mouseleave", scheduleClose);
+  menu.addEventListener("mouseenter", ()=>clearTimeout(window._menuTimer));
+  menu.addEventListener("mouseleave", scheduleClose);
+  // Click mantido como fallback (mobile / teclado)
+  btn.addEventListener("click", toggleMenu);
+})();
+// ESC fecha menu e modal
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){ closeMenu(); closeMod(); }
+});
 
 /* Tema */
 function toggleTheme(){
@@ -1752,10 +1905,16 @@ function toggleTheme(){
   document.documentElement.dataset.theme = next;
   localStorage.setItem('tema', next);
   document.getElementById("themeBtn").textContent = next === 'dark' ? '🌙' : '☀️';
+  applyTVTheme();
 }
 
 /* Modal */
-function openMod(tab){document.getElementById("mod").classList.add("open");swMTab(tab,document.querySelector(`.mtab[onclick*="'${tab}'"]`));renderMetasList();}
+function openMod(tab){
+  loadSettings(); // carrega token e dados no formulário ANTES de abrir
+  document.getElementById("mod").classList.add("open");
+  swMTab(tab,document.querySelector(`.mtab[onclick*="'${tab}'"]`));
+  renderMetasList();
+}
 function closeMod(){document.getElementById("mod").classList.remove("open")}
 function swMTab(id,btn){
   ["login","metas","app","changelog"].forEach(t=>document.getElementById("mt-"+t).style.display=t===id?"block":"none");
@@ -1794,8 +1953,12 @@ function saveUser(){
 }
 
 function saveAppSettings(){
-  const tok=(document.getElementById("brapiTok")||{}).value||"";
-  localStorage.setItem("brapiToken",tok);
+  const tokEl = document.getElementById("brapiTok");
+  const tok = (tokEl||{}).value||"";
+  if(tok){
+    localStorage.setItem("brapiToken", tok);
+  }
+  // se campo vazio, não apaga token existente
   closeMod();
   refreshPrices();
 }
@@ -1874,7 +2037,11 @@ async function setMeta(i){
   }
   const btn = document.getElementById('themeBtn');
   if(btn) btn.textContent = document.documentElement.dataset.theme === 'dark' ? '🌙' : '☀️';
+  // aplica tema no widget TradingView
+  applyTVTheme();
 })();
+
+function applyTVTheme(){ /* TradingView removido — mkt-strip estático */ }
 
 (async function init(){
   // Garante que o loading some SEMPRE, mesmo com erro
@@ -1886,11 +2053,9 @@ async function setMeta(i){
   setTimeout(hideLoading, 5000);
 
   try{
-  /* 1. Renderiza com snapshot como estimativa inicial */
-  setLdStatus("Preparando dados…");
-  Object.assign(prices, SNAPSHOT_PRICES);
-  render();
-  Object.keys(SNAPSHOT_PRICES).forEach(k => delete prices[k]);
+  /* 1. Renderiza esqueleto — sem dados ainda */
+  setLdStatus("Aguardando cotações…");
+  // Não usa snapshot — mostra estado real de carregamento
 
   /* 2. Carrega dados do Supabase */
   setLdStatus("Conectando ao banco…");
@@ -1953,7 +2118,10 @@ async function setMeta(i){
   document.getElementById("lastUpd").textContent="Buscando cotações…";
   await refreshPrices();
 
-  /* 5. Auto-refresh a cada 60s */
+  /* 5. Logos em background — via CDN (logoImg já usa) + fallback Brapi API */
+  fetchLogosEmLote(); // melhora logos que já apareceram via CDN
+
+  /* 6. Auto-refresh a cada 60s */
   setInterval(refreshPrices, 60*1000);
 
   } catch(fatalErr) {
