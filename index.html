@@ -102,33 +102,19 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .login-divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--faint);font-size:11px}
 .login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:var(--border2)}
 
-/* ─── B3 PROMO CARD ──────────────────── */
-.b3-promo{
-  position:relative;display:flex;align-items:center;gap:14px;
-  background:linear-gradient(120deg,var(--gold-bg),var(--card) 60%);
-  border:1px solid var(--gold-dim);border-radius:var(--r);
-  padding:14px 44px 14px 16px;margin-bottom:16px;overflow:hidden;
+/* ─── B3 HEADER BADGE ────────────────── */
+.b3-badge{
+  display:flex;align-items:center;gap:6px;padding:6px 13px;border-radius:20px;
+  border:1px solid var(--gold-dim);background:var(--gold-bg);color:var(--gold);
+  font-family:var(--font);font-size:11.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:background .15s,transform .15s;
 }
-.b3-promo::after{content:"";position:absolute;top:-40%;right:-10%;width:180px;height:180px;
-  background:radial-gradient(circle,var(--gold-bg),transparent 70%);pointer-events:none;
-}
-.b3-promo-icon{font-size:26px;flex-shrink:0;position:relative}
-.b3-promo-body{flex:1;min-width:0;position:relative}
-.b3-promo-ttl{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.b3-promo-sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.5}
-.b3-promo-cta{flex-shrink:0;position:relative;padding:7px 14px;border-radius:var(--rm);
-  border:1px solid var(--gold-dim);background:transparent;color:var(--gold);
-  font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
-  transition:background .15s;
-}
-.b3-promo-cta:hover{background:var(--gold-bg)}
-.b3-promo-x{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--muted);
-  font-size:16px;line-height:1;cursor:pointer;padding:4px;z-index:1}
-.b3-promo-x:hover{color:var(--text)}
-@media(max-width:600px){
-  .b3-promo{flex-wrap:wrap;padding:14px 38px 14px 14px}
-  .b3-promo-cta{margin-left:40px}
-}
+.b3-badge:hover{background:var(--gold-dim);transform:translateY(-1px)}
+.b3-badge:active{transform:translateY(0)}
+.b3-badge svg{flex-shrink:0}
+.b3-badge .b3-badge-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);
+  box-shadow:0 0 0 3px var(--gold-bg);flex-shrink:0}
+@media(max-width:560px){.b3-badge span.b3-badge-lbl{display:none}.b3-badge{padding:6px 8px}}
 
 /* ─── HEADER ─────────────────────────── */
 .hdr{
@@ -239,10 +225,11 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .falta-pill{color:var(--gold);font-weight:600;font-family:var(--mono);
   background:var(--gold-bg);padding:2px 8px;border-radius:20px;
   border:1px solid var(--gold-dim);font-size:11px;white-space:nowrap}
-.var-pill{font-size:13px;font-weight:600;padding:3px 10px;border-radius:20px;
+.var-pill{font-size:13px;font-weight:600;padding:4px 11px;border-radius:20px;
   border:1px solid var(--border2);background:var(--bg3);color:var(--muted);
-  white-space:nowrap;display:inline-flex;align-items:center;gap:5px;cursor:help}
-.var-pill strong{font-family:var(--mono);font-weight:700}
+  white-space:nowrap;display:inline-flex;align-items:center;gap:6px;cursor:help;letter-spacing:.01em}
+.var-pill .vp-ic{flex-shrink:0;opacity:.85}
+.var-pill strong{font-family:var(--mono);font-weight:700;font-size:13px}
 .var-pill.up{border-color:var(--pos-dim);background:var(--pos-bg);color:var(--pos)}
 .var-pill.dn{border-color:var(--neg-dim);background:var(--neg-bg);color:var(--neg)}
 .snap-chip{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--border2);
@@ -421,15 +408,15 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
 .tag-sm.plan{color:var(--blue);border:1px solid #1e3a5f;background:var(--blue-bg)}
 
 /* ─── SECTOR BARS ────────────────────── */
-.sbar{background:var(--card);border:1px solid var(--border);border-radius:var(--rm);padding:10px 12px;margin-bottom:7px}
-.sbar-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
-.sbar-n{font-size:12px;font-weight:500}
-.sbar-c{font-family:var(--mono);font-size:11px;color:var(--muted)}
-.sbar-t{height:8px;border-radius:5px;background:var(--bg3);position:relative;overflow:visible}
-.sbar-f{height:100%;border-radius:5px;position:absolute;top:0;left:0;transition:width .7s ease;min-width:2px}
-.sbar-l{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--gold);border-radius:1px}
-.sbar-note{font-size:10px;color:var(--muted);margin-top:4px}
-.sbar-note.ov{color:var(--neg);font-weight:500}
+.sdon-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.sdon-wrap svg{flex-shrink:0}
+.sdon-legend{flex:1;min-width:140px;display:flex;flex-direction:column;gap:7px}
+.sdon-row{display:flex;align-items:center;gap:7px;font-size:11px}
+.sdon-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;display:inline-block}
+.sdon-n{color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sdon-c{margin-left:auto;font-family:var(--mono);font-size:11px;white-space:nowrap;cursor:pointer}
+.sdon-c u{text-decoration-style:dotted}
+@media(max-width:480px){.sdon-wrap{justify-content:center}.sdon-legend{min-width:100%}}
 
 /* ─── PROV ───────────────────────────── */
 .mbar-wrap{display:flex;align-items:flex-end;gap:6px;height:80px;padding-top:4px}
@@ -614,7 +601,7 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
 
   /* Patrimônio principal: reduz tamanho da fonte gigante, sem quebrar layout */
   .patr{font-size:26px!important;flex-wrap:wrap;gap:8px!important}
-  .var-pill{font-size:11px;padding:2px 8px}
+  .var-pill{font-size:12px;padding:3px 9px}
 
   /* falta-pill e snap-chip: tamanho reduzido pra não estourar largura */
   .falta-pill,.snap-chip{font-size:10px;padding:2px 7px}
@@ -748,6 +735,11 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
     </div>
   </div>
   <div class="hdr-r">
+    <button class="b3-badge" onclick="b3EmBreve()" title="Integração direta com a B3 — em breve">
+      <span class="b3-badge-dot"></span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span class="b3-badge-lbl">Integração B3</span>
+    </button>
     <button class="ibtn" onclick="toggleTheme()" id="themeBtn">🌙</button>
     <button class="ibtn" onclick="openMod('metas')">⚙️</button>
     <button class="avt" onclick="openMod('login')" id="avtBtn">D</button>
@@ -762,7 +754,7 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
       <div class="patr" id="hPatr" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span id="hPatrVal">R$ —</span>
         <span id="hVariacaoPill" class="var-pill" title="Informa de fato quanto foi o seu ganho real, levando em conta o valor investido e o saldo atual. Não considera o pagamento de dividendos.">
-          Variação <span style="opacity:.6">ⓘ</span> <strong id="hVariacao">—</strong>
+          Variação <svg class="vp-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor" stroke="none"/></svg> <strong id="hVariacao">—</strong>
         </span>
       </div>
       <div class="patr-sub">
@@ -819,17 +811,6 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
   <div class="refbar">
     <span id="lastUpd">—</span>
     <button class="refbtn" id="btnAtualizar" onclick="refreshPrices(true)" style="font-weight:600;border-color:var(--gold);color:var(--gold)">↻ Atualizar</button>
-  </div>
-
-  <!-- Card de Integração B3 -->
-  <div class="b3-promo" id="b3Promo">
-    <button class="b3-promo-x" onclick="dismissB3Banner()" title="Dispensar">×</button>
-    <div class="b3-promo-icon">🏛️</div>
-    <div class="b3-promo-body">
-      <div class="b3-promo-ttl">Integração direta com a B3 <span class="pill core">EM BREVE</span></div>
-      <div class="b3-promo-sub">Sua carteira sincronizada automaticamente, sem digitar nada — chega na fase final do projeto.</div>
-    </div>
-    <button class="b3-promo-cta" onclick="b3EmBreve()">Saiba mais</button>
   </div>
 
   <!-- Toast de atualização (não bloqueante) -->
@@ -1640,6 +1621,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v16.8",d:"Jun/2026",items:[
+    "Botão de Integração B3 virou um badge dourado compacto no header (saiu do card grande) — igual ao estilo de referência que você mandou",
+    "'Teto por Setor' virou um gráfico de rosca com legenda em Ações BR, FIIs, ETFs e Stocks — bem mais visual que a lista de barras de antes, mantendo o clique pra editar o teto",
+    "Segmentos novos de FII (Tijolo, Lajes Corporativas, etc.) agora aparecem no Teto por Setor mesmo sem teto configurado ainda",
+    "Pill de 'Variação' no topo: ícone trocado por um SVG nítido (o ⓘ antigo ficava borrado) e fonte um pouco maior pra ler melhor",
+  ]},
   {v:"v16.7",d:"Jun/2026",items:[
     "RENDA FIXA DE VERDADE: novo botão '+ Adicionar título' com tipo (Tesouro IPCA+/Selic/Prefixado, CDB, LCI/LCA, Outro), banco/corretora, taxa, valor investido e bruto atual — e botão de excluir em cada posição",
     "Indicadores macro de Renda Fixa (Selic, IPCA 12m, Expectativa Selic) agora buscam o valor real do Banco Central e do Boletim Focus automaticamente ao abrir o app — se a busca falhar, mantém os valores anteriores",
@@ -2002,22 +1989,48 @@ function getTetoSetor(classe, setor, padrao){
   return custom[key]!==undefined ? custom[key] : padrao;
 }
 
-function mkSetores(data,id,pctFn,classe){
+function corFallbackSetor(nome){
+  const palette=['#3B82F6','#F59E0B','#16A34A','#A78BFA','#EC4899','#38BDF8','#F97316','#06B6D4','#818CF8','#FB7185'];
+  let hash=0; for(let i=0;i<nome.length;i++) hash=(hash*31+nome.charCodeAt(i))>>>0;
+  return palette[hash%palette.length];
+}
+function mkSetores(data,id,map,classe){
   const c=document.getElementById(id); if(!c) return; c.innerHTML="";
-  data.forEach(t=>{
-    const tetoAtual = classe ? getTetoSetor(classe, t.s, t.teto) : t.teto;
-    const atual=pctFn(t.s), over=atual>tetoAtual;
-    const w=Math.min(100,atual/Math.max(tetoAtual,atual)*100), cap=tetoAtual/Math.max(tetoAtual,atual)*100;
-    const el=document.createElement("div"); el.className="sbar";
-    el.innerHTML=`<div class="sbar-h"><span class="sbar-n">${t.s}</span>
-      <span class="sbar-c" style="color:${over?"var(--neg)":"var(--muted)"};cursor:pointer" onclick="editTetoSetor('${classe}','${t.s}',${tetoAtual})" title="Clique para editar o teto deste setor">
-        ${atual.toFixed(1)}% / <u>${tetoAtual}%</u>
-      </span></div>
-      <div class="sbar-t"><div class="sbar-f" style="width:${w.toFixed(0)}%;background:${over?"var(--neg)":"var(--blue)"}"></div>
-      <div class="sbar-l" style="left:${cap.toFixed(0)}%"></div></div>
-      <div class="sbar-note${over?" ov":""}">${over?`⚠ Acima em ${(atual-tetoAtual).toFixed(1)} p.p.`:`Folga de ${(tetoAtual-atual).toFixed(1)} p.p.`}</div>`;
-    c.appendChild(el);
+  const total=Object.values(map).reduce((a,b)=>a+b,0);
+  if(!total){
+    c.innerHTML=`<div style="font-size:11px;color:var(--muted);text-align:center;padding:18px 0">Sem posições nesta classe ainda.</div>`;
+    return;
+  }
+  // une os setores configurados (sempre aparecem, mesmo em 0%) com quaisquer outros
+  // presentes nas posições mas ainda sem teto definido (cobre segmentos novos)
+  const nomesConfig=new Set(data.map(t=>t.s));
+  const extras=Object.keys(map).filter(k=>!nomesConfig.has(k)&&map[k]>0).map(s=>({s,teto:100}));
+  const rows=[...data,...extras].map(t=>{
+    const tetoAtual=classe?getTetoSetor(classe,t.s,t.teto):t.teto;
+    const atual=(map[t.s]||0)/total*100;
+    return {s:t.s,atual,tetoAtual,over:atual>tetoAtual,color:SETOR_CORES[t.s]||corFallbackSetor(t.s)};
   });
+  const R=46,cx=58,cy=58,sw=15,circ=2*Math.PI*R;
+  let arcs=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="${sw}"/>`;
+  let off=circ/4;
+  rows.filter(r=>r.atual>0).forEach(r=>{
+    const arc=r.atual/100*circ, gap=circ-arc;
+    arcs+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${r.color}" stroke-width="${sw}"
+      stroke-dasharray="${arc.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"/>`;
+    off-=arc;
+  });
+  const legend=rows.map(r=>`
+    <div class="sdon-row">
+      <span class="sdon-dot" style="background:${r.color}"></span>
+      <span class="sdon-n">${r.s}</span>
+      <span class="sdon-c" style="color:${r.over?"var(--neg)":"var(--muted)"}" onclick="editTetoSetor('${classe}','${r.s}',${r.tetoAtual})" title="Clique para editar o teto deste setor">
+        ${r.atual.toFixed(1)}% / <u>${r.tetoAtual}%</u>${r.over?" ⚠":""}
+      </span>
+    </div>`).join("");
+  c.innerHTML=`<div class="sdon-wrap">
+    <svg width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}" style="flex-shrink:0">${arcs}</svg>
+    <div class="sdon-legend">${legend}</div>
+  </div>`;
 }
 
 function editTetoSetor(classe, setor, tetoAtual){
@@ -3037,7 +3050,7 @@ function renderAcoes(totAcoes,sc,sd){
   const SC={"Financeiro":"#3B82F6","Energia":"#F59E0B","Indústria":"#16A34A","Saneamento":"#38BDF8","Serviços":"#A78BFA"};
   mkDonut(Object.entries(mapSt).map(([k,v])=>({label:k,v,c:SC[k]||"#888"})),"ac-donut","ac-donut-leg");
   mkDY(D.acoes.map(a=>({label:a.tk,v:getDY(a.tk,a.dy),setor:a.st})),"ac-dy");
-  mkSetores(D.tetosBR,"ac-setores",s=>{const t=Object.values(mapSt).reduce((a,b)=>a+b,0);return t>0?(mapSt[s]||0)/t*100:0},"Ações BR");
+  mkSetores(D.tetosBR,"ac-setores",mapSt,"Ações BR");
 }
 
 /* fiis */
@@ -3084,7 +3097,7 @@ function renderFiis(totFiis,sc,sd){
   mkHBars(rows.map(f=>({label:f.tk,v:f.totb3,pct:tot>0?f.totb3/tot*100:0})),"fi-hbars","#A78BFA");
   mkDonut(Object.entries(mapSeg).map(([k,v])=>({label:k,v,c:FI_COL[k]||"#888"})),"fi-donut","fi-donut-leg");
   mkDY(D.fiis.filter(f=>f.cotas>0).map(f=>({label:f.tk.replace("11",""),v:getDY(f.tk,f.dy),setor:f.seg})),"fi-dy");
-  mkSetores(D.tetosFII,"fi-setores",s=>{const t=Object.values(mapSeg).reduce((a,b)=>a+b,0);return t>0?(mapSeg[s]||0)/t*100:0},"FIIs");
+  mkSetores(D.tetosFII,"fi-setores",mapSeg,"FIIs");
   const pt=g("fiProvTbl"); pt.innerHTML="";
   D.fiis.filter(f=>f.cotas>0).forEach(f=>{
     const tr=document.createElement("tr");
@@ -3249,7 +3262,7 @@ function renderETFs(sc,sd){
   mkHBars(rows.map(e=>({label:e.tk,v:e.atual,pct:tot>0?e.atual/tot*100:0})),"et-hbars","#38BDF8");
   mkDY(rows.map(e=>({label:e.tk,v:e.dy})),"et-dy"); // ETFs sem mapa de cor por categoria — usa dourado padrão
   const mapFun={};rows.forEach(e=>{mapFun[e.fun]=(mapFun[e.fun]||0)+e.atual});
-  mkSetores(D.tetosETF,"et-setores",s=>{const t=Object.values(mapFun).reduce((a,b)=>a+b,0);return t>0?(mapFun[s]||0)/t*100:0},"ETFs");
+  mkSetores(D.tetosETF,"et-setores",mapFun,"ETFs");
 }
 
 /* Stocks */
@@ -3296,7 +3309,7 @@ function renderStocks(sc,sd){
   const mapSt={};rows.forEach(s=>{mapSt[s.setor]=(mapSt[s.setor]||0)+s.atual});
   const SK_COL={"Tecnologia":"#818CF8","Financeiro":"#3B82F6","Saúde":"#16A34A","Consumo":"#F59E0B"};
   mkDonut(Object.entries(mapSt).map(([k,v])=>({label:k,v,c:SK_COL[k]||"#888"})),"sk-donut","sk-donut-leg");
-  mkSetores(D.setoresEUA,"sk-setores",s=>{const t=Object.values(mapSt).reduce((a,b)=>a+b,0);return t>0?(mapSt[s]||0)/t*100:0},"Stocks");
+  mkSetores(D.setoresEUA,"sk-setores",mapSt,"Stocks");
 }
 
 /* Proventos */
@@ -3687,11 +3700,6 @@ function b3EmBreve(){
   closeMenu();
   alert("Integração direta com a B3 ainda não está disponível.\nEla chega na fase final do projeto — assim que estiver pronta, esse botão te leva direto pra ela.");
 }
-function dismissB3Banner(){
-  localStorage.setItem("b3PromoDismissed","1");
-  const el=document.getElementById("b3Promo");
-  if(el) el.style.display="none";
-}
 function toggleMenu(){
   const menu=document.getElementById("sideMenu");
   if(!menu) return;
@@ -3933,9 +3941,6 @@ async function startApp(){
   setLdStatus("Aguardando cotações…");
   // Carrega cache local de mercado imediatamente — evita "—" enquanto a rede não responde
   loadMktCache();
-  if(localStorage.getItem("b3PromoDismissed")==="1"){
-    const b3el=document.getElementById("b3Promo"); if(b3el) b3el.style.display="none";
-  }
   const fv=document.getElementById("footerVer");
   if(fv && CHANGELOG[0]) fv.textContent="📋 "+CHANGELOG[0].v;
   loadCriptoAtivos();
