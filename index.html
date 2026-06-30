@@ -747,7 +747,7 @@ tr.total-row:hover td{background:var(--bg4)}
 
 <!-- CRIPTO -->
 <section class="panel" id="p-cripto">
-  <div class="st" style="display:flex;align-items:center;gap:8px">Posições — Cripto <button class="add-btn" onclick="openAddAtivo('cripto')">＋ Adicionar moeda</button></div>
+  <div class="st" style="display:flex;align-items:center;gap:8px">Posições — Cripto <span id="cripto-src" style="color:var(--gold)">snapshot</span><button class="add-btn" onclick="openAddAtivo('cripto')">＋ Adicionar moeda</button></div>
   <div class="tw">
     <table>
       <thead><tr>
@@ -885,7 +885,8 @@ tr.total-row:hover td{background:var(--bg4)}
       </div>
       <div>
         <label class="flbl" id="addCotasLabel">Qtd. cotas</label>
-        <input class="finp" id="addCotas" type="number" placeholder="0" style="font-family:var(--mono)"/>
+        <input class="finp" id="addCotas" type="number" placeholder="0" style="font-family:var(--mono)"
+          oninput="if(this.value.includes('e')||this.value.includes('E')){this.value=parseFloat(this.value).toFixed(8).replace(/0+$/,'').replace(/\.$/,'');}"/>
       </div>
     </div>
     <div id="addSetorRow" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
@@ -1424,7 +1425,7 @@ async function refreshPrices(manual=false){
       j.results.forEach(q=>{
         if(!q.regularMarketPrice) { console.warn('Sem regularMarketPrice para',q.symbol,q); return; }
         if(q.symbol==='^BVSP'){
-          updMkt('ibov',(q.regularMarketPrice/1000).toFixed(2)+'k',q.regularMarketChangePercent||0);
+          updMkt('ibov',q.regularMarketPrice.toLocaleString('pt-BR',{maximumFractionDigits:0}),q.regularMarketChangePercent||0);
           ibovOK=true;
         } else {
           prices[q.symbol]=q.regularMarketPrice; brOK++;
@@ -1442,25 +1443,32 @@ async function refreshPrices(manual=false){
       console.log('IBOV isolado resposta:', j2);
       const q2=j2.results&&j2.results[0];
       if(q2&&q2.regularMarketPrice){
-        updMkt('ibov',(q2.regularMarketPrice/1000).toFixed(2)+'k',q2.regularMarketChangePercent||0);
+        updMkt('ibov',q2.regularMarketPrice.toLocaleString('pt-BR',{maximumFractionDigits:0}),q2.regularMarketChangePercent||0);
         ibovOK=true;
       } else { updMktErr('ibov'); }
     }catch(e){ console.warn('IBOV isolado falhou:',e.message); updMktErr('ibov'); }
   }
 
-  /* 2. USD/BRL e Bitcoin via AwesomeAPI — CORS nativo, sem token, cache de 1min */
+  /* 2. USD/BRL + todas as criptos da carteira via AwesomeAPI — CORS nativo, sem token, cache de 1min */
   try{
-    const j=await corsGetJSON('https://economia.awesomeapi.com.br/json/last/USD-BRL,BTC-BRL');
+    const moedasCripto = [...new Set(D.cripto.map(c=>c.moeda))]; // BTC, ETH, ENA, etc — o que o usuário tiver
+    const pares = ['USD-BRL', ...moedasCripto.map(m=>`${m}-BRL`)].join(',');
+    const j=await corsGetJSON(`https://economia.awesomeapi.com.br/json/last/${pares}`);
     if(j.USDBRL){
       usdBRL=parseFloat(j.USDBRL.bid)||usdBRL;
       updMkt('usd','R$\u00a0'+usdBRL.toFixed(2),parseFloat(j.USDBRL.pctChange)||0);
     }
-    if(j.BTCBRL){
-      const btcBRL=parseFloat(j.BTCBRL.bid)||0;
-      prices['BTC']=btcBRL/usdBRL; // guarda em USD para consistência com outras cripto
-      window._btcBRLDireto=btcBRL; // valor direto em BRL, sem precisar reconverter
-      window._btcChange=parseFloat(j.BTCBRL.pctChange)||0;
-    }
+    window._cryptoBRL = window._cryptoBRL || {};
+    window._cryptoChange = window._cryptoChange || {};
+    moedasCripto.forEach(m=>{
+      const key=m+'BRL';
+      if(j[key]&&j[key].bid){
+        window._cryptoBRL[m]=parseFloat(j[key].bid);
+        window._cryptoChange[m]=parseFloat(j[key].pctChange)||0;
+      }
+    });
+    // compat: mantém _btcBRLDireto para código legado
+    if(window._cryptoBRL['BTC']) window._btcBRLDireto=window._cryptoBRL['BTC'];
   }catch(e){ console.warn('AwesomeAPI falhou:',e.message); }
 
   /* 3. ETFs/Stocks EUA — tenta Yahoo (pode falhar por bloqueio externo; best-effort) */
@@ -1735,7 +1743,10 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
   const lucroETF2=D.etfs.reduce((s,e)=>s+e.lucro,0)*usdBRL;
   const lucroSTK2=D.stocks.reduce((s,s2)=>s+s2.lucro,0)*usdBRL;
   const totProvFII=D.fiis.reduce((s,f)=>s+f.prov,0);
-  const lucroTotal2=lucroAcoes+lucroFiis+lucroETF2+lucroSTK2;
+  const totCripto=getCriptoTotal();
+  const custoCriptoDc=D.cripto.reduce((s,c)=>s+c.pm*c.qtd,0);
+  const lucroCripto2=totCripto-custoCriptoDc;
+  const lucroTotal2=lucroAcoes+lucroFiis+lucroETF2+lucroSTK2+lucroCripto2;
   const items=[
     {name:"Carteira Total",val:brl(D.invest.reduce((s,c)=>s+c.v,0),2),
       sub:pct.toFixed(1)+"% da meta",sub2:sgn(lucroTotal2)+brl(Math.abs(lucroTotal2),2),
@@ -1754,6 +1765,9 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
     {name:"Stocks",val:usd(D.stocks.reduce((s,s2)=>s+s2.atual,0)),
       sub:brl(totSTK,2),sub2:sgn(lucroSTK2)+brl(Math.abs(lucroSTK2),2),sub2cls:lucroSTK2>=0?"pos":"neg",
       pct:totSTK/meta*100,c:"#818CF8",tab:"stocks"},
+    {name:"Cripto",val:brl(totCripto,2),
+      sub2:sgn(lucroCripto2)+brl(Math.abs(lucroCripto2),2),sub2cls:lucroCripto2>=0?"pos":"neg",
+      pct:Math.min(100,totCripto/meta*100),c:"#F7931A",tab:"cripto"},
     {name:"Proventos",val:brl(totProvFII,2),
       sub:"acumulado FIIs",sub2cls:"gold",pct:Math.min(100,totProvFII/500*100),c:"var(--gold)",tab:"prov"},
   ];
@@ -1792,9 +1806,9 @@ function saveCriptoAtivos(){
 }
 
 function cryptoPrecoBRL(moeda){
-  // BTC tem cotação ao vivo via AwesomeAPI; demais moedas usam o PM (sem fonte gratuita confiável)
-  if(moeda==="BTC" && window._btcBRLDireto) return window._btcBRLDireto;
-  return null; // sem cotação ao vivo — usa PM como fallback
+  // Busca no cache de qualquer moeda obtida via AwesomeAPI (BTC, ETH, etc — o que a corretora suportar)
+  if(window._cryptoBRL && window._cryptoBRL[moeda]) return window._cryptoBRL[moeda];
+  return null; // sem cotação ao vivo (par não suportado pela AwesomeAPI) — usa PM como fallback
 }
 
 function renderCripto(){
@@ -1809,13 +1823,17 @@ function renderCripto(){
     return;
   }
 
+  let algumAoVivo=false;
   tbody.innerHTML = D.cripto.map((c,idx)=>{
     const precoVivo = cryptoPrecoBRL(c.moeda);
+    if(precoVivo) algumAoVivo=true;
     const preco = precoVivo || c.pm;
     const totInv = c.pm*c.qtd;
     const totCorretora = preco*c.qtd;
     const lucro = precoVivo ? (totCorretora-totInv) : 0;
     const lucroColor = lucro>0?'var(--pos)':lucro<0?'var(--neg)':'var(--muted)';
+    const chg = window._cryptoChange && window._cryptoChange[c.moeda];
+    const chgTxt = (precoVivo && chg!==undefined) ? `<div style="font-size:9px;color:${chg>=0?'var(--pos)':'var(--neg)'}">${chg>=0?'▲':'▼'} ${Math.abs(chg).toFixed(2)}%</div>` : '';
     return `<tr>
       <td><div class="ativo-cell">
         <span class="ativo-initials" style="background:${c.c};color:#fff">${c.moeda.slice(0,2)}</span>
@@ -1824,12 +1842,18 @@ function renderCripto(){
       <td class="r" style="font-family:var(--mono)">${c.qtd}</td>
       <td class="r" style="font-family:var(--mono)">${brl(totInv,2)}</td>
       <td class="r" style="font-family:var(--mono)">${brl(totCorretora,2)}</td>
-      <td class="r" style="font-family:var(--mono);color:${precoVivo?'var(--text)':'var(--muted)'}">${precoVivo?brl(preco,2):'PM'}</td>
+      <td class="r" style="font-family:var(--mono);color:${precoVivo?'var(--text)':'var(--muted)'}">${precoVivo?brl(preco,2):'PM'}${chgTxt}</td>
       <td class="r" style="font-family:var(--mono);color:${lucroColor};font-weight:600">${lucro>=0?'+':''}${brl(lucro,2)}
         <span onclick="deleteCripto(${idx})" style="cursor:pointer;color:var(--neg);margin-left:8px;font-size:12px" title="Remover">✕</span>
       </td>
     </tr>`;
   }).join("");
+
+  const srcEl = document.getElementById("cripto-src");
+  if(srcEl){
+    srcEl.textContent = algumAoVivo ? "ao vivo" : "snapshot";
+    srcEl.style.color = algumAoVivo ? "var(--pos)" : "var(--gold)";
+  }
 }
 
 function deleteCripto(idx){
@@ -2325,7 +2349,7 @@ function openAddAtivo(tipo){
   const pmLabel=document.getElementById("addPMLabel");
   const cotasLabel=document.getElementById("addCotasLabel");
   if(tipo==="cripto"){
-    cotasInput.step="0.00000001";
+    cotasInput.step="0.0001"; // evita notação científica nas setinhas (8 casas era exagero pro spinner)
     cotasInput.placeholder="0.00351089";
     tickerInput.placeholder="BTC, ETH, SOL…";
     tickerInput.setAttribute("list","cryptoTickerList"); // só sugestões de cripto
