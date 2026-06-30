@@ -401,37 +401,55 @@ tr.total-row:hover td{background:var(--bg4)}
 
 /* ═══════════════ RESPONSIVO MOBILE ═══════════════ */
 @media(max-width:768px){
-  /* Header: logo + mkt-strip compacto + ícones */
-  .hdr{padding:0 8px;height:46px}
-  .logo-m{width:26px;height:26px;font-size:13px}
-  .logo{font-size:14px}
-  .ham-btn{width:30px;height:30px;margin-right:2px}
+  /* Trava overflow horizontal global — nada deve cortar conteúdo lateralmente */
+  html,body{overflow-x:hidden;max-width:100vw}
+  .wrap{overflow-x:hidden}
+  main,section,.hero,.hero-row{max-width:100%;overflow-x:hidden}
 
-  /* mkt-strip: compacta, sem label, só valor+variação */
-  .mkt-strip{gap:8px;padding:0 6px;border-left:none}
-  .mkt-item{gap:3px;flex-direction:column;align-items:flex-start}
-  .mk-n{font-size:8px}
-  .mk-v{font-size:11px}
-  .mk-c{font-size:8px;padding:1px 4px}
+  /* Header: empilha em 2 linhas se necessário — logo+menu em cima, mkt-strip embaixo */
+  .hdr{
+    flex-wrap:wrap;height:auto;min-height:46px;padding:6px 8px;gap:4px;
+  }
+  .hdr>#hdrSpacer{display:none} /* spacer desktop não é necessário no mobile (mkt-strip vai pra linha 2) */
+  .logo-m{width:24px;height:24px;font-size:12px}
+  .logo{font-size:13px}
+  .ham-btn{width:28px;height:28px;margin-right:2px;order:0}
+  .logo{order:1}
+  .hdr-r{order:2;margin-left:auto}
 
-  /* botões de tema/config/avatar menores */
-  .ibtn,.avt{width:28px!important;height:28px!important;font-size:13px!important}
+  /* mkt-strip: quebra pra segunda linha do header, ocupa largura total, sem cortar */
+  .mkt-strip{
+    order:3;width:100%;justify-content:flex-start;
+    gap:14px;padding:4px 0 0 0;border-left:none;border-top:1px solid var(--border);
+    margin-top:4px;flex-wrap:wrap;
+  }
+  .mkt-item{gap:3px;flex-direction:row;align-items:center}
+  .mk-n{font-size:9px}
+  .mk-v{font-size:12px}
+  .mk-c{font-size:9px;padding:1px 5px}
+
+  /* botões de tema/config/avatar menores, sempre visíveis na 1ª linha */
+  .ibtn,.avt{width:26px!important;height:26px!important;font-size:12px!important}
+
+  /* Toast de atualização: nunca cobre o header — desce mais e fica mais discreto */
+  .refresh-toast{top:auto;bottom:16px;font-size:12px;padding:6px 16px}
 
   /* Cards de classe (dcards) — scroll horizontal continua, mas compacto */
-  .dcard{min-width:128px;padding:10px}
+  .dcard{min-width:120px;padding:9px}
 
-  /* Alocação por classe: 2 colunas no mobile */
-  .agrid{grid-template-columns:1fr 1fr;gap:6px}
-  .acard{padding:8px}
-  .ac-name{font-size:11px}
-  .ac-cur{font-size:13px}
+  /* Alocação por classe: 2 colunas no mobile, sem overflow */
+  .agrid{grid-template-columns:1fr 1fr;gap:6px;width:100%}
+  .acard{padding:8px;min-width:0}
+  .ac-name{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ac-cur{font-size:12px}
   .ac-falta,.ac-ok{font-size:9px}
 
-  /* Refbar: empilha botão de atualizar embaixo do texto */
-  .refbar{font-size:10px;gap:5px}
+  /* Refbar: empilha, sem cortar texto */
+  .refbar{font-size:10px;gap:5px;flex-wrap:wrap}
   #btnAtualizar{padding:5px 10px;font-size:11px}
 
   /* Tabelas: mantém scroll horizontal nativo do .tw, mas reduz fonte */
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .tw table{font-size:11px}
   .tw th,.tw td{padding:6px 8px;white-space:nowrap}
   .ativo-cell{gap:6px}
@@ -445,8 +463,16 @@ tr.total-row:hover td{background:var(--bg4)}
   .mbg .modal{border-radius:16px 16px 0 0;animation:slideUp .25s ease-out}
   @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 
-  /* Patrimônio principal: reduz tamanho da fonte gigante */
-  .patr{font-size:30px!important}
+  /* Patrimônio principal: reduz tamanho da fonte gigante, sem quebrar layout */
+  .patr{font-size:26px!important;flex-wrap:wrap;gap:8px!important}
+  .var-pill{font-size:11px;padding:2px 8px}
+
+  /* falta-pill e snap-chip: tamanho reduzido pra não estourar largura */
+  .falta-pill,.snap-chip{font-size:10px;padding:2px 7px}
+  .patr-sub{flex-wrap:wrap;gap:6px}
+
+  /* meta-row: garante que a barra de progresso não estoure */
+  .meta-row{flex-wrap:wrap;gap:6px}
 
   /* Side menu: ocupa mais largura no mobile */
   .side-menu{width:84vw;max-width:300px}
@@ -459,7 +485,8 @@ tr.total-row:hover td{background:var(--bg4)}
 @media(max-width:420px){
   /* Telas muito pequenas: 1 coluna nos cards de alocação */
   .agrid{grid-template-columns:1fr}
-  .mkt-strip .mkt-item:nth-child(n+3){display:none} /* esconde itens extras se houver */
+  .patr{font-size:22px!important}
+  .mkt-strip{gap:10px}
 }
 </style>
 </head>
@@ -505,7 +532,7 @@ tr.total-row:hover td{background:var(--bg4)}
     </nav>
   </div>
   <div id="sideOverlay" class="side-overlay" onclick="closeMenu()"></div>
-  <div style="flex:1;min-width:0"></div>
+  <div id="hdrSpacer" style="flex:1;min-width:0"></div>
   <!-- Índices: só os confiáveis (IBOV e USD/BRL) -->
   <div class="mkt-strip" id="mktStrip">
     <div class="mkt-item">
