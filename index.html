@@ -127,15 +127,15 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .ndot{width:5px;height:5px;border-radius:50%;background:var(--faint)}
 .ntab.on .ndot{background:var(--pos);box-shadow:0 0 5px var(--pos)}
 
-/* market boxes — direita do header */
-.mkt-strip{display:flex;align-items:stretch;border-left:1px solid var(--border);flex-shrink:0}
-.mkt-item{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;padding:0 10px;border-right:1px solid var(--border);min-width:76px;cursor:default}
-.mkt-item:last-child{border-right:none}
-.mk-n{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
-.mk-v{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
-.mk-c{font-size:10px;font-family:var(--mono);line-height:1.2}
-.mk-c.up{color:var(--pos)}.mk-c.dn{color:var(--neg)}.mk-c.neu{color:var(--faint)}
-@media(max-width:860px){.mkt-item:nth-child(n+3){display:none}}
+/* market boxes — estilo MoneyTimes */
+.mkt-strip{display:flex;align-items:center;gap:16px;padding:0 14px;border-left:1px solid var(--border);flex-shrink:0}
+.mkt-item{display:flex;align-items:center;gap:7px}
+.mk-n{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.mk-v{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text)}
+.mk-c{font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 6px;border-radius:5px}
+.mk-c.up{background:rgba(22,163,74,.18);color:var(--pos)}
+.mk-c.dn{background:rgba(239,68,68,.18);color:var(--neg)}
+.mk-c.neu{background:var(--bg3);color:var(--muted)}
 
 .hdr-r{display:flex;align-items:center;gap:6px;padding-left:8px;flex-shrink:0}
 .ibtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);
@@ -159,9 +159,30 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .falta-pill{color:var(--gold);font-weight:600;font-family:var(--mono);
   background:var(--gold-bg);padding:2px 8px;border-radius:20px;
   border:1px solid var(--gold-dim);font-size:11px;white-space:nowrap}
+.var-pill{font-size:13px;font-weight:600;padding:3px 10px;border-radius:20px;
+  border:1px solid var(--border2);background:var(--bg3);color:var(--muted);
+  white-space:nowrap;display:inline-flex;align-items:center;gap:5px;cursor:help}
+.var-pill strong{font-family:var(--mono);font-weight:700}
+.var-pill.up{border-color:var(--pos-dim);background:var(--pos-bg);color:var(--pos)}
+.var-pill.dn{border-color:var(--neg-dim);background:var(--neg-bg);color:var(--neg)}
 .snap-chip{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--border2);
   color:var(--muted);background:var(--bg3);white-space:nowrap}
 .snap-chip.live{border-color:var(--pos-dim);color:var(--pos);background:var(--pos-bg)}
+/* ── Refresh toast (não bloqueante) ── */
+.refresh-toast{
+  position:fixed;top:54px;left:50%;
+  transform:translateX(-50%) translateY(-80px);
+  background:var(--gold);color:#1a1008;
+  padding:8px 20px 8px 14px;border-radius:24px;
+  font-size:13px;font-weight:700;letter-spacing:.01em;
+  z-index:1500;display:flex;align-items:center;gap:8px;
+  box-shadow:0 6px 20px rgba(0,0,0,.4);
+  transition:transform .32s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;user-select:none;
+}
+.refresh-toast.show{transform:translateX(-50%) translateY(0)}
+.toast-spin{display:inline-block;animation:toastSpin .9s linear infinite}
+@keyframes toastSpin{to{transform:rotate(360deg)}}
 
 /* hstats inline removido */
 
@@ -377,6 +398,69 @@ tr.total-row:hover td{background:var(--bg4)}
   .hstats{border-left:none;padding-left:0;margin-top:10px}
   .hst{padding:5px 12px 5px 0;border-right:none}
 }
+
+/* ═══════════════ RESPONSIVO MOBILE ═══════════════ */
+@media(max-width:768px){
+  /* Header: logo + mkt-strip compacto + ícones */
+  .hdr{padding:0 8px;height:46px}
+  .logo-m{width:26px;height:26px;font-size:13px}
+  .logo{font-size:14px}
+  .ham-btn{width:30px;height:30px;margin-right:2px}
+
+  /* mkt-strip: compacta, sem label, só valor+variação */
+  .mkt-strip{gap:8px;padding:0 6px;border-left:none}
+  .mkt-item{gap:3px;flex-direction:column;align-items:flex-start}
+  .mk-n{font-size:8px}
+  .mk-v{font-size:11px}
+  .mk-c{font-size:8px;padding:1px 4px}
+
+  /* botões de tema/config/avatar menores */
+  .ibtn,.avt{width:28px!important;height:28px!important;font-size:13px!important}
+
+  /* Cards de classe (dcards) — scroll horizontal continua, mas compacto */
+  .dcard{min-width:128px;padding:10px}
+
+  /* Alocação por classe: 2 colunas no mobile */
+  .agrid{grid-template-columns:1fr 1fr;gap:6px}
+  .acard{padding:8px}
+  .ac-name{font-size:11px}
+  .ac-cur{font-size:13px}
+  .ac-falta,.ac-ok{font-size:9px}
+
+  /* Refbar: empilha botão de atualizar embaixo do texto */
+  .refbar{font-size:10px;gap:5px}
+  #btnAtualizar{padding:5px 10px;font-size:11px}
+
+  /* Tabelas: mantém scroll horizontal nativo do .tw, mas reduz fonte */
+  .tw table{font-size:11px}
+  .tw th,.tw td{padding:6px 8px;white-space:nowrap}
+  .ativo-cell{gap:6px}
+  .ativo-logo,.ativo-initials{width:24px;height:24px;font-size:9px}
+  .tk{font-size:12px}
+  .co{font-size:10px}
+
+  /* Modais: ocupam quase a tela toda, sem margem lateral excessiva */
+  .modal{width:94vw;padding:16px;max-height:90vh}
+  .mbg{align-items:flex-end}
+  .mbg .modal{border-radius:16px 16px 0 0;animation:slideUp .25s ease-out}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+  /* Patrimônio principal: reduz tamanho da fonte gigante */
+  .patr{font-size:30px!important}
+
+  /* Side menu: ocupa mais largura no mobile */
+  .side-menu{width:84vw;max-width:300px}
+
+  /* Footer: empilha verticalmente */
+  .footer{flex-direction:column;gap:8px;text-align:center;padding:16px 12px}
+  .f-note{text-align:center}
+}
+
+@media(max-width:420px){
+  /* Telas muito pequenas: 1 coluna nos cards de alocação */
+  .agrid{grid-template-columns:1fr}
+  .mkt-strip .mkt-item:nth-child(n+3){display:none} /* esconde itens extras se houver */
+}
 </style>
 </head>
 <body class="wrap">
@@ -408,6 +492,7 @@ tr.total-row:hover td{background:var(--bg4)}
       <button onclick="closeMenu();goTab('rf')">💰 Renda Fixa</button>
       <button onclick="closeMenu();goTab('etfs')">🌎 ETFs</button>
       <button onclick="closeMenu();goTab('stocks')">📊 Stocks</button>
+      <button onclick="closeMenu();goTab('cripto')">₿ Cripto</button>
       <button onclick="closeMenu();goTab('prov')">💵 Proventos</button>
       <div class="side-sep"></div>
       <button onclick="closeMenu();openMod('metas')">🎯 Metas</button>
@@ -421,11 +506,18 @@ tr.total-row:hover td{background:var(--bg4)}
   </div>
   <div id="sideOverlay" class="side-overlay" onclick="closeMenu()"></div>
   <div style="flex:1;min-width:0"></div>
+  <!-- Índices: só os confiáveis (IBOV e USD/BRL) -->
   <div class="mkt-strip" id="mktStrip">
-    <div class="mkt-item"><div class="mk-n">IBOV</div><div class="mk-v" id="mk-ibov-v">—</div><div class="mk-c neu" id="mk-ibov-c">—</div></div>
-    <div class="mkt-item"><div class="mk-n">S&P 500</div><div class="mk-v" id="mk-sp-v">—</div><div class="mk-c neu" id="mk-sp-c">—</div></div>
-    <div class="mkt-item"><div class="mk-n">IFIX</div><div class="mk-v" id="mk-ifix-v">—</div><div class="mk-c neu" id="mk-ifix-c">—</div></div>
-    <div class="mkt-item"><div class="mk-n">USD/BRL</div><div class="mk-v" id="mk-usd-v">—</div><div class="mk-c neu" id="mk-usd-c">—</div></div>
+    <div class="mkt-item">
+      <span class="mk-n">IBOVESPA</span>
+      <span class="mk-c neu" id="mk-ibov-c">—</span>
+      <span class="mk-v" id="mk-ibov-v">—</span>
+    </div>
+    <div class="mkt-item">
+      <span class="mk-n">DÓLAR</span>
+      <span class="mk-c neu" id="mk-usd-c">—</span>
+      <span class="mk-v" id="mk-usd-v">—</span>
+    </div>
   </div>
   <div class="hdr-r">
     <button class="ibtn" onclick="toggleTheme()" id="themeBtn">🌙</button>
@@ -439,7 +531,12 @@ tr.total-row:hover td{background:var(--bg4)}
   <div class="hero-row">
     <div class="hero-left">
       <div class="eyebrow">Patrimônio de investimentos</div>
-      <div class="patr" id="hPatr">R$ —</div>
+      <div class="patr" id="hPatr" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span id="hPatrVal">R$ —</span>
+        <span id="hVariacaoPill" class="var-pill" title="Informa de fato quanto foi o seu ganho real, levando em conta o valor investido e o saldo atual. Não considera o pagamento de dividendos.">
+          Variação <span style="opacity:.6">ⓘ</span> <strong id="hVariacao">—</strong>
+        </span>
+      </div>
       <div class="patr-sub">
         <span id="hSub">Meta: —</span>
         <span class="falta-pill" id="hFalta">—</span>
@@ -472,13 +569,18 @@ tr.total-row:hover td{background:var(--bg4)}
 <section class="panel on" id="p-visao">
   <div class="refbar">
     <span id="lastUpd">—</span>
-    <button class="refbtn" onclick="refreshPrices()">↻ Atualizar cotações</button>
-    <button class="refbtn" onclick="window.location.reload()" style="margin-left:4px">⟳ Recarregar página</button>
+    <button class="refbtn" id="btnAtualizar" onclick="refreshPrices(true)" style="font-weight:600;border-color:var(--gold);color:var(--gold)">↻ Atualizar</button>
   </div>
+  <!-- Toast de atualização (não bloqueante) -->
+  <div class="refresh-toast" id="refreshToast"><span class="toast-spin">↻</span> Atualizando preços…</div>
   <div class="st">Alocação por classe (excl. Reserva e Caixa)</div>
   <div class="agrid" id="allocGrid"></div>
-  <div class="st" style="margin-top:4px">Reserva e caixa — não entram na meta de investimentos</div>
+  <div class="st" style="margin-top:4px;display:flex;align-items:center;justify-content:space-between">
+    <span>Reserva e caixa — não entram na meta de investimentos</span>
+    <button class="refbtn" onclick="openAddExtraItem()" style="font-size:11px">+ Adicionar item</button>
+  </div>
   <div class="agrid" id="allocExtra"></div>
+  <div id="extraTotalBar" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:right"></div>
 
   <!-- METAS DE ALOCAÇÃO -->
   <div class="st" style="margin-top:16px;display:flex;align-items:center;justify-content:space-between">
@@ -643,6 +745,28 @@ tr.total-row:hover td{background:var(--bg4)}
   </div>
 </section>
 
+<!-- CRIPTO -->
+<section class="panel" id="p-cripto">
+  <div class="st" style="display:flex;align-items:center;gap:8px">Posições — Cripto <button class="add-btn" onclick="openAddAtivo('cripto')">＋ Adicionar moeda</button></div>
+  <div class="tw">
+    <table>
+      <thead><tr>
+        <th>Moeda</th>
+        <th class="r">Qtd.</th>
+        <th class="r">Total Investido</th>
+        <th class="r">Total Corretora</th>
+        <th class="r">Preço</th>
+        <th class="r">Lucro</th>
+      </tr></thead>
+      <tbody id="cryptoTbl">
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px 0">
+          Nenhuma posição em cripto ainda. Clique em "+ Adicionar moeda" para começar.
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
 <!-- PROVENTOS -->
 <section class="panel" id="p-prov">
   <div class="two eq">
@@ -680,7 +804,32 @@ tr.total-row:hover td{background:var(--bg4)}
 </section>
 </main>
 
-<footer class="footer">
+<!-- Modal: Adicionar Item Extra (Reserva/Caixa customizável) -->
+<div class="mbg" id="modExtra" onclick="if(event.target===this)closeExtraItem()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
+    <div class="m-title">
+      <span id="extraModalTitle">Adicionar item</span>
+      <button class="m-close" onclick="closeExtraItem()">×</button>
+    </div>
+    <div style="padding:16px">
+      <label class="flbl">Nome do item</label>
+      <input class="finp" id="exName" placeholder="Ex: Viagem 2027, Fundo Faculdade…" style="margin-bottom:10px"/>
+      <div class="frow2">
+        <div><label class="flbl">Valor atual (R$)</label><input class="finp" id="exVal" type="number" step="0.01" placeholder="0,00" style="font-family:var(--mono)"/></div>
+        <div><label class="flbl">Meta (R$) — opcional</label><input class="finp" id="exMeta" type="number" step="0.01" placeholder="0,00" style="font-family:var(--mono)"/></div>
+      </div>
+      <label class="flbl" style="margin-top:8px">Cor</label>
+      <div id="exColorPicker" style="display:flex;gap:6px;margin-bottom:14px"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-pri" style="flex:1" onclick="saveExtraItem()">Salvar</button>
+        <button class="refbtn" id="exDeleteBtn" style="display:none;color:var(--neg);border-color:var(--neg)" onclick="deleteExtraItem()">Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
   <div class="f-brand"><div class="logo-m" style="width:22px;height:22px;font-size:11px">A</div>ativo·br</div>
   <div class="f-links">
     <a href="#">Painel</a><a href="#">Proventos</a>
@@ -706,18 +855,40 @@ tr.total-row:hover td{background:var(--bg4)}
       <input class="finp" id="addTicker" placeholder="Ex: WEGE3, BTLG11, VOO"
         list="tickerList" autocomplete="off" style="font-family:var(--mono);text-transform:uppercase"
         oninput="this.value=this.value.toUpperCase()"/>
+      <datalist id="cryptoTickerList">
+        <option value="BTC">Bitcoin</option>
+        <option value="ETH">Ethereum</option>
+        <option value="BNB">BNB</option>
+        <option value="SOL">Solana</option>
+        <option value="XRP">XRP</option>
+        <option value="ADA">Cardano</option>
+        <option value="AVAX">Avalanche</option>
+        <option value="DOT">Polkadot</option>
+        <option value="LINK">Chainlink</option>
+        <option value="DOGE">Dogecoin</option>
+        <option value="MATIC">Polygon</option>
+        <option value="LTC">Litecoin</option>
+        <option value="USDT">Tether</option>
+        <option value="USDC">USD Coin</option>
+        <option value="ENA">Ethena</option>
+        <option value="HBAR">Hedera Hashgraph</option>
+        <option value="ATOM">Cosmos</option>
+        <option value="UNI">Uniswap</option>
+        <option value="NEAR">NEAR Protocol</option>
+        <option value="APT">Aptos</option>
+      </datalist>
     </div>
     <div class="form-row" id="addFormFields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div>
-        <label class="flbl">Preço médio (R$)</label>
+        <label class="flbl" id="addPMLabel">Preço médio (R$)</label>
         <input class="finp" id="addPM" type="number" step="0.01" placeholder="0,00" style="font-family:var(--mono)"/>
       </div>
       <div>
-        <label class="flbl">Qtd. cotas</label>
+        <label class="flbl" id="addCotasLabel">Qtd. cotas</label>
         <input class="finp" id="addCotas" type="number" placeholder="0" style="font-family:var(--mono)"/>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+    <div id="addSetorRow" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div>
         <label class="flbl">Setor</label>
         <select class="fsel" id="addSetor">
@@ -799,6 +970,9 @@ tr.total-row:hover td{background:var(--bg4)}
 ════════════════════════════════════════════════════ */
 const SB_URL = 'https://pojzzwxuawpqvrethncz.supabase.co';
 const SB_KEY = 'sb_publishable_I3WoWXxxvEpGdwBmiDppjQ_RWKSkUTZ';
+
+// Token Brapi embutido — nunca exposto em campo de UI, plano free (15k req/mês)
+const BRAPI_TOKEN = 'cAycArQLxF2iZbAuzqJyta';
 
 const SB = {
   headers(extra){
@@ -883,9 +1057,21 @@ function logoImg(tk){
 
 // ─── CORS helper para fetches de dados (cotações) ────────────────────
 async function corsGetJSON(url){
-  try{ const r=await fetch(url,{headers:{Accept:'application/json'}}); if(r.ok) return await r.json(); }catch{}
-  try{ const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url)); const j=await r.json(); return JSON.parse(j.contents||'{}'); }catch{}
-  try{ const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url)); if(r.ok) return await r.json(); }catch{}
+  try{
+    const r=await fetch(url,{headers:{Accept:'application/json'}});
+    if(r.ok) return await r.json();
+    console.warn('corsGetJSON direct failed:',r.status,url);
+  }catch(e){ console.warn('corsGetJSON direct error:',e.message,url); }
+  try{
+    const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url));
+    const j=await r.json();
+    return JSON.parse(j.contents||'{}');
+  }catch(e){ console.warn('corsGetJSON allorigins error:',e.message); }
+  try{
+    const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url));
+    if(r.ok) return await r.json();
+    console.warn('corsGetJSON corsproxy failed:',r.status);
+  }catch(e){ console.warn('corsGetJSON corsproxy error:',e.message); }
   throw new Error('Todos os proxies falharam');
 }
 
@@ -1030,13 +1216,10 @@ const D={
     {n:"FIIs",           v:0,  m:13580,c:"#A78BFA",fonte:"calc"},
     {n:"ETFs EUA",       v:0,  m:15520,c:"#38BDF8",fonte:"calc"},
     {n:"Stocks EUA",     v:0,  m:11640,c:"#818CF8",fonte:"calc"},
-    {n:"Cripto",         v:0,  m:2910, c:"#F97316",fonte:"zerado"},
-    {n:"Trade Ações BR", v:0,  m:1940, c:"#6B7280",fonte:"manual"},
+    {n:"Cripto",         v:0,  m:2910, c:"#F97316",fonte:"manual"},
   ],
-  extra:[
-    {n:"Reserva de Emergência",v:5000,m:11640,c:"#16A34A",fonte:"manual"},
-    {n:"Caixa Obra",           v:0,   m:9700, c:"#22C55E",fonte:"manual"},
-  ],
+  extra:[], // preenchido dinamicamente por renderAllocExtra() (somente itens manuais do usuário)
+  cripto:[], // moedas adicionadas manualmente: {moeda, nome, qtd, pm, c (cor)}
   acoes:[
     {tk:"WEGE3",co:"Weg",           st:"Indústria", pm:46.19,cotas:24, dy:4.7, teto:20,obj:"Manter"},
     {tk:"BBSE3",co:"BB Seguridade", st:"Financeiro",pm:33.71,cotas:26, dy:13.3,teto:35,obj:"Manter"},
@@ -1064,9 +1247,9 @@ const D={
     {tk:"BTCI11",seg:"Papel HG",  pm:9.27,  cotas:44, dy:12.45,prov:8.73,  st:"BARATO"},
   ],
   etfs:[
-    {tk:"VOO",fun:"S&P 500 — âncora",inv:806.28,atual:878.10,lucro:71.82,dy:1.11},
-    {tk:"XLI",fun:"Industrial",       inv:205.00,atual:236.58,lucro:31.58,dy:1.14},
-    {tk:"XLV",fun:"Saúde/Biotech",    inv:193.25,atual:193.94,lucro:0.69, dy:1.57},
+    {tk:"VOO",fun:"S&P 500 — âncora",cotas:1.2995,inv:806.28,atual:878.10,lucro:71.82,dy:1.11},
+    {tk:"XLI",fun:"Industrial",       cotas:1.2849,inv:205.00,atual:236.58,lucro:31.58,dy:1.14},
+    {tk:"XLV",fun:"Saúde/Biotech",    cotas:1.2462,inv:193.25,atual:193.94,lucro:0.69, dy:1.57},
   ],
   stocks:[
     {tk:"AVGO",co:"Broadcom",   setor:"Tecnologia", inv:191.01,atual:205.93,lucro:14.92,dy:0.64,obj:"Manter"},
@@ -1208,97 +1391,111 @@ function mkSetores(data,id,pctFn){
 function setLdStatus(txt){ const el=document.getElementById("ldStatus"); if(el) el.textContent=txt; }
 
 /* ─── COTAÇÕES: Yahoo Finance batch ─────────────────────────────────── */
-async function refreshPrices(){
+let _refreshing = false;
+function showRefreshToast(){
+  document.getElementById('refreshToast')?.classList.add('show');
+  const btn = document.getElementById('btnAtualizar');
+  if(btn){ btn.disabled=true; btn.style.opacity='.5'; }
+}
+function hideRefreshToast(){
+  document.getElementById('refreshToast')?.classList.remove('show');
+  const btn = document.getElementById('btnAtualizar');
+  if(btn){ btn.disabled=false; btn.style.opacity=''; }
+}
+
+async function refreshPrices(manual=false){
+  if(_refreshing) return;
+  _refreshing = true;
+  if(manual) showRefreshToast();
+
   const tksAcoes=D.acoes.map(a=>a.tk);
   const tksFiis =D.fiis.map(f=>f.tk);
-  const tksUS   =[...new Set([...D.etfs.map(e=>e.tk),...D.stocks.map(s=>s.tk)])];
-  const allBR   =[...tksAcoes,...tksFiis].map(t=>t+'.SA');
-  const idxSyms =['^BVSP','^GSPC','IFIX11.SA','BRL=X'];
-  const allSyms =[...allBR,...tksUS,...idxSyms];
-
-  // Constrói URL preservando vírgulas, encode só ^ e =
-  const symStr=allSyms.map(s=>s.replace(/\^/g,'%5E').replace(/=/g,'%3D')).join(',');
-  const batchUrl=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symStr}`;
-
+  const tksBR   =[...tksAcoes,...tksFiis,'^BVSP']; // inclui índice na mesma chamada
   let brOK=0;
-  let batchWorked=false;
 
+  /* 1. BR + IBOV via Brapi (token embutido — plano free, 15k req/mês, atualiza a cada 15min) */
+  let ibovOK=false;
   try{
-    const j=await corsGetJSON(batchUrl);
-    const results=j?.quoteResponse?.result;
-    if(results&&results.length>0){
-      batchWorked=true;
-      results.forEach(q=>{
-        const p=q.regularMarketPrice, chg=q.regularMarketChangePercent||0;
-        if(!p) return;
-        const sym=q.symbol;
-        if(sym.endsWith('.SA')){
-          const tk=sym.slice(0,-3); prices[tk]=p; brOK++;
-        } else if(tksUS.includes(sym)){
-          prices[sym]=p;
-          const prev=q.regularMarketPreviousClose||0;
-          D.etfs.filter(e=>e.tk===sym).forEach(e=>{e.priceUSD=p;e.prevClose=prev;});
-          D.stocks.filter(s=>s.tk===sym).forEach(s=>{s.priceUSD=p;s.prevClose=prev;});
-        } else if(sym==='^BVSP')   updMkt('ibov',(p/1000).toFixed(2)+'k',chg);
-        else if(sym==='^GSPC')     updMkt('sp',p.toFixed(0),chg);
-        else if(sym==='IFIX11.SA') updMkt('ifix',p.toFixed(0),chg);
-        else if(sym==='BRL=X')     { usdBRL=p; updMkt('usd','R$\u00a0'+p.toFixed(2),chg); }
+    const symStr = tksBR.map(s=>s.replace('^','%5E')).join(',');
+    const url=`https://brapi.dev/api/quote/${symStr}?token=${BRAPI_TOKEN}`;
+    const j=await corsGetJSON(url);
+    console.log('Brapi resposta completa:', j);
+    if(j.results&&j.results.length){
+      j.results.forEach(q=>{
+        if(!q.regularMarketPrice) { console.warn('Sem regularMarketPrice para',q.symbol,q); return; }
+        if(q.symbol==='^BVSP'){
+          updMkt('ibov',(q.regularMarketPrice/1000).toFixed(2)+'k',q.regularMarketChangePercent||0);
+          ibovOK=true;
+        } else {
+          prices[q.symbol]=q.regularMarketPrice; brOK++;
+        }
       });
     }
-    console.log(`Batch Yahoo: ${results?.length||0} símbolos, ${brOK} BR OK`);
-  }catch(e){ console.warn('Yahoo batch falhou:',e.message); }
+    console.log(`Brapi: ${brOK} ativos BR + IBOV ${ibovOK?'OK':'FALTOU'}`);
+  }catch(e){ console.warn('Brapi falhou:',e.message); }
 
-  // Fallback individual se batch falhou (4 chamadas simultâneas via corsGetJSON)
-  if(!batchWorked){
-    console.log('Usando fallback individual…');
-    // BR em grupos de 5 para não sobrecarregar proxy
-    for(let i=0;i<allBR.length;i+=5){
-      await Promise.allSettled(allBR.slice(i,i+5).map(async sym=>{
-        try{
-          const j=await corsGetJSON(`https://query1.finance.yahoo.com/v8/finance/chart/${sym.replace('^','%5E')}?interval=1m&range=1d`);
-          const m=j?.chart?.result?.[0]?.meta;
-          if(m?.regularMarketPrice){ prices[sym.slice(0,-3)]=m.regularMarketPrice; brOK++; }
-        }catch(e){}
-      }));
-    }
-    // US
-    await Promise.allSettled(tksUS.map(async tk=>{
-      try{
-        const j=await corsGetJSON(`https://query1.finance.yahoo.com/v8/finance/chart/${tk}?interval=1m&range=1d`);
-        const m=j?.chart?.result?.[0]?.meta;
-        if(m?.regularMarketPrice){
-          const p=m.regularMarketPrice,prev=m.chartPreviousClose||0;
-          prices[tk]=p;
-          D.etfs.filter(e=>e.tk===tk).forEach(e=>{e.priceUSD=p;e.prevClose=prev;});
-          D.stocks.filter(s=>s.tk===tk).forEach(s=>{s.priceUSD=p;s.prevClose=prev;});
-        }
-      }catch(e){}
-    }));
-    // Índices
-    await Promise.allSettled([
-      corsGetJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EBVSP?interval=1m&range=1d').then(j=>{const m=j?.chart?.result?.[0]?.meta;if(m?.regularMarketPrice)updMkt('ibov',(m.regularMarketPrice/1000).toFixed(2)+'k',m.regularMarketChangePercent||0);}).catch(()=>updMktErr('ibov')),
-      corsGetJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1m&range=1d').then(j=>{const m=j?.chart?.result?.[0]?.meta;if(m?.regularMarketPrice)updMkt('sp',m.regularMarketPrice.toFixed(0),m.regularMarketChangePercent||0);}).catch(()=>updMktErr('sp')),
-      corsGetJSON('https://query1.finance.yahoo.com/v8/finance/chart/IFIX11.SA?interval=1m&range=1d').then(j=>{const m=j?.chart?.result?.[0]?.meta;if(m?.regularMarketPrice)updMkt('ifix',m.regularMarketPrice.toFixed(0),m.regularMarketChangePercent||0);}).catch(()=>updMktErr('ifix')),
-      corsGetJSON('https://query1.finance.yahoo.com/v8/finance/chart/BRL%3DX?interval=1m&range=1d').then(j=>{const m=j?.chart?.result?.[0]?.meta;if(m?.regularMarketPrice){usdBRL=m.regularMarketPrice;updMkt('usd','R$\u00a0'+usdBRL.toFixed(2),m.regularMarketChangePercent||0);}}).catch(()=>updMktErr('usd')),
-    ]);
+  /* 1b. Fallback: busca ^BVSP isolado se não veio no batch (alguns planos limitam mix de índice+ações) */
+  if(!ibovOK){
+    try{
+      const url2=`https://brapi.dev/api/quote/%5EBVSP?token=${BRAPI_TOKEN}`;
+      const j2=await corsGetJSON(url2);
+      console.log('IBOV isolado resposta:', j2);
+      const q2=j2.results&&j2.results[0];
+      if(q2&&q2.regularMarketPrice){
+        updMkt('ibov',(q2.regularMarketPrice/1000).toFixed(2)+'k',q2.regularMarketChangePercent||0);
+        ibovOK=true;
+      } else { updMktErr('ibov'); }
+    }catch(e){ console.warn('IBOV isolado falhou:',e.message); updMktErr('ibov'); }
   }
+
+  /* 2. USD/BRL e Bitcoin via AwesomeAPI — CORS nativo, sem token, cache de 1min */
+  try{
+    const j=await corsGetJSON('https://economia.awesomeapi.com.br/json/last/USD-BRL,BTC-BRL');
+    if(j.USDBRL){
+      usdBRL=parseFloat(j.USDBRL.bid)||usdBRL;
+      updMkt('usd','R$\u00a0'+usdBRL.toFixed(2),parseFloat(j.USDBRL.pctChange)||0);
+    }
+    if(j.BTCBRL){
+      const btcBRL=parseFloat(j.BTCBRL.bid)||0;
+      prices['BTC']=btcBRL/usdBRL; // guarda em USD para consistência com outras cripto
+      window._btcBRLDireto=btcBRL; // valor direto em BRL, sem precisar reconverter
+      window._btcChange=parseFloat(j.BTCBRL.pctChange)||0;
+    }
+  }catch(e){ console.warn('AwesomeAPI falhou:',e.message); }
+
+  /* 3. ETFs/Stocks EUA — tenta Yahoo (pode falhar por bloqueio externo; best-effort) */
+  const tksUS=[...new Set([...D.etfs.map(e=>e.tk),...D.stocks.map(s=>s.tk)])];
+  await Promise.allSettled(tksUS.map(async tk=>{
+    try{
+      const j=await corsGetJSON(`https://query1.finance.yahoo.com/v8/finance/chart/${tk}?interval=1m&range=1d`);
+      const m=j?.chart?.result?.[0]?.meta;
+      if(m?.regularMarketPrice){
+        const p=m.regularMarketPrice,prev=m.chartPreviousClose||0;
+        prices[tk]=p;
+        D.etfs.filter(e=>e.tk===tk).forEach(e=>{e.priceUSD=p;e.prevClose=prev;});
+        D.stocks.filter(s=>s.tk===tk).forEach(s=>{s.priceUSD=p;s.prevClose=prev;});
+      }
+    }catch(e){}
+  }));
 
   // Status
   const nowTs=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   if(brOK>0){
     pricesArelive=true;
-    document.getElementById('lastUpd').textContent=`Yahoo Finance — ${nowTs}`;
+    document.getElementById('lastUpd').textContent=`Preços atualizados — ${nowTs}`;
     document.getElementById('lastUpd').style.color='';
     const chip=document.getElementById('snapChip');
-    if(chip){chip.textContent=`Yahoo — ${nowTs}`;chip.className='snap-chip live';}
+    if(chip){chip.textContent=`Ao vivo — ${nowTs}`;chip.className='snap-chip live';}
     const s1=document.getElementById('ac-src'),s2=document.getElementById('fi-src');
     if(s1)s1.textContent='ao vivo';if(s2)s2.textContent='ao vivo';
   } else {
     const chip=document.getElementById('snapChip');
     if(chip&&!chip.classList.contains('live')){chip.textContent='Snapshot';chip.className='snap-chip';}
-    document.getElementById('lastUpd').textContent='Yahoo indisponível — snapshot';
+    document.getElementById('lastUpd').textContent='Sem conexão — usando snapshot';
   }
   render();
+  if(manual) hideRefreshToast();
+  _refreshing = false;
 }
 
 function updMkt(key,val,chPct){
@@ -1309,6 +1506,10 @@ function updMkt(key,val,chPct){
   const ch=parseFloat(chPct)||0, up=ch>0, dn=ch<0;
   cEl.className="mk-c "+(up?"up":dn?"dn":"neu");
   cEl.textContent=(up?"▲ ":dn?"▼ ":"")+Math.abs(ch).toFixed(2)+"%";
+  // Cache local — garante que nunca mostra "—" na próxima carga, mesmo com delay
+  try{
+    localStorage.setItem("mktCache_"+key, JSON.stringify({val,chPct:ch,ts:Date.now()}));
+  }catch(e){}
 }
 function updMktErr(key){
   const vEl=document.getElementById("mk-"+key+"-v");
@@ -1317,9 +1518,20 @@ function updMktErr(key){
   vEl.textContent="—"; cEl.textContent="—"; cEl.className="mk-c neu";
 }
 
+/* Carrega valores em cache local imediatamente — evita "—" enquanto a rede não responde.
+   Mesmo com alguns minutos de atraso, sempre mostra um valor. */
+function loadMktCache(){
+  ["ibov","usd"].forEach(key=>{
+    try{
+      const cached=JSON.parse(localStorage.getItem("mktCache_"+key)||"null");
+      if(cached) updMkt(key,cached.val,cached.chPct);
+    }catch(e){}
+  });
+}
+
 /* ─── METAS DE ALOCAÇÃO ─────────────────────────────────────────────── */
 const METAS_KEY = "aloc_metas";
-const METAS_DEFAULT = {acoes:20, fiis:22, etfs:20, stocks:15, rf:18};
+const METAS_DEFAULT = {acoes:20, fiis:22, etfs:20, stocks:15, rf:18, cripto:0};
 
 function getMetasAloc(){
   try{ return {...METAS_DEFAULT,...JSON.parse(localStorage.getItem(METAS_KEY)||"{}")}; }
@@ -1331,16 +1543,26 @@ function renderMetasAloc(){
   if(!tbody) return;
   const metas = getMetasAloc();
   const rfVal = D.rf && D.rf.length ? D.rf.reduce((s,r)=>s+(r.bruto||r.inv||0),0) : 7183.30;
+  // ETFs: usa cotas * priceUSD ao vivo quando disponível (idêntico à planilha com Google Finance)
+  const etfVal = D.etfs.reduce((s,e)=>{
+    const atualUSD = (e.cotas && e.priceUSD) ? e.cotas*e.priceUSD : e.atual;
+    return s + atualUSD*usdBRL;
+  },0);
+  // Stocks: ajusta snapshot pelo ratio do preço de ontem (sem cotas no dado)
+  const stVal = D.stocks.reduce((s,st)=>{
+    const adj = (st.priceUSD && st.prevClose>0) ? st.priceUSD/st.prevClose : 1;
+    return s + st.atual*adj*usdBRL;
+  },0);
+  // Ordem e nomes iguais à planilha ATIVOS % + Cripto (só aparece se tiver valor)
   const classes = [
-    {id:"acoes",  name:"Ações BR",     val: D.acoes.reduce((s,a)=>s+posVal(a),0)},
-    {id:"fiis",   name:"FIIs",         val: D.fiis.reduce((s,f)=>s+posVal(f),0)},
-    {id:"etfs",   name:"ETFs EUA",     val: D.etfs.reduce((s,e)=>s+(e.priceUSD||e.atual/usdBRL)*e.inv/e.atual*usdBRL||e.atual*usdBRL,0)},
-    {id:"stocks", name:"Stocks EUA",   val: D.stocks.reduce((s,s2)=>s+(s2.priceUSD?s2.atual*(s2.priceUSD/s2.prevClose||1):s2.atual)*usdBRL,0)||D.stocks.reduce((s,s2)=>s+s2.atual,0)*usdBRL},
-    {id:"rf",     name:"Renda Fixa",   val: rfVal},
+    {id:"fiis",   name:"FIIs",                val: D.fiis.reduce((s,f)=>s+posVal(f),0)},
+    {id:"acoes",  name:"Ações Brasil",         val: D.acoes.reduce((s,a)=>s+posVal(a),0)},
+    {id:"stocks", name:"Stocks EUA",           val: stVal},
+    {id:"etfs",   name:"ETFs Internacionais",  val: etfVal},
+    {id:"rf",     name:"Tesouro IPCA+",        val: rfVal},
   ];
-  // Usa valor simples sem tentar recalcular pelo priceUSD (ETFs/Stocks não têm cotas)
-  classes[2].val = D.etfs.reduce((s,e)=>s+e.atual,0)*usdBRL;
-  classes[3].val = D.stocks.reduce((s,s2)=>s+s2.atual,0)*usdBRL;
+  const criptoVal = getCriptoTotal();
+  if(criptoVal>0) classes.push({id:"cripto", name:"Cripto", val: criptoVal});
 
   const total = classes.reduce((s,c)=>s+c.val,0);
   let totalMeta = 0;
@@ -1351,7 +1573,10 @@ function renderMetasAloc(){
     totalMeta += meta;
     const devia = total*meta/100;
     const gap = c.val - devia;
-    const gapColor = gap>200?"var(--neg)":gap<-200?"var(--pos)":"var(--muted)";
+    // Positivo = excesso (cor laranja/atenção), Negativo = oportunidade de comprar (cor azul)
+    const absGap = Math.abs(gap);
+    const gapColor = absGap < 100 ? 'var(--muted)' : gap > 0 ? 'var(--gold)' : 'var(--pos)';
+    const gapPrefix = gap >= 0 ? '+' : '';
     return `<tr>
       <td class="l" style="font-weight:500">${c.name}</td>
       <td class="r" style="font-family:var(--mono)">${brl(c.val,0)}</td>
@@ -1365,7 +1590,7 @@ function renderMetasAloc(){
           oninput="recalcMetaRow(this)"/>%
       </td>
       <td class="r meta-devia" style="font-family:var(--mono)">${brl(devia,0)}</td>
-      <td class="r meta-gap" style="font-family:var(--mono);color:${gapColor}">${gap>=0?"+":""}${brl(gap,0)}</td>
+      <td class="r meta-gap" style="font-family:var(--mono);color:${gapColor}">${gapPrefix}${brl(gap,0)}</td>
     </tr>`;
   }).join("") + `<tr style="border-top:1px solid var(--border);font-weight:600">
     <td class="l" style="color:var(--muted);font-size:11px">TOTAL</td>
@@ -1383,7 +1608,7 @@ function recalcMetaRow(inp){
   const meta = parseFloat(inp.value)||0;
   const devia = total*meta/100;
   const gap = val - devia;
-  const gapColor = gap>200?"var(--neg)":gap<-200?"var(--pos)":"var(--muted)";
+  const gapColor = Math.abs(gap)<100?'var(--muted)':gap>0?'var(--gold)':'var(--pos)';
   row.querySelector(".meta-devia").textContent = brl(devia,0);
   const gapEl = row.querySelector(".meta-gap");
   gapEl.textContent = (gap>=0?"+":"")+brl(gap,0);
@@ -1427,17 +1652,44 @@ function render(){
   const lucroSTK=D.stocks.reduce((s,s2)=>s+s2.lucro,0)*usdBRL;
 
   D.invest.find(c=>c.n==="Ações Brasil").v=totAcoes;
+  D.invest.find(c=>c.n==="Ações Brasil").lucro=lucroAcoes;
   D.invest.find(c=>c.n==="FIIs").v=totFiis;
+  D.invest.find(c=>c.n==="FIIs").lucro=lucroFiis;
   D.invest.find(c=>c.n==="ETFs EUA").v=totETF;
+  D.invest.find(c=>c.n==="ETFs EUA").lucro=lucroETF;
   D.invest.find(c=>c.n==="Stocks EUA").v=totSTK;
+  D.invest.find(c=>c.n==="Stocks EUA").lucro=lucroSTK;
 
   const meta=D.metas[D.activeMeta].v;
   const totalInvest=D.invest.reduce((s,c)=>s+c.v,0);
   const falta=Math.max(0,meta-totalInvest);
   const pct=totalInvest/meta*100;
 
+  /* Variação real da carteira: ganho/perda sobre o custo investido (sem dividendos) */
+  const custoAcoes = D.acoes.reduce((s,a)=>s+a.pm*a.cotas,0);
+  const custoFiis  = D.fiis.reduce((s,f)=>s+f.pm*f.cotas,0);
+  const custoETF   = D.etfs.reduce((s,e)=>s+e.inv,0)*usdBRL;
+  const custoSTK   = D.stocks.reduce((s,s2)=>s+s2.inv,0)*usdBRL;
+  const custoCripto = D.cripto.reduce((s,c)=>s+c.pm*c.qtd,0);
+  const custoTotal = custoAcoes+custoFiis+custoETF+custoSTK+custoCripto;
+  const lucroCriptoCalc = getCriptoTotal()-custoCripto;
+  const lucroTotalPortfolio = lucroAcoes+lucroFiis+lucroETF+lucroSTK+lucroCriptoCalc;
+  const variacaoPct = custoTotal>0 ? (lucroTotalPortfolio/custoTotal*100) : 0;
+  const pillEl = document.getElementById("hVariacaoPill");
+  const hVar = document.getElementById("hVariacao");
+  if(hVar && pillEl){
+    const vSign = variacaoPct>=0?'+':'';
+    pillEl.className = 'var-pill ' + (variacaoPct>0?'up':variacaoPct<0?'dn':'');
+    hVar.textContent = `${vSign}${variacaoPct.toFixed(2)}%`;
+  }
+  // Guarda custo por classe para uso nos cards de Alocação (variação individual)
+  window._custoPorClasse = {
+    "Ações Brasil":custoAcoes, "FIIs":custoFiis,
+    "ETFs EUA":custoETF, "Stocks EUA":custoSTK, "Cripto":custoCripto,
+  };
+
   /* hero */
-  g("hPatr").textContent=brl(totalInvest,2);
+  g("hPatrVal").textContent=brl(totalInvest,2);
   g("hSub").textContent="Meta: "+brl(meta);
   g("hFalta").textContent="Faltam "+brl(falta,2);
   g("hAcoes").textContent=brl(totAcoes,2);
@@ -1463,6 +1715,7 @@ function render(){
   const gh=document.createElement("div"); gh.className="mghost"; gh.style.flexGrow=falta; bar.appendChild(gh);
 
   renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis);
+  renderCripto();
   renderAlloc();
   renderMetasAloc();
   renderAcoes(totAcoes);
@@ -1526,29 +1779,243 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
   });
 }
 
-/* alloc */
+/* ─── CRIPTO ─────────────────────────────────────────────────────────── */
+const CRIPTO_DATA_KEY = "criptoAtivos";
+function loadCriptoAtivos(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(CRIPTO_DATA_KEY)||"[]");
+    if(saved.length) D.cripto = saved;
+  }catch(e){}
+}
+function saveCriptoAtivos(){
+  localStorage.setItem(CRIPTO_DATA_KEY, JSON.stringify(D.cripto));
+}
+
+function cryptoPrecoBRL(moeda){
+  // BTC tem cotação ao vivo via AwesomeAPI; demais moedas usam o PM (sem fonte gratuita confiável)
+  if(moeda==="BTC" && window._btcBRLDireto) return window._btcBRLDireto;
+  return null; // sem cotação ao vivo — usa PM como fallback
+}
+
+function renderCripto(){
+  const tbody = document.getElementById("cryptoTbl");
+  if(!tbody) return;
+  saveCriptoAtivos();
+
+  if(!D.cripto.length){
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px 0">
+      Nenhuma posição em cripto ainda. Clique em "+ Adicionar moeda" para começar.
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = D.cripto.map((c,idx)=>{
+    const precoVivo = cryptoPrecoBRL(c.moeda);
+    const preco = precoVivo || c.pm;
+    const totInv = c.pm*c.qtd;
+    const totCorretora = preco*c.qtd;
+    const lucro = precoVivo ? (totCorretora-totInv) : 0;
+    const lucroColor = lucro>0?'var(--pos)':lucro<0?'var(--neg)':'var(--muted)';
+    return `<tr>
+      <td><div class="ativo-cell">
+        <span class="ativo-initials" style="background:${c.c};color:#fff">${c.moeda.slice(0,2)}</span>
+        <div><div class="tk">${c.moeda}</div><div class="co">${c.nome}</div></div>
+      </div></td>
+      <td class="r" style="font-family:var(--mono)">${c.qtd}</td>
+      <td class="r" style="font-family:var(--mono)">${brl(totInv,2)}</td>
+      <td class="r" style="font-family:var(--mono)">${brl(totCorretora,2)}</td>
+      <td class="r" style="font-family:var(--mono);color:${precoVivo?'var(--text)':'var(--muted)'}">${precoVivo?brl(preco,2):'PM'}</td>
+      <td class="r" style="font-family:var(--mono);color:${lucroColor};font-weight:600">${lucro>=0?'+':''}${brl(lucro,2)}
+        <span onclick="deleteCripto(${idx})" style="cursor:pointer;color:var(--neg);margin-left:8px;font-size:12px" title="Remover">✕</span>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
+function deleteCripto(idx){
+  if(!confirm("Remover essa posição?")) return;
+  D.cripto.splice(idx,1);
+  renderCripto();
+  renderAlloc();
+  renderMetasAloc();
+}
+
+function getCriptoTotal(){
+  return D.cripto.reduce((s,c)=>{
+    const precoVivo = cryptoPrecoBRL(c.moeda);
+    const preco = precoVivo || c.pm;
+    return s + preco*c.qtd;
+  },0);
+}
 function renderAlloc(){
+  // Cripto agora usa total real calculado das posições (não mais valor manual avulso)
+  const cripto = D.invest.find(c=>c.n==="Cripto");
+  if(cripto){
+    cripto.v = getCriptoTotal();
+    const custoCripto = D.cripto.reduce((s,c)=>s+c.pm*c.qtd,0);
+    cripto.lucro = cripto.v - custoCripto;
+  }
   renderAllocSec("allocGrid",D.invest);
-  renderAllocSec("allocExtra",D.extra);
+  renderAllocExtra();
 }
 function renderAllocSec(gid,arr){
   const g2=g(gid); g2.innerHTML="";
-  const tabMap={"Ações Brasil":"acoes","FIIs":"fiis","Renda Fixa IPCA":"rf","ETFs EUA":"etfs","Stocks EUA":"stocks"};
+  const tabMap={"Ações Brasil":"acoes","FIIs":"fiis","Renda Fixa IPCA":"rf","ETFs EUA":"etfs","Stocks EUA":"stocks","Cripto":"cripto"};
+  const custoMap = window._custoPorClasse||{};
   arr.forEach(c=>{
-    const falta=Math.max(0,c.m-c.v), pct=Math.min(100,c.v/c.m*100);
-    const tag=c.fonte==="calc"?'<span class="tag-sm calc">CALC</span>':c.fonte==="planilha"?'<span class="tag-sm plan">PLAN</span>':"";
+    const pct = c.m>0 ? Math.min(100,c.v/c.m*100) : 0;
+    const lucro = c.lucro||0;
+    const lucroColor = lucro>0?'var(--pos)':lucro<0?'var(--neg)':'var(--muted)';
+    const lucroSign = lucro>=0?'+':'';
+    const custo = custoMap[c.n]||0;
+    const varPct = custo>0 ? (lucro/custo*100) : null;
+    const varTxt = varPct!==null ? ` (${varPct>=0?'+':''}${varPct.toFixed(1)}%)` : '';
     const el=document.createElement("div"); el.className="acard";
     el.onclick=()=>{const t=tabMap[c.n];if(t) goTab(t);};
     el.innerHTML=`<div class="ac-top">
-      <div class="ac-name"><span class="ac-sw" style="background:${c.c}"></span>${c.n}${tag}</div>
+      <div class="ac-name"><span class="ac-sw" style="background:${c.c}"></span>${c.n}</div>
       <span class="ac-pct">${pct.toFixed(0)}%</span></div>
     <div class="ac-track"><div class="ac-fill" style="width:${pct}%;background:${c.c}"></div></div>
     <div class="ac-bot">
       <span class="ac-cur">${brl(c.v,2)}</span>
-      ${falta>0?`<span class="ac-falta">faltam ${brl(falta,2)}</span>`:'<span class="ac-ok">✓ meta</span>'}
+      <span style="font-size:10px;font-family:var(--mono);font-weight:600;color:${lucroColor}">${lucroSign}${brl(lucro,2)}${varTxt}</span>
     </div>`;
     g2.appendChild(el);
   });
+}
+
+/* ─── ITENS EXTRAS CUSTOMIZÁVEIS (Reserva/Caixa) ───────────────────── */
+const EXTRA_KEY = "extraItems";
+const EXTRA_COLORS = ["#16A34A","#22C55E","#0EA5E9","#A855F7","#F59E0B","#EF4444","#6366F1"];
+const EXTRA_MAX = 5; // máximo de itens — todos manuais, sem padrão fixo
+let _editingExtraIdx = null;
+
+function getCustomExtra(){
+  try{ return JSON.parse(localStorage.getItem(EXTRA_KEY)||"[]"); }
+  catch(e){ return []; }
+}
+function saveCustomExtra(list){
+  localStorage.setItem(EXTRA_KEY, JSON.stringify(list));
+}
+function getAllExtra(){
+  return getCustomExtra(); // sem itens padrão — só o que o usuário adicionar manualmente
+}
+
+function renderAllocExtra(){
+  const all = getAllExtra();
+  D.extra = all; // mantém compatível com o resto do código que lê D.extra
+  renderAllocSec("allocExtra", all);
+
+  // Card "+ Adicionar" inline no grid, só se ainda houver espaço
+  const custom = getCustomExtra();
+  if(custom.length < EXTRA_MAX){
+    const g2=g("allocExtra");
+    const addCard=document.createElement("div");
+    addCard.className="acard";
+    addCard.style.cssText="display:flex;align-items:center;justify-content:center;cursor:pointer;border-style:dashed;min-height:84px";
+    addCard.innerHTML=`<span style="color:var(--muted);font-size:13px;font-weight:600">+ Adicionar item</span>`;
+    addCard.onclick=()=>openAddExtraItem();
+    g2.appendChild(addCard);
+  }
+
+  // Botão de editar/excluir nos cards customizados (clique direito não é intuitivo — usa duplo-clique ou ícone)
+  const customNames = custom.map(c=>c.n);
+  document.querySelectorAll("#allocExtra .acard").forEach(card=>{
+    const nameEl = card.querySelector(".ac-name");
+    if(!nameEl) return;
+    const name = nameEl.textContent.replace("CALC","").replace("PLAN","").trim();
+    if(customNames.includes(name)){
+      card.style.cursor="pointer";
+      card.title="Clique para editar";
+      card.onclick=(e)=>{ e.stopPropagation(); openEditExtraItem(name); };
+    }
+  });
+
+  // Total
+  const totalBar = document.getElementById("extraTotalBar");
+  if(totalBar){
+    const total = all.reduce((s,c)=>s+c.v,0);
+    const totalMeta = all.reduce((s,c)=>s+c.m,0);
+    totalBar.textContent = `Total: ${brl(total,2)}` + (totalMeta>0?` de ${brl(totalMeta,2)} planejado`:"");
+  }
+}
+
+function openAddExtraItem(){
+  _editingExtraIdx = null;
+  document.getElementById("extraModalTitle").textContent="Adicionar item";
+  document.getElementById("exName").value="";
+  document.getElementById("exVal").value="";
+  document.getElementById("exMeta").value="";
+  document.getElementById("exDeleteBtn").style.display="none";
+  renderExColorPicker(EXTRA_COLORS[getCustomExtra().length % EXTRA_COLORS.length]);
+  document.getElementById("modExtra").classList.add("open");
+}
+
+function openEditExtraItem(name){
+  const custom = getCustomExtra();
+  const idx = custom.findIndex(c=>c.n===name);
+  if(idx<0) return;
+  _editingExtraIdx = idx;
+  const item = custom[idx];
+  document.getElementById("extraModalTitle").textContent="Editar item";
+  document.getElementById("exName").value=item.n;
+  document.getElementById("exVal").value=item.v;
+  document.getElementById("exMeta").value=item.m||"";
+  document.getElementById("exDeleteBtn").style.display="block";
+  renderExColorPicker(item.c);
+  document.getElementById("modExtra").classList.add("open");
+}
+
+function renderExColorPicker(selected){
+  const wrap=document.getElementById("exColorPicker");
+  wrap.innerHTML="";
+  wrap.dataset.selected=selected;
+  EXTRA_COLORS.forEach(c=>{
+    const sw=document.createElement("div");
+    sw.style.cssText=`width:24px;height:24px;border-radius:50%;background:${c};cursor:pointer;
+      border:2px solid ${c===selected?"var(--text)":"transparent"};transition:transform .12s`;
+    sw.onclick=()=>{
+      wrap.dataset.selected=c;
+      wrap.querySelectorAll("div").forEach(d=>d.style.border="2px solid transparent");
+      sw.style.border="2px solid var(--text)";
+    };
+    wrap.appendChild(sw);
+  });
+}
+
+function closeExtraItem(){
+  document.getElementById("modExtra").classList.remove("open");
+}
+
+function saveExtraItem(){
+  const name = document.getElementById("exName").value.trim();
+  const val = parseFloat(document.getElementById("exVal").value)||0;
+  const meta = parseFloat(document.getElementById("exMeta").value)||0;
+  const color = document.getElementById("exColorPicker").dataset.selected||EXTRA_COLORS[0];
+  if(!name){ alert("Digite um nome para o item"); return; }
+
+  const custom = getCustomExtra();
+  const item = {n:name, v:val, m:meta||val||1, c:color, fonte:"manual"};
+
+  if(_editingExtraIdx !== null){
+    custom[_editingExtraIdx] = item;
+  } else {
+    if(custom.length >= EXTRA_MAX){ alert(`Máximo de ${EXTRA_MAX} itens customizados`); return; }
+    custom.push(item);
+  }
+  saveCustomExtra(custom);
+  closeExtraItem();
+  renderAllocExtra();
+}
+
+function deleteExtraItem(){
+  if(_editingExtraIdx === null) return;
+  if(!confirm("Excluir este item?")) return;
+  const custom = getCustomExtra();
+  custom.splice(_editingExtraIdx, 1);
+  saveCustomExtra(custom);
+  closeExtraItem();
+  renderAllocExtra();
 }
 
 /* ações */
@@ -1846,12 +2313,34 @@ let addAtivoTipo = 'acoes';
 function openAddAtivo(tipo){
   addAtivoTipo=tipo;
   document.getElementById("addModalTitle").textContent=
-    tipo==="acoes"?"Adicionar Ação":tipo==="fiis"?"Adicionar FII":"Adicionar Ativo EUA";
+    tipo==="acoes"?"Adicionar Ação":tipo==="fiis"?"Adicionar FII":tipo==="cripto"?"Adicionar Cripto":"Adicionar Ativo EUA";
   document.getElementById("addTicker").value="";
   document.getElementById("addPM").value="";
   document.getElementById("addCotas").value="";
   document.getElementById("addDY").value="";
   document.getElementById("addPreview").style.display="none";
+  const cotasInput=document.getElementById("addCotas");
+  const tickerInput=document.getElementById("addTicker");
+  const setorRow=document.getElementById("addSetorRow");
+  const pmLabel=document.getElementById("addPMLabel");
+  const cotasLabel=document.getElementById("addCotasLabel");
+  if(tipo==="cripto"){
+    cotasInput.step="0.00000001";
+    cotasInput.placeholder="0.00351089";
+    tickerInput.placeholder="BTC, ETH, SOL…";
+    tickerInput.setAttribute("list","cryptoTickerList"); // só sugestões de cripto
+    setorRow.style.display="none"; // Setor/DY não fazem sentido para cripto
+    pmLabel.textContent="Preço médio (R$)";
+    cotasLabel.textContent="Qtd. moeda";
+  } else {
+    cotasInput.step="1";
+    cotasInput.placeholder="23";
+    tickerInput.placeholder="Digite ou selecione…";
+    tickerInput.setAttribute("list","tickerList"); // tickers B3/EUA normais
+    setorRow.style.display="grid";
+    pmLabel.textContent="Preço médio (R$)";
+    cotasLabel.textContent="Qtd. cotas";
+  }
   document.getElementById("modAdd").classList.add("open");
 }
 function closeAddAtivo(){ document.getElementById("modAdd").classList.remove("open"); }
@@ -1860,7 +2349,7 @@ function closeAddAtivo(){ document.getElementById("modAdd").classList.remove("op
 ["addPM","addCotas"].forEach(id=>{
   document.getElementById(id)?.addEventListener("input", ()=>{
     const pm=parseFloat(document.getElementById("addPM").value)||0;
-    const cotas=parseInt(document.getElementById("addCotas").value)||0;
+    const cotas=parseFloat(document.getElementById("addCotas").value)||0; // parseFloat — não trunca decimais de cripto
     if(pm&&cotas){
       document.getElementById("addTotInv").textContent=brl(pm*cotas,2);
       document.getElementById("addPreview").style.display="block";
@@ -1868,10 +2357,32 @@ function closeAddAtivo(){ document.getElementById("modAdd").classList.remove("op
   });
 });
 
+// Auto-preenche Preço Médio sugerido ao digitar ticker de cripto conhecido (evita erro de casa decimal)
+const CRYPTO_PRICE_HINTS = { BTC:"BTCBRL", ETH:"ETHBRL", LTC:"LTCBRL" }; // AwesomeAPI suporta esses pares diretos
+document.getElementById("addTicker")?.addEventListener("blur", async function(){
+  if(addAtivoTipo!=="cripto") return;
+  const tk=this.value.toUpperCase().trim();
+  const pmField=document.getElementById("addPM");
+  if(pmField.value) return; // não sobrescreve se usuário já digitou algo
+  const pair=CRYPTO_PRICE_HINTS[tk];
+  if(!pair) return;
+  try{
+    const j=await corsGetJSON(`https://economia.awesomeapi.com.br/json/last/${tk}-BRL`);
+    const key=tk+"BRL";
+    if(j[key]&&j[key].bid){
+      const precoSugerido=parseFloat(j[key].bid);
+      pmField.value=precoSugerido.toFixed(2);
+      pmField.style.borderColor="var(--pos)";
+      pmField.title=`Sugestão automática: cotação atual de ${tk}. Edite se necessário.`;
+      setTimeout(()=>{pmField.style.borderColor="";},2000);
+    }
+  }catch(e){ console.warn("Não foi possível sugerir preço para",tk,e.message); }
+});
+
 async function confirmarAddAtivo(){
   const tk=document.getElementById("addTicker").value.toUpperCase().trim();
   const pm=parseFloat(document.getElementById("addPM").value)||0;
-  const cotas=parseInt(document.getElementById("addCotas").value)||0;
+  const cotas=parseFloat(document.getElementById("addCotas").value)||0;
   const setor=document.getElementById("addSetor").value;
   const dy=parseFloat(document.getElementById("addDY").value)||0;
   if(!tk||!pm||!cotas){ alert("Preencha Ticker, Preço médio e Cotas."); return; }
@@ -1881,6 +2392,14 @@ async function confirmarAddAtivo(){
     D.acoes.push({tk,co:tk,st:setor,pm,cotas,dy,teto,obj:"Manter"});
   } else if(addAtivoTipo==="fiis"){
     D.fiis.push({tk,seg:setor,pm,cotas,dy,prov:0,st:"NEUTRO"});
+  } else if(addAtivoTipo==="cripto"){
+    const cCores=["#F7931A","#627EEA","#8247E5","#F3BA2F","#23292F","#345D9D"];
+    const cor=cCores[D.cripto.length % cCores.length];
+    D.cripto.push({moeda:tk,nome:tk,qtd:cotas,pm,c:cor});
+    renderCripto();
+    closeAddAtivo();
+    renderAlloc(); renderMetasAloc();
+    return;
   }
 
   // salva no Supabase se conectado (tabela futura)
@@ -2107,7 +2626,9 @@ function applyTVTheme(){ /* TradingView removido — mkt-strip estático */ }
   try{
   /* 1. Renderiza esqueleto — sem dados ainda */
   setLdStatus("Aguardando cotações…");
-  // Não usa snapshot — mostra estado real de carregamento
+  // Carrega cache local de mercado imediatamente — evita "—" enquanto a rede não responde
+  loadMktCache();
+  loadCriptoAtivos();
 
   /* 2. Carrega dados do Supabase */
   setLdStatus("Conectando ao banco…");
@@ -2171,7 +2692,7 @@ function applyTVTheme(){ /* TradingView removido — mkt-strip estático */ }
   await refreshPrices();
 
   /* 5. Auto-refresh a cada 60s */
-  setInterval(refreshPrices, 60*1000);
+  setInterval(()=>refreshPrices(false), 60*1000);
 
   } catch(fatalErr) {
     console.error("INIT ERRO:", fatalErr);
