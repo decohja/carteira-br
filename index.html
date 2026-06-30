@@ -6,6 +6,7 @@
 <title>ativo·br</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ─── TOKENS ─────────────────────────── */
 :root{
@@ -62,6 +63,42 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   animation:ldbar 2s ease-in-out infinite}
 @keyframes ldbar{0%{width:0;margin-left:0}60%{width:100%;margin-left:0}100%{width:0;margin-left:100%}}
 .ld-status{font-size:11px;color:var(--faint);font-family:var(--mono);margin-top:4px}
+
+/* ─── LOGIN SCREEN ───────────────────── */
+#loginScreen{
+  position:fixed;inset:0;z-index:10000;
+  background:var(--bg);
+  display:none;align-items:center;justify-content:center;
+  padding:24px;
+}
+#loginScreen.show{display:flex}
+#loginScreen::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 600px 400px at 50% 0%,var(--gold-bg),transparent 70%);
+}
+.login-card{position:relative;width:min(380px,100%);text-align:center}
+.login-logo{width:60px;height:60px;border-radius:18px;margin:0 auto 18px;
+  background:linear-gradient(135deg,var(--gold-l),var(--gold),#8B5E0A);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:700;color:#fff;
+  box-shadow:0 0 50px rgba(200,146,42,.35);
+}
+.login-title{font-size:22px;font-weight:600;letter-spacing:-.02em;margin-bottom:6px}
+.login-title em{color:var(--gold);font-style:normal}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:32px;line-height:1.6}
+.login-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:13px 18px;border-radius:var(--r);border:1px solid var(--border2);
+  background:var(--bg2);color:var(--text);font-family:var(--font);font-size:14px;font-weight:600;
+  cursor:pointer;transition:border-color .15s,transform .15s;margin-bottom:12px;
+}
+.login-btn:hover{border-color:var(--border3);transform:translateY(-1px)}
+.login-btn:active{transform:translateY(0)}
+.login-btn svg{flex-shrink:0}
+.login-btn.b3{color:var(--muted);cursor:default;justify-content:space-between;padding:13px 16px}
+.login-btn.b3:hover{transform:none;border-color:var(--border2)}
+.login-btn.b3 .b3-lbl{display:flex;align-items:center;gap:10px}
+.login-foot{font-size:11px;color:var(--faint);margin-top:22px;line-height:1.6}
+.login-err{font-size:12px;color:var(--neg);margin-top:10px;display:none}
+.login-err.show{display:block}
 
 /* ─── HEADER ─────────────────────────── */
 .hdr{
@@ -590,6 +627,25 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
   <div class="ld-status" id="ldStatus">Inicializando…</div>
 </div>
 
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">A</div>
+    <div class="login-title">ativo<em>·br</em></div>
+    <div class="login-sub">Sua carteira de investimentos,<br/>organizada em um só lugar.</div>
+    <button class="login-btn" id="googleLoginBtn" onclick="loginWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.93v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.41 5.41 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.93A9 9 0 0 0 0 9c0 1.45.35 2.83.93 4.05l3.04-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.59-2.59C13.46.89 11.43 0 9 0A9 9 0 0 0 .93 4.95l3.04 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+      Entrar com Google
+    </button>
+    <button class="login-btn b3" disabled title="Integração direta com a B3 — em breve">
+      <span class="b3-lbl">🏛️ Integração com a B3</span>
+      <span class="pill core">EM BREVE</span>
+    </button>
+    <div class="login-err" id="loginErr"></div>
+    <div class="login-foot">Seus dados ficam vinculados à sua conta Google.<br/>Ninguém mais tem acesso à sua carteira.</div>
+  </div>
+</div>
+
 <!-- HEADER -->
 <header class="hdr">
   <button class="ham-btn" id="hamBtn" title="Menu">
@@ -682,6 +738,17 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
 
 <!-- CONTENT -->
 <main class="content">
+
+<!-- Banner de primeiro acesso: carteira ainda não salva na nuvem -->
+<div id="migBanner" style="display:none;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:var(--r);
+  padding:12px 14px;margin-bottom:14px;flex-wrap:wrap">
+  <div style="font-size:12px;color:var(--text);line-height:1.5">
+    <strong>Primeira vez por aqui.</strong> Esta é a sua carteira atual — ela ainda só existe neste navegador.
+    Salve na nuvem pra acessar de qualquer dispositivo, sempre vinculada à sua conta Google.
+  </div>
+  <button class="btn-pri" style="white-space:nowrap" onclick="salvarCarteiraNaNuvem().then(()=>{ const b=document.getElementById('migBanner'); if(b)b.style.display='none'; })">☁️ Salvar carteira na nuvem</button>
+</div>
 
 <!-- VISÃO GERAL -->
 <section class="panel on" id="p-visao">
@@ -1093,15 +1160,14 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
     <div id="mt-login">
       <div class="avt-up" id="avtUp" onclick="document.getElementById('avtFile').click()">📷</div>
       <input type="file" id="avtFile" accept="image/*" style="display:none" onchange="upAvt(this)"/>
-      <div class="frow2" style="margin-bottom:0">
-        <div><label class="flbl">Nome</label><input class="finp" id="uName" value="Denys"/></div>
-        <div><label class="flbl">Inicial</label><input class="finp" id="uInit" value="D" maxlength="2" oninput="document.getElementById('avtBtn').textContent=this.value||'D'"/></div>
-      </div>
-      <label class="flbl" style="margin-top:10px">E-mail</label>
-      <input class="finp" id="uEmail" type="email" placeholder="seu@email.com" style="margin-bottom:10px"/>
+      <p style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:14px">Toque na foto para usar uma imagem personalizada</p>
+      <label class="flbl">Nome</label>
+      <input class="finp" id="uName" value="" readonly style="opacity:.75;margin-bottom:10px;cursor:default"/>
+      <label class="flbl">E-mail</label>
+      <input class="finp" id="uEmail" type="email" readonly style="opacity:.75;margin-bottom:10px;cursor:default"/>
       <div class="sep"></div>
-      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">🔒 Login completo com senha e sessão multi-dispositivo funciona quando hospedar com Supabase.</p>
-      <button class="btn-pri" style="width:100%" onclick="saveUser()">Salvar perfil</button>
+      <p style="font-size:11px;color:var(--pos);margin-bottom:10px;line-height:1.6">✓ Conectado com sua conta Google — esses dados ficam vinculados só a ela.</p>
+      <button class="btn-sec" style="width:100%;color:var(--neg);border-color:var(--neg-dim)" onclick="logout()">Sair da conta</button>
     </div>
 
     <div id="mt-metas" style="display:none">
@@ -1143,6 +1209,13 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
 const SB_URL = 'https://pojzzwxuawpqvrethncz.supabase.co';
 const SB_KEY = 'sb_publishable_I3WoWXxxvEpGdwBmiDppjQ_RWKSkUTZ';
 
+// Cliente de autenticação (Google OAuth via Supabase Auth)
+const sbAuth = supabase.createClient(SB_URL, SB_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+let userAccessToken = null; // JWT do usuário logado — substitui a anon key nas chamadas REST
+let currentUser = null;     // { id, email, user_metadata:{name,avatar_url} }
+
 // Token Brapi embutido — nunca exposto em campo de UI, plano free (15k req/mês)
 const BRAPI_TOKEN = 'cAycArQLxF2iZbAuzqJyta';
 
@@ -1150,7 +1223,7 @@ const SB = {
   headers(extra){
     return {
       'apikey': SB_KEY,
-      'Authorization': 'Bearer ' + SB_KEY,
+      'Authorization': 'Bearer ' + (userAccessToken || SB_KEY),
       'Content-Type': 'application/json',
       ...extra
     };
@@ -1195,6 +1268,72 @@ const SB = {
     if(!r.ok) throw new Error(await r.text());
   }
 };
+
+// ─── AUTH (Google via Supabase) ───────────────────────────────────────
+async function loginWithGoogle(){
+  const errEl = document.getElementById('loginErr');
+  if(errEl) errEl.classList.remove('show');
+  const btn = document.getElementById('googleLoginBtn');
+  if(btn){ btn.disabled = true; btn.style.opacity = '.6'; }
+  const { error } = await sbAuth.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if(error){
+    if(btn){ btn.disabled = false; btn.style.opacity = '1'; }
+    if(errEl){ errEl.textContent = 'Não foi possível entrar: ' + error.message; errEl.classList.add('show'); }
+  }
+  // em caso de sucesso o navegador é redirecionado para o Google — nada mais a fazer aqui
+}
+async function logout(){
+  closeMod(); closeMenu();
+  await sbAuth.auth.signOut();
+  location.reload();
+}
+function showLoginScreen(){
+  const ld = document.getElementById('loading'); if(ld) ld.classList.add('out');
+  const ls = document.getElementById('loginScreen'); if(ls) ls.classList.add('show');
+}
+function hideLoginScreen(){
+  const ls = document.getElementById('loginScreen'); if(ls) ls.classList.remove('show');
+}
+function updateProfileUI(){
+  if(!currentUser) return;
+  const meta = currentUser.user_metadata || {};
+  const nome = meta.full_name || meta.name || currentUser.email || 'Você';
+  const foto = meta.avatar_url || meta.picture || '';
+  const inicial = nome.trim().charAt(0).toUpperCase() || 'A';
+  // só usa a foto do Google se o usuário ainda não tiver um avatar customizado salvo
+  const avatarCustom = localStorage.getItem('avatar');
+  if(!avatarCustom){
+    const avtBtn = document.getElementById('avtBtn');
+    if(avtBtn){
+      avtBtn.innerHTML = foto
+        ? `<img src="${foto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`
+        : inicial;
+    }
+    const avtUp = document.getElementById('avtUp');
+    if(avtUp && foto){ avtUp.style.backgroundImage = `url(${foto})`; avtUp.style.backgroundSize = 'cover'; avtUp.textContent = ''; }
+  }
+  const nEl = document.getElementById('uName'); if(nEl) nEl.value = nome;
+  const eEl = document.getElementById('uEmail'); if(eEl) eEl.value = currentUser.email || '';
+}
+
+// Reage a qualquer mudança de sessão: login, logout, refresh de token, retorno do redirect do Google
+sbAuth.auth.onAuthStateChange((event, session) => {
+  if(session){
+    userAccessToken = session.access_token;
+    currentUser = session.user;
+    hideLoginScreen();
+    updateProfileUI();
+    if(!window.__appStarted){ window.__appStarted = true; startApp(); }
+  } else {
+    userAccessToken = null; currentUser = null;
+    window.__appStarted = false;
+    const ld = document.getElementById('loading'); if(ld) ld.classList.add('out');
+    showLoginScreen();
+  }
+});
 
 // ─── LOGOS ──────────────────────────────────────────────────────────
 // Fonte primária: ícones oficiais B3 (thefintz/icones-b3) — por TICKER exato.
@@ -1314,6 +1453,14 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v16.0",d:"Jun/2026",items:[
+    "LOGIN COM GOOGLE: tela de entrada antes de qualquer dado — autenticação real via Supabase Auth",
+    "Carteira (Ações, FIIs, ETFs, Stocks, RF) passa a viver na nuvem, vinculada à conta logada (tabela portfolio_data)",
+    "Primeiro acesso mostra banner para salvar a carteira atual na nuvem com um clique",
+    "Aba Perfil agora mostra nome, e-mail e foto reais da conta Google — com botão Sair",
+    "Botão 'Integração com a B3' na tela de login, com selo Em breve",
+    "Exclusão de ativos passa a sincronizar automaticamente com a nuvem",
+  ]},
   {v:"v15.0",d:"Jun/2026",items:[
     "MENU CORRIGIDO: Abas de navegação voltaram ao header (Visão Geral | Ações BR | FIIs | ...)",
     "goTab() auto-encontra a aba por data-tab — funciona do hamburguer E dos cards sem perder highlight",
@@ -2179,6 +2326,11 @@ function deleteAtivo(classe, tk){
   else if(classe==="etfs") D.etfs = D.etfs.filter(e=>e.tk!==tk);
   else if(classe==="stocks") D.stocks = D.stocks.filter(s=>s.tk!==tk);
   render(); // re-renderiza tudo (tabelas, alocação, metas)
+  if(currentUser){
+    carteiraEhSemente = false; // a exclusão já é o estado real — não oferece mais "migrar a semente"
+    atualizaBannerMigracao();
+    salvarCarteiraNaNuvem().catch(e=>console.warn('Sync carteira:', e));
+  }
 }
 
 function getCriptoTotal(){
@@ -3263,7 +3415,55 @@ async function setMeta(i){
 
 function applyTVTheme(){ /* TradingView removido — mkt-strip estático */ }
 
-(async function init(){
+// Guarda os valores originais (hardcoded) como "semente" — usados apenas
+// na primeira vez que uma conta loga e ainda não tem carteira salva na nuvem.
+const SEED_PORTFOLIO = {
+  acoes: JSON.parse(JSON.stringify(D.acoes)),
+  fiis:  JSON.parse(JSON.stringify(D.fiis)),
+  etfs:  JSON.parse(JSON.stringify(D.etfs)),
+  stocks:JSON.parse(JSON.stringify(D.stocks)),
+  rf:    JSON.parse(JSON.stringify(D.rf)),
+};
+let carteiraEhSemente = false; // true = dados ainda não foram salvos na nuvem (primeiro acesso)
+
+async function carregarCarteiraDaNuvem(){
+  const rows = await SB.get('portfolio_data', {'user_id':'eq.'+currentUser.id, 'select':'*'});
+  if(rows && rows.length){
+    const pd = rows[0];
+    D.acoes  = pd.acoes  && pd.acoes.length  ? pd.acoes  : [];
+    D.fiis   = pd.fiis   && pd.fiis.length   ? pd.fiis   : [];
+    D.etfs   = pd.etfs   && pd.etfs.length   ? pd.etfs   : [];
+    D.stocks = pd.stocks && pd.stocks.length ? pd.stocks : [];
+    D.rf     = pd.rf     && pd.rf.length     ? pd.rf     : [];
+    carteiraEhSemente = false;
+  } else {
+    // primeira vez desta conta — mantém os valores atuais (semente) em memória
+    // e oferece um botão para salvar definitivamente na nuvem
+    D.acoes = JSON.parse(JSON.stringify(SEED_PORTFOLIO.acoes));
+    D.fiis = JSON.parse(JSON.stringify(SEED_PORTFOLIO.fiis));
+    D.etfs = JSON.parse(JSON.stringify(SEED_PORTFOLIO.etfs));
+    D.stocks = JSON.parse(JSON.stringify(SEED_PORTFOLIO.stocks));
+    D.rf = JSON.parse(JSON.stringify(SEED_PORTFOLIO.rf));
+    carteiraEhSemente = true;
+  }
+  atualizaBannerMigracao();
+}
+async function salvarCarteiraNaNuvem(){
+  if(!currentUser) return;
+  await SB.upsert('portfolio_data', {
+    user_id: currentUser.id,
+    acoes: D.acoes, fiis: D.fiis, etfs: D.etfs, stocks: D.stocks, rf: D.rf,
+    updated_at: new Date().toISOString()
+  });
+  carteiraEhSemente = false;
+  atualizaBannerMigracao();
+}
+function atualizaBannerMigracao(){
+  const el = document.getElementById('migBanner');
+  if(el) el.style.display = carteiraEhSemente ? 'flex' : 'none';
+}
+
+async function startApp(){
   // Garante que o loading some SEMPRE, mesmo com erro
   const hideLoading = () => {
     const ld = document.getElementById("loading");
@@ -3285,6 +3485,9 @@ function applyTVTheme(){ /* TradingView removido — mkt-strip estático */ }
   /* 2. Carrega dados do Supabase */
   setLdStatus("Conectando ao banco…");
   try{
+    // carteira do usuário logado (Ações, FIIs, ETFs, Stocks, RF)
+    await carregarCarteiraDaNuvem();
+
     // proventos
     const provs = await SB.get('proventos','order=created_at.desc');
     if(provs && provs.length){
@@ -3324,6 +3527,7 @@ function applyTVTheme(){ /* TradingView removido — mkt-strip estático */ }
     // carrega avatar salvo
     loadAvatar_SB();
     loadSettings();
+    updateProfileUI();
     // popula datalist de tickers
     const dl = document.getElementById('tickerList');
     if(dl) TICKERS_BR.forEach(t=>{ const o=document.createElement('option'); o.value=t; dl.appendChild(o); });
@@ -3357,7 +3561,15 @@ function applyTVTheme(){ /* TradingView removido — mkt-strip estático */ }
     if(el) el.textContent = "Erro ao inicializar: " + fatalErr.message;
     render(); // tenta renderizar mesmo com erro
   }
-})();
+}
+
+// Salvaguarda: se por algum motivo o evento de sessão nunca disparar
+// (ex.: rede bloqueada), não deixa o usuário preso na tela de loading.
+setTimeout(()=>{
+  if(!window.__appStarted && !document.getElementById('loginScreen').classList.contains('show')){
+    showLoginScreen();
+  }
+}, 6000);
 </script>
 </body>
 </html>
