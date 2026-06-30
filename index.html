@@ -283,7 +283,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .st::after{content:"";flex:1;height:1px;background:var(--border)}
 
 /* ─── TABLES ─────────────────────────── */
-.tw{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px}
+.tw{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow-x:auto;overflow-y:hidden;margin-bottom:12px}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
   color:var(--muted);text-align:left;padding:9px 11px;
@@ -891,7 +891,7 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
 <section class="panel" id="p-etfs">
   <div class="two">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições ETFs — USD e BRL <button class="refbtn" onclick="openColunasModal('et')" style="font-size:11px">⚙ Colunas</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições ETFs — USD e BRL <button class="add-btn" onclick="openAddAtivo('etfs')">＋ Adicionar ETF</button><button class="refbtn" onclick="openColunasModal('et')" style="font-size:11px">⚙ Colunas</button></div>
       <div class="tw">
         <table data-tbl="et">
           <thead><tr>
@@ -923,7 +923,7 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
 <section class="panel" id="p-stocks">
   <div class="two">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições Stocks — USD e BRL <button class="refbtn" onclick="openColunasModal('sk')" style="font-size:11px">⚙ Colunas</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições Stocks — USD e BRL <button class="add-btn" onclick="openAddAtivo('stocks')">＋ Adicionar Stock</button><button class="refbtn" onclick="openColunasModal('sk')" style="font-size:11px">⚙ Colunas</button></div>
       <div class="tw">
         <table data-tbl="sk">
           <thead><tr>
@@ -1090,8 +1090,10 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
     <div class="form-group" style="margin-bottom:10px">
       <label class="flbl">Ticker</label>
       <input class="finp" id="addTicker" placeholder="Ex: WEGE3, BTLG11, VOO"
-        list="tickerList" autocomplete="off" style="font-family:var(--mono);text-transform:uppercase"
+        list="tickerListAcoes" autocomplete="off" style="font-family:var(--mono);text-transform:uppercase"
         oninput="this.value=this.value.toUpperCase()"/>
+      <datalist id="tickerListAcoes"></datalist>
+      <datalist id="tickerListFiis"></datalist>
       <datalist id="cryptoTickerList">
         <option value="BTC">Bitcoin</option>
         <option value="ETH">Ethereum</option>
@@ -1117,7 +1119,7 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
     </div>
     <div class="form-row" id="addFormFields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div>
-        <label class="flbl" id="addPMLabel">Preço médio (R$)</label>
+        <label class="flbl" id="addPMLabel">Valor atual (R$)</label>
         <input class="finp" id="addPM" type="number" step="0.01" placeholder="0,00" style="font-family:var(--mono)"/>
       </div>
       <div>
@@ -1127,18 +1129,13 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
       </div>
     </div>
     <div id="addSetorRow" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div>
-        <label class="flbl">Setor</label>
-        <select class="fsel" id="addSetor">
-          <option>Financeiro</option><option>Energia</option><option>Indústria</option>
-          <option>Saneamento</option><option>Serviços</option><option>Saúde</option>
-          <option>Consumo</option><option>Tecnologia</option><option>Outros</option>
-          <option>Logística</option><option>Papel HG</option><option>Shopping</option><option>Híbrido</option>
-        </select>
+      <div id="addCol1">
+        <label class="flbl" id="addCol1Label">Setor</label>
+        <select class="fsel" id="addSetor"></select>
       </div>
-      <div>
-        <label class="flbl">DY% (estimado)</label>
-        <input class="finp" id="addDY" type="number" step="0.1" placeholder="0.0" style="font-family:var(--mono)"/>
+      <div id="addCol2">
+        <label class="flbl" id="addCol2Label">Empresa</label>
+        <input class="finp" id="addEmpresa" placeholder="Ex: Apple Inc."/>
       </div>
     </div>
     <div id="addPreview" style="display:none;padding:10px;background:var(--bg3);border-radius:var(--rm);margin-bottom:10px;font-size:12px">
@@ -1396,7 +1393,7 @@ async function corsGetJSON(url){
 
 
 // Lista de tickers B3 para dropdown (top ativos + FIIs comuns)
-const TICKERS_BR = [
+const TICKERS_ACOES_BR = [
   'ABEV3','ALSO3','ARZZ3','ASAI3','AZUL4','B3SA3','BBAS3','BBDC3','BBDC4','BBSE3',
   'BEEF3','BPAC11','BRAP4','BRFS3','BRKM5','BRML3','CCRO3','CIEL3','CMIG4','COGN3',
   'CPFE3','CPLE3','CSAN3','CSMG3','CSNA3','CXSE3','CYRE3','DXCO3','ECOR3','EGIE3',
@@ -1406,7 +1403,8 @@ const TICKERS_BR = [
   'PETR3','PETR4','PETZ3','POSI3','PRIO3','QUAL3','RADL3','RAIL3','RDOR3','RENT3',
   'RRRP3','SAPR4','SBFG3','SBSP3','SIMH3','SLCE3','SMFT3','SOMA3','SUZB3','TAEE11',
   'TIMS3','TOTS3','UGPA3','USIM5','VALE3','VBBR3','VIVT3','WEGE3','WIZC3','YDUQ3',
-  // FIIs comuns
+];
+const TICKERS_FIIS_BR = [
   'BCFF11','BCIA11','BCRI11','BTCI11','BTLG11','CPTS11','FEXC11','FIIB11','FLCR11',
   'GGRC11','GARE11','HGLG11','HGRU11','HGBS11','HSLG11','HSML11','IFIX11','ITLG11',
   'JSAF11','JSRE11','KFOF11','KINP11','KNCT11','KNRI11','KNSC11','LVBI11','MCCI11',
@@ -1414,6 +1412,12 @@ const TICKERS_BR = [
   'SNAG11','SNEL11','TGAR11','TPFT11','TRXF11','URPR11','VGIR11','VILG11','VISC11',
   'VOTS11','VRTA11','VTLT11','XPML11','XPLG11','XPPR11',
 ];
+const TICKERS_BR = [...TICKERS_ACOES_BR, ...TICKERS_FIIS_BR]; // combinada — usada no formulário de Proventos (vale para os dois)
+
+// Opções de Setor/Segmento por classe — listas distintas, sem misturar Ações com FIIs
+const SETORES_ACOES = ["Financeiro","Energia","Indústria","Saneamento","Serviços","Saúde","Consumo","Tecnologia","Outros"];
+const SEGMENTOS_FII = ["Papel (Recebíveis)","Tijolo","Logística","Shoppings","Lajes Corporativas","Híbrido","Fundo de Fundos (FOF)","Energia/Infraestrutura","Saneamento","Outros"];
+const SETORES_EUA = ["Tecnologia","Financeiro","Saúde","Consumo","Industrial","Energia","Outros"];
 
 // Mapa ticker → setor (combina com as categorias usadas em D.tetosBR) para auto-associar ao digitar
 const TICKER_SETOR_BR = {
@@ -1460,6 +1464,15 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v16.3",d:"Jun/2026",items:[
+    "CORRIGIDO: tabela de Ações BR cortava colunas no desktop sem mostrar o final — agora rola horizontalmente",
+    "CORRIGIDO: card 'Renda Fixa' no topo mostrava valor fixo do código pra qualquer conta — agora calcula a partir da carteira real",
+    "Campo 'Preço médio' virou 'Valor atual' em todos os formulários de adicionar ativo",
+    "Campo DY% removido do formulário de adicionar — passa a vir automático depois, via cotação",
+    "Setor (Ações) e Segmento (FIIs) agora são listas separadas — sem mais opções de FII aparecendo pra Ações e vice-versa",
+    "Sugestões de ticker (autocomplete) separadas por classe: Ações BR só sugere ações, FIIs só sugere FIIs",
+    "Novos botões '+ Adicionar ETF' e '+ Adicionar Stock', com formulário adaptado pro mercado americano (US$, sem Setor BR)",
+  ]},
   {v:"v16.2",d:"Jun/2026",items:[
     "CORRIGIDO: outras contas Google viam sua carteira real no primeiro acesso — agora só decohja@gmail.com herda a carteira de exemplo",
     "Qualquer outra conta nova entra com a carteira 100% vazia, com banner de boas-vindas e atalho pra adicionar o primeiro ativo",
@@ -1582,7 +1595,7 @@ const D={
   metas:[{v:97000,lbl:"Meta 2026"}],
   activeMeta:0,
   invest:[
-    {n:"Renda Fixa IPCA",v:7183,m:15520,c:"#3B82F6",fonte:"planilha"},
+    {n:"Renda Fixa IPCA",v:0,m:15520,c:"#3B82F6",fonte:"calc"},
     {n:"Ações Brasil",   v:0,  m:16490,c:"#F59E0B",fonte:"calc"},
     {n:"FIIs",           v:0,  m:13580,c:"#A78BFA",fonte:"calc"},
     {n:"ETFs EUA",       v:0,  m:15520,c:"#38BDF8",fonte:"calc"},
@@ -1640,7 +1653,8 @@ const D={
     {tk:"NU",  co:"Nubank",     setor:"Financeiro", inv:65.72, atual:49.82, lucro:-15.90,dy:0,  obj:"Comprar"},
   ],
   setoresEUA:[
-    {s:"Tecnologia",teto:40},{s:"Financeiro",teto:30},{s:"Saúde",teto:15},{s:"Consumo",teto:10}
+    {s:"Tecnologia",teto:40},{s:"Financeiro",teto:30},{s:"Saúde",teto:15},{s:"Consumo",teto:10},
+    {s:"Industrial",teto:100},{s:"Energia",teto:100},{s:"Outros",teto:100},
   ],
   rf:[{titulo:"Tesouro IPCA+ 2050",cotas:8.24,inv:7050.33,bruto:7183.30,taxa:"7,06% a.a."}],
   rfMacro:[
@@ -2016,7 +2030,7 @@ function renderMetasAloc(){
   const tbody = document.getElementById("metasAlocTbody");
   if(!tbody) return;
   const metas = getMetasAloc();
-  const rfVal = D.rf && D.rf.length ? D.rf.reduce((s,r)=>s+(r.bruto||r.inv||0),0) : 7183.30;
+  const rfVal = D.rf.reduce((s,r)=>s+(r.bruto||r.inv||0),0);
   // ETFs: usa cotas * priceUSD ao vivo quando disponível (idêntico à planilha com Google Finance)
   const etfVal = D.etfs.reduce((s,e)=>{
     const atualUSD = (e.cotas && e.priceUSD) ? e.cotas*e.priceUSD : e.atual;
@@ -2124,6 +2138,8 @@ function render(){
   const totSTK=D.stocks.reduce((s,s2)=>s+s2.atual,0)*usdBRL;
   const lucroETF=D.etfs.reduce((s,e)=>s+e.lucro,0)*usdBRL;
   const lucroSTK=D.stocks.reduce((s,s2)=>s+s2.lucro,0)*usdBRL;
+  const totRF=D.rf.reduce((s,r)=>s+(r.bruto||r.inv||0),0);
+  const lucroRF=D.rf.reduce((s,r)=>s+((r.bruto||0)-(r.inv||0)),0);
 
   D.invest.find(c=>c.n==="Ações Brasil").v=totAcoes;
   D.invest.find(c=>c.n==="Ações Brasil").lucro=lucroAcoes;
@@ -2133,6 +2149,8 @@ function render(){
   D.invest.find(c=>c.n==="ETFs EUA").lucro=lucroETF;
   D.invest.find(c=>c.n==="Stocks EUA").v=totSTK;
   D.invest.find(c=>c.n==="Stocks EUA").lucro=lucroSTK;
+  D.invest.find(c=>c.n==="Renda Fixa IPCA").v=totRF;
+  D.invest.find(c=>c.n==="Renda Fixa IPCA").lucro=lucroRF;
 
   const meta=D.metas[D.activeMeta].v;
   const totalInvest=D.invest.reduce((s,c)=>s+c.v,0);
@@ -3098,44 +3116,96 @@ async function saveObj(tk, val){
 
 /* ── Adicionar ativo ─────────────────────── */
 let addAtivoTipo = 'acoes';
+function populateSelect(id, options){
+  const sel = document.getElementById(id);
+  if(!sel) return;
+  sel.innerHTML = options.map(o=>`<option>${o}</option>`).join("");
+}
+
 function openAddAtivo(tipo){
   addAtivoTipo=tipo;
-  document.getElementById("addModalTitle").textContent=
-    tipo==="acoes"?"Adicionar Ação":tipo==="fiis"?"Adicionar FII":tipo==="cripto"?"Adicionar Cripto":"Adicionar Ativo EUA";
+  const titulos={acoes:"Adicionar Ação",fiis:"Adicionar FII",cripto:"Adicionar Cripto",etfs:"Adicionar ETF",stocks:"Adicionar Stock"};
+  document.getElementById("addModalTitle").textContent = titulos[tipo] || "Adicionar Ativo";
   document.getElementById("addTicker").value="";
   document.getElementById("addPM").value="";
   document.getElementById("addCotas").value="";
-  document.getElementById("addDY").value="";
+  document.getElementById("addEmpresa").value="";
   document.getElementById("addPreview").style.display="none";
   const cotasInput=document.getElementById("addCotas");
   const tickerInput=document.getElementById("addTicker");
   const setorRow=document.getElementById("addSetorRow");
+  const col1=document.getElementById("addCol1");
+  const col2=document.getElementById("addCol2");
+  const col1Label=document.getElementById("addCol1Label");
+  const col2Label=document.getElementById("addCol2Label");
   const pmLabel=document.getElementById("addPMLabel");
   const cotasLabel=document.getElementById("addCotasLabel");
+
+  // reset padrão
+  cotasInput.style.display="";
+  document.getElementById("addCotasLabel").style.display="";
+  col1.style.display="block"; col2.style.display="block"; col2.style.gridColumn="auto";
+
   if(tipo==="cripto"){
     cotasInput.step="0.0001"; // evita notação científica nas setinhas (8 casas era exagero pro spinner)
     cotasInput.placeholder="0.00351089";
     tickerInput.placeholder="BTC, ETH, SOL…";
-    tickerInput.setAttribute("list","cryptoTickerList"); // só sugestões de cripto
-    setorRow.style.display="none"; // Setor/DY não fazem sentido para cripto
-    pmLabel.textContent="Preço médio (R$)";
+    tickerInput.setAttribute("list","cryptoTickerList");
+    setorRow.style.display="none";
+    pmLabel.textContent="Valor atual (R$)";
     cotasLabel.textContent="Qtd. moeda";
-  } else {
-    cotasInput.step="1";
-    cotasInput.placeholder="23";
-    tickerInput.placeholder="Digite ou selecione…";
-    tickerInput.setAttribute("list","tickerList"); // tickers B3/EUA normais
+  } else if(tipo==="acoes"){
+    cotasInput.step="1"; cotasInput.placeholder="23";
+    tickerInput.placeholder="Ex: WEGE3, ITUB4…";
+    tickerInput.setAttribute("list","tickerListAcoes");
     setorRow.style.display="grid";
-    pmLabel.textContent="Preço médio (R$)";
+    col2.style.display="none";
+    col1Label.textContent="Setor";
+    populateSelect("addSetor", SETORES_ACOES);
+    pmLabel.textContent="Valor atual (R$)";
     cotasLabel.textContent="Qtd. cotas";
+  } else if(tipo==="fiis"){
+    cotasInput.step="1"; cotasInput.placeholder="23";
+    tickerInput.placeholder="Ex: BTLG11, KNRI11…";
+    tickerInput.setAttribute("list","tickerListFiis");
+    setorRow.style.display="grid";
+    col2.style.display="none";
+    col1Label.textContent="Segmento";
+    populateSelect("addSetor", SEGMENTOS_FII);
+    pmLabel.textContent="Valor atual (R$)";
+    cotasLabel.textContent="Qtd. cotas";
+  } else if(tipo==="etfs"){
+    cotasInput.step="0.0001"; cotasInput.placeholder="1.25";
+    tickerInput.placeholder="Ex: VOO, XLI…";
+    tickerInput.removeAttribute("list");
+    setorRow.style.display="grid";
+    col1.style.display="none";
+    col2.style.gridColumn="1/-1";
+    col2Label.textContent="Descrição do fundo";
+    document.getElementById("addEmpresa").placeholder="Ex: S&P 500 — âncora";
+    pmLabel.textContent="Valor atual (US$)";
+    cotasLabel.textContent="Qtd. cotas";
+  } else if(tipo==="stocks"){
+    cotasInput.style.display="none";
+    document.getElementById("addCotasLabel").style.display="none";
+    tickerInput.placeholder="Ex: AAPL, MSFT…";
+    tickerInput.removeAttribute("list");
+    setorRow.style.display="grid";
+    col1Label.textContent="Setor";
+    populateSelect("addSetor", SETORES_EUA);
+    col2Label.textContent="Empresa";
+    document.getElementById("addEmpresa").placeholder="Ex: Apple Inc.";
+    pmLabel.textContent="Valor investido (US$)";
+    cotasLabel.textContent="Valor atual (US$)";
   }
   document.getElementById("modAdd").classList.add("open");
 }
 function closeAddAtivo(){ document.getElementById("modAdd").classList.remove("open"); }
 
-// preview ao preencher
+// preview ao preencher (não faz sentido para Stocks, que já usa os 2 campos como valores totais)
 ["addPM","addCotas"].forEach(id=>{
   document.getElementById(id)?.addEventListener("input", ()=>{
+    if(addAtivoTipo==="stocks") return;
     const pm=parseFloat(document.getElementById("addPM").value)||0;
     const cotas=parseFloat(document.getElementById("addCotas").value)||0; // parseFloat — não trunca decimais de cripto
     if(pm&&cotas){
@@ -3145,7 +3215,7 @@ function closeAddAtivo(){ document.getElementById("modAdd").classList.remove("op
   });
 });
 
-// Auto-preenche Preço Médio sugerido ao digitar ticker de cripto conhecido (evita erro de casa decimal)
+// Auto-preenche Valor Atual sugerido ao digitar ticker de cripto conhecido (evita erro de casa decimal)
 const CRYPTO_PRICE_HINTS = { BTC:"BTCBRL", ETH:"ETHBRL", LTC:"LTCBRL" }; // AwesomeAPI suporta esses pares diretos
 document.getElementById("addTicker")?.addEventListener("blur", async function(){
   const tk=this.value.toUpperCase().trim();
@@ -3186,7 +3256,7 @@ document.getElementById("addTicker")?.addEventListener("blur", async function(){
         if(q&&q.regularMarketPrice){
           pmField.value=q.regularMarketPrice.toFixed(2);
           pmField.style.borderColor="var(--pos)";
-          pmField.title=`Sugestão automática: cotação atual de ${tk}. Edite se necessário (ex: se seu preço médio de compra for diferente).`;
+          pmField.title=`Sugestão automática: cotação atual de ${tk}. Edite se necessário.`;
           setTimeout(()=>{pmField.style.borderColor="";},2000);
         }
       }catch(e){ console.warn("Não foi possível sugerir preço para",tk,e.message); }
@@ -3199,15 +3269,23 @@ async function confirmarAddAtivo(){
   const pm=parseFloat(document.getElementById("addPM").value)||0;
   const cotas=parseFloat(document.getElementById("addCotas").value)||0;
   const setor=document.getElementById("addSetor").value;
-  const dy=parseFloat(document.getElementById("addDY").value)||0;
-  if(!tk||!pm||!cotas){ alert("Preencha Ticker, Preço médio e Cotas."); return; }
+  const empresa=document.getElementById("addEmpresa").value.trim();
 
-  if(addAtivoTipo==="acoes"){
+  if(addAtivoTipo==="stocks"){
+    if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor investido e Valor atual."); return; }
+    D.stocks.push({tk,co:empresa||tk,setor,inv:pm,atual:cotas,lucro:cotas-pm,dy:0,obj:"Manter"});
+  } else if(addAtivoTipo==="etfs"){
+    if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Qtd. cotas."); return; }
+    D.etfs.push({tk,fun:empresa||tk,cotas,inv:pm*cotas,atual:pm*cotas,lucro:0,dy:0});
+  } else if(addAtivoTipo==="acoes"){
+    if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Cotas."); return; }
     const teto={"Financeiro":35,"Energia":25,"Indústria":20,"Saneamento":15,"Serviços":5}[setor]||20;
-    D.acoes.push({tk,co:tk,st:setor,pm,cotas,dy,teto,obj:"Manter"});
+    D.acoes.push({tk,co:tk,st:setor,pm,cotas,dy:0,teto,obj:"Manter"});
   } else if(addAtivoTipo==="fiis"){
-    D.fiis.push({tk,seg:setor,pm,cotas,dy,prov:0,st:"NEUTRO"});
+    if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Cotas."); return; }
+    D.fiis.push({tk,seg:setor,pm,cotas,dy:0,prov:0,st:"NEUTRO"});
   } else if(addAtivoTipo==="cripto"){
+    if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Qtd. moeda."); return; }
     const cCores=["#F7931A","#627EEA","#8247E5","#F3BA2F","#23292F","#345D9D"];
     const cor=cCores[D.cripto.length % cCores.length];
     D.cripto.push({moeda:tk,nome:tk,qtd:cotas,pm,c:cor});
@@ -3231,7 +3309,7 @@ async function confirmarAddAtivo(){
     atualizaBannerMigracao();
     salvarCarteiraNaNuvem().catch(e=>console.warn('Sync carteira:', e));
   }
-  alert(`${tk} adicionado! Cotação será buscada no próximo refresh.`);
+  alert(`${tk} adicionado à carteira!`);
 }
 
 /* Sort */
@@ -3565,6 +3643,10 @@ async function startApp(){
     // popula datalist de tickers
     const dl = document.getElementById('tickerList');
     if(dl) TICKERS_BR.forEach(t=>{ const o=document.createElement('option'); o.value=t; dl.appendChild(o); });
+    const dlAc = document.getElementById('tickerListAcoes');
+    if(dlAc) TICKERS_ACOES_BR.forEach(t=>{ const o=document.createElement('option'); o.value=t; dlAc.appendChild(o); });
+    const dlFi = document.getElementById('tickerListFiis');
+    if(dlFi) TICKERS_FIIS_BR.forEach(t=>{ const o=document.createElement('option'); o.value=t; dlFi.appendChild(o); });
     render(); // re-renderiza com dados do banco
   } catch(e){
     console.warn('Supabase init error:', e);
