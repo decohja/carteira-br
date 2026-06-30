@@ -947,8 +947,8 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
 <section class="panel" id="p-rf">
   <div class="two">
     <div>
-      <div class="st">Posições</div>
-      <div class="tw"><table><thead><tr><th>Título</th><th class="r">Cotas</th><th class="r">Investido</th><th class="r">Total bruto</th><th class="r">Ganho</th></tr></thead><tbody id="rfTbl"></tbody></table></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições <button class="add-btn" onclick="openAddRF()">＋ Adicionar título</button></div>
+      <div class="tw"><table><thead><tr><th>Título</th><th class="r">Cotas</th><th class="r">Investido</th><th class="r">Total bruto</th><th class="r">Ganho</th><th></th></tr></thead><tbody id="rfTbl"></tbody></table></div>
       <div class="st" style="margin-top:12px">Cenários de saída</div>
       <div id="rfCen"></div>
     </div>
@@ -1217,6 +1217,55 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
     <button class="btn-pri" style="width:100%" onclick="confirmarAddAtivo()">＋ Adicionar à carteira</button>
     <p style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center">
       O ativo será adicionado localmente e salvo no Supabase se conectado.
+    </p>
+  </div>
+</div>
+
+<!-- Modal: Adicionar Renda Fixa -->
+<div class="mbg" id="modAddRF" onclick="if(event.target===this)closeAddRF()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+    <div class="m-title">
+      <span>Adicionar Renda Fixa</span>
+      <button class="m-close" onclick="closeAddRF()">×</button>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="flbl">Tipo de título</label>
+      <select class="fsel" id="rfTipo" onchange="onRfTipoChange()">
+        <option>Tesouro IPCA+</option>
+        <option>Tesouro Selic</option>
+        <option>Tesouro Prefixado</option>
+        <option>CDB</option>
+        <option>LCI/LCA</option>
+        <option>Outro</option>
+      </select>
+    </div>
+    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div id="rfBancoRow">
+        <label class="flbl">Banco/Corretora</label>
+        <input class="finp" id="rfBanco" placeholder="Ex: XP, Nubank…"/>
+      </div>
+      <div>
+        <label class="flbl">Vencimento <span style="color:var(--faint);font-weight:400">(opcional)</span></label>
+        <input class="finp" id="rfVenc" placeholder="Ex: 2029"/>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:10px">
+      <label class="flbl">Taxa contratada</label>
+      <input class="finp" id="rfTaxa" placeholder="Ex: IPCA+7,06% a.a. ou 118% CDI"/>
+    </div>
+    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <label class="flbl">Valor investido (R$)</label>
+        <input class="finp" id="rfInv" type="number" step="0.01" placeholder="0,00" style="font-family:var(--mono)"/>
+      </div>
+      <div>
+        <label class="flbl">Valor bruto atual (R$) <span style="color:var(--faint);font-weight:400">(opcional)</span></label>
+        <input class="finp" id="rfBruto" type="number" step="0.01" placeholder="= investido" style="font-family:var(--mono)"/>
+      </div>
+    </div>
+    <button class="btn-pri" style="width:100%" onclick="confirmarAddRF()">＋ Adicionar à carteira</button>
+    <p style="font-size:10px;color:var(--muted);margin-top:8px;text-align:center">
+      Se não souber o valor bruto atual, deixe em branco — usamos o valor investido até você atualizar.
     </p>
   </div>
 </div>
@@ -1563,6 +1612,21 @@ const TICKER_SETOR_BR = {
   RRRP3:"Energia", SBFG3:"Serviços", VALE3:"Indústria",
 };
 
+const TICKER_SETOR_EUA = {
+  AAPL:"Tecnologia", MSFT:"Tecnologia", GOOGL:"Tecnologia", GOOG:"Tecnologia",
+  NVDA:"Tecnologia", META:"Tecnologia", AVGO:"Tecnologia", CRM:"Tecnologia",
+  ADBE:"Tecnologia", AMD:"Tecnologia", INTC:"Tecnologia", ORCL:"Tecnologia",
+  CSCO:"Tecnologia", ACN:"Tecnologia", TXN:"Tecnologia", QCOM:"Tecnologia",
+  IBM:"Tecnologia", NFLX:"Tecnologia",
+  JPM:"Financeiro", V:"Financeiro", MA:"Financeiro", BAC:"Financeiro", NU:"Financeiro",
+  UNH:"Saúde", JNJ:"Saúde", MRK:"Saúde", ABBV:"Saúde", PFE:"Saúde", TMO:"Saúde", ABT:"Saúde",
+  XOM:"Energia", CVX:"Energia",
+  AMZN:"Consumo", TSLA:"Consumo", PG:"Consumo", HD:"Consumo", KO:"Consumo",
+  PEP:"Consumo", COST:"Consumo", WMT:"Consumo", DIS:"Consumo", NKE:"Consumo",
+  MCD:"Consumo", SBUX:"Consumo",
+  LIN:"Industrial", GE:"Industrial", CAT:"Industrial", BA:"Industrial", UPS:"Industrial",
+};
+
 function setSbStatus(ok){
   sbOK = ok;
   const dot = document.getElementById('sbStatusDot');
@@ -1576,6 +1640,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v16.7",d:"Jun/2026",items:[
+    "RENDA FIXA DE VERDADE: novo botão '+ Adicionar título' com tipo (Tesouro IPCA+/Selic/Prefixado, CDB, LCI/LCA, Outro), banco/corretora, taxa, valor investido e bruto atual — e botão de excluir em cada posição",
+    "Indicadores macro de Renda Fixa (Selic, IPCA 12m, Expectativa Selic) agora buscam o valor real do Banco Central e do Boletim Focus automaticamente ao abrir o app — se a busca falhar, mantém os valores anteriores",
+    "ETFs e Stocks: ticker agora vincula o Setor automaticamente (EUA) e busca a cotação muito mais rápido, com cache temporário — repetir o mesmo ticker fica instantâneo",
+    "CORRIGIDO: ao trocar de ticker no formulário de adicionar, o valor antigo não fica mais preso no campo",
+  ]},
   {v:"v16.6",d:"Jun/2026",items:[
     "CORRIGIDO BUG GRAVE: formulário de Adicionar Stock tinha um campo invisível travando o cadastro — ninguém conseguia adicionar uma Stock",
     "ETFs e Stocks agora têm autocomplete de ticker (lista de tickers comuns dos EUA) e cotação atual buscada automaticamente via Yahoo Finance, igual já acontece em Ações BR",
@@ -1786,7 +1856,7 @@ const D={
   rf:[{titulo:"Tesouro IPCA+ 2050",cotas:8.24,inv:7050.33,bruto:7183.30,taxa:"7,06% a.a."}],
   rfMacro:[
     {k:"Selic",v:"14,25% a.a."},{k:"IPCA 12m",v:"5,17%"},
-    {k:"Expec. Selic 2026",v:"≈ 11%"},{k:"Taxa travada",v:"7,06% a.a."},
+    {k:"Expec. Selic 2026",v:"≈ 11%"},
     {k:"Tendência",v:"Queda → valoriza"},
   ],
   rfCen:[
@@ -3026,11 +3096,17 @@ function renderFiis(totFiis,sc,sd){
 /* RF */
 function renderRF(){
   const tb=g("rfTbl"); tb.innerHTML="";
-  D.rf.forEach(r=>{
+  if(!D.rf.length){
+    tb.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--muted);font-size:12px;padding:20px">Nenhum título de Renda Fixa cadastrado ainda.</td></tr>`;
+  }
+  D.rf.forEach((r,i)=>{
+    const ganho=r.bruto-r.inv;
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td><div class="tk" style="font-size:12px">${r.titulo}</div><div class="co">${r.taxa}</div></td>
+    tr.innerHTML=`<td><div class="tk" style="font-size:12px">${r.titulo}</div><div class="co">${r.taxa||"—"}</div></td>
       <td class="r">${r.cotas}</td><td class="r">${brl(r.inv,2)}</td>
-      <td class="r">${brl(r.bruto,2)}</td><td class="r" style="color:var(--pos)">+${brl(r.bruto-r.inv,2)}</td>`;
+      <td class="r">${brl(r.bruto,2)}</td>
+      <td class="r" style="color:${ganho>=0?"var(--pos)":"var(--neg)"}">${sgn(ganho)}${brl(Math.abs(ganho),2)}</td>
+      <td class="r"><button class="refbtn" onclick="deleteRF(${i})" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover este título">✕</button></td>`;
     tb.appendChild(tr);
   });
   const mc=g("rfMacro"); mc.innerHTML="";
@@ -3047,6 +3123,90 @@ function renderRF(){
     el.innerHTML=`<div style="font-size:12px;font-weight:500">${c.s}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${c.e} → <em>${c.a}</em></div>`;
     ce.appendChild(el);
   });
+}
+
+/* Indicadores macro de Renda Fixa — Selic e IPCA 12m via BCB/SGS (oficial),
+   Expectativa Selic via Boletim Focus. Best-effort: se falhar, mantém os valores estáticos. */
+async function atualizarIndicadoresMacroRF(){
+  try{
+    const selicJ = await corsGetJSON('https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json');
+    const v = selicJ && selicJ[0] && parseFloat(selicJ[0].valor);
+    if(!isNaN(v)){
+      const m=D.rfMacro.find(x=>x.k==="Selic");
+      if(m) m.v = v.toFixed(2).replace(".",",")+"% a.a.";
+    }
+  }catch(e){ console.warn("Selic BCB falhou:",e.message); }
+
+  try{
+    const ipcaJ = await corsGetJSON('https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados/ultimos/1?formato=json');
+    const v = ipcaJ && ipcaJ[0] && parseFloat(ipcaJ[0].valor);
+    if(!isNaN(v)){
+      const m=D.rfMacro.find(x=>x.k==="IPCA 12m");
+      if(m) m.v = v.toFixed(2).replace(".",",")+"%";
+    }
+  }catch(e){ console.warn("IPCA 12m BCB falhou:",e.message); }
+
+  try{
+    const ano=new Date().getFullYear();
+    const url=`https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?$format=json&$select=Indicador,Data,DataReferencia,Mediana&$filter=Indicador%20eq%20%27Selic%27%20and%20DataReferencia%20eq%20%27${ano}%27%20and%20baseCalculo%20eq%200&$orderby=Data%20desc&$top=1`;
+    const j=await corsGetJSON(url);
+    const item=j && j.value && j.value[0];
+    if(item && item.Mediana!=null){
+      const v=parseFloat(item.Mediana);
+      let m=D.rfMacro.find(x=>x.k.indexOf("Expec. Selic")===0);
+      if(m){ m.k=`Expec. Selic ${ano}`; m.v="≈ "+v.toFixed(2).replace(".",",")+"%"; }
+    }
+  }catch(e){ console.warn("Focus Selic falhou (mantendo valor de exemplo):",e.message); }
+
+  renderRF();
+}
+
+/* ── Adicionar Renda Fixa ─────────────────── */
+function onRfTipoChange(){
+  const tipo=document.getElementById("rfTipo").value;
+  const bancoRow=document.getElementById("rfBancoRow");
+  const vencDiv=document.getElementById("rfVenc").parentElement;
+  const ehTesouro=tipo.startsWith("Tesouro");
+  bancoRow.style.display=ehTesouro?"none":"block";
+  vencDiv.style.gridColumn=ehTesouro?"1/-1":"auto";
+}
+function openAddRF(){
+  document.getElementById("rfTipo").value="Tesouro IPCA+";
+  document.getElementById("rfBanco").value="";
+  document.getElementById("rfVenc").value="";
+  document.getElementById("rfTaxa").value="";
+  document.getElementById("rfInv").value="";
+  document.getElementById("rfBruto").value="";
+  onRfTipoChange();
+  document.getElementById("modAddRF").classList.add("open");
+}
+function closeAddRF(){ document.getElementById("modAddRF").classList.remove("open"); }
+async function confirmarAddRF(){
+  const tipo=document.getElementById("rfTipo").value;
+  const banco=document.getElementById("rfBanco").value.trim();
+  const venc=document.getElementById("rfVenc").value.trim();
+  const taxa=document.getElementById("rfTaxa").value.trim()||"—";
+  const inv=parseFloat(document.getElementById("rfInv").value)||0;
+  let bruto=parseFloat(document.getElementById("rfBruto").value)||0;
+  if(!inv){ alert("Preencha o valor investido."); return; }
+  if(!bruto) bruto=inv;
+  let titulo=tipo;
+  if(venc) titulo+=" "+venc;
+  if(banco && !tipo.startsWith("Tesouro")) titulo+=" — "+banco;
+  D.rf.push({titulo,cotas:1,inv,bruto,taxa});
+  closeAddRF();
+  render();
+  if(currentUser){
+    salvarCarteiraNaNuvem().catch(e=>console.warn("Sync RF:",e));
+  }
+}
+function deleteRF(idx){
+  if(!confirm("Remover este título de Renda Fixa?")) return;
+  D.rf.splice(idx,1);
+  render();
+  if(currentUser){
+    salvarCarteiraNaNuvem().catch(e=>console.warn("Sync RF:",e));
+  }
 }
 
 /* ETFs */
@@ -3337,16 +3497,35 @@ function closeAddAtivo(){ document.getElementById("modAdd").classList.remove("op
   });
 });
 
+// Cache temporário de cotações já buscadas nesta sessão — evita reconsultar a rede
+// pro mesmo ticker (deixa a 2ª vez instantânea) e expira sozinho em 5 minutos.
+window._quoteCache = window._quoteCache || {};
+const QUOTE_CACHE_TTL = 5*60*1000;
+function getCachedQuote(tk){
+  const c=window._quoteCache[tk];
+  if(c && (Date.now()-c.ts)<QUOTE_CACHE_TTL) return c.price;
+  return null;
+}
+function setCachedQuote(tk,price){ window._quoteCache[tk]={price,ts:Date.now()}; }
+
 // Auto-preenche Valor Atual sugerido ao digitar ticker de cripto conhecido (evita erro de casa decimal)
 const CRYPTO_PRICE_HINTS = { BTC:"BTCBRL", ETH:"ETHBRL", LTC:"LTCBRL" }; // AwesomeAPI suporta esses pares diretos
+let _lastAutoTicker = null;
 document.getElementById("addTicker")?.addEventListener("blur", async function(){
   const tk=this.value.toUpperCase().trim();
   if(!tk) return;
   const pmField=document.getElementById("addPM");
 
+  // Trocou de ticker de verdade (não é só re-blur no mesmo) — limpa o valor antigo
+  // pra não ficar mostrando a cotação do ativo anterior enquanto busca a nova.
+  if(tk!==_lastAutoTicker){
+    pmField.value="";
+    pmField.title="";
+  }
+  _lastAutoTicker=tk;
+
   // Cripto: sugere preço via AwesomeAPI
   if(addAtivoTipo==="cripto"){
-    if(pmField.value) return; // não sobrescreve se usuário já digitou algo
     const pair=CRYPTO_PRICE_HINTS[tk];
     if(!pair) return;
     try{
@@ -3370,12 +3549,19 @@ document.getElementById("addTicker")?.addEventListener("blur", async function(){
       const setorField=document.getElementById("addSetor");
       if(setorField) setorField.value=TICKER_SETOR_BR[tk];
     }
-    // Auto-preenche preço atual via Brapi (token embutido)
-    if(!pmField.value){
+    const cached=getCachedQuote(tk);
+    if(cached!=null){
+      pmField.value=cached.toFixed(2);
+      pmField.style.borderColor="var(--pos)";
+      pmField.title=`Sugestão automática (cache): cotação de ${tk}. Edite se necessário.`;
+      setTimeout(()=>{pmField.style.borderColor="";},2000);
+    } else {
       try{
         const j=await corsGetJSON(`https://brapi.dev/api/quote/${tk}?token=${BRAPI_TOKEN}`);
         const q=j.results&&j.results[0];
         if(q&&q.regularMarketPrice){
+          setCachedQuote(tk,q.regularMarketPrice);
+          if(tk!==this.value.toUpperCase().trim()) return; // usuário já trocou de ticker enquanto a rede respondia
           pmField.value=q.regularMarketPrice.toFixed(2);
           pmField.style.borderColor="var(--pos)";
           pmField.title=`Sugestão automática: cotação atual de ${tk}. Edite se necessário.`;
@@ -3385,13 +3571,25 @@ document.getElementById("addTicker")?.addEventListener("blur", async function(){
     }
   }
 
-  // ETFs e Stocks EUA: busca preço atual via Yahoo Finance (mesma fonte do refresh automático)
+  // ETFs e Stocks EUA: busca preço atual via Yahoo Finance (mesma fonte do refresh automático) + auto-associa setor
   if(addAtivoTipo==="etfs" || addAtivoTipo==="stocks"){
-    if(!pmField.value){
+    if(addAtivoTipo==="stocks" && TICKER_SETOR_EUA[tk]){
+      const setorField=document.getElementById("addSetor");
+      if(setorField) setorField.value=TICKER_SETOR_EUA[tk];
+    }
+    const cached=getCachedQuote(tk);
+    if(cached!=null){
+      pmField.value=cached.toFixed(2);
+      pmField.style.borderColor="var(--pos)";
+      pmField.title=`Sugestão automática (cache): cotação de ${tk}. Edite se necessário.`;
+      setTimeout(()=>{pmField.style.borderColor="";},2000);
+    } else {
       try{
         const j=await corsGetJSON(`https://query1.finance.yahoo.com/v8/finance/chart/${tk}?interval=1m&range=1d`);
         const m=j?.chart?.result?.[0]?.meta;
         if(m?.regularMarketPrice){
+          setCachedQuote(tk,m.regularMarketPrice);
+          if(tk!==this.value.toUpperCase().trim()) return; // usuário já trocou de ticker enquanto a rede respondia
           pmField.value=m.regularMarketPrice.toFixed(2);
           pmField.style.borderColor="var(--pos)";
           pmField.title=`Sugestão automática: cotação atual de ${tk}. Edite se necessário.`;
@@ -3801,6 +3999,7 @@ async function startApp(){
     const dlSk = document.getElementById('tickerListStocks');
     if(dlSk) TICKERS_STOCKS_US.forEach(t=>{ const o=document.createElement('option'); o.value=t; dlSk.appendChild(o); });
     render(); // re-renderiza com dados do banco
+    atualizarIndicadoresMacroRF().catch(()=>{}); // best-effort, não bloqueia o carregamento
   } catch(e){
     console.warn('Supabase init error:', e);
     setSbStatus(false);
