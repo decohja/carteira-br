@@ -83,12 +83,12 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .ham-btn.open span:nth-child(2){opacity:0}
 .ham-btn.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
 .side-menu{
-  position:fixed;top:0;left:-260px;width:240px;height:100vh;
+  position:fixed;top:0;left:0;width:240px;height:100vh;
   background:var(--bg2);border-right:1px solid var(--border2);
-  z-index:999;transition:left .25s cubic-bezier(.2,.8,.2,1);
+  z-index:999;transform:translateX(-100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);
   display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,.2);
 }
-.side-menu.open{left:0}
+.side-menu.open{transform:translateX(0)}
 .side-menu-head{
   padding:18px 16px 12px;font-size:12px;font-weight:600;
   text-transform:uppercase;letter-spacing:.12em;color:var(--muted);
@@ -128,14 +128,27 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .ntab.on .ndot{background:var(--pos);box-shadow:0 0 5px var(--pos)}
 
 /* market boxes — estilo MoneyTimes */
-.mkt-strip{display:flex;align-items:center;gap:16px;padding:0 14px;border-left:1px solid var(--border);flex-shrink:0}
-.mkt-item{display:flex;align-items:center;gap:7px}
-.mk-n{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-.mk-v{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text)}
-.mk-c{font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 6px;border-radius:5px}
+.mkt-strip{display:flex;align-items:stretch;gap:10px;padding:0 14px;border-left:1px solid var(--border);flex-shrink:0}
+.mkt-item{
+  display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:9px;
+  background:linear-gradient(180deg,var(--bg3),var(--bg4));
+  border:1px solid transparent;transition:all .18s ease;cursor:default;
+}
+.mkt-item:hover{
+  border-color:var(--gold);
+  background:linear-gradient(180deg,var(--bg4),var(--bg3));
+  transform:translateY(-1px);
+}
+.mkt-item .mk-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.mkt-item.ibov .mk-dot{background:#3B82F6}
+.mkt-item.usd .mk-dot{background:#16A34A}
+.mk-n{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.mk-v{font-family:var(--mono);font-size:13.5px;font-weight:700;color:var(--text)}
+.mk-c{display:flex;align-items:center;gap:2px;font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 6px;border-radius:5px}
 .mk-c.up{background:rgba(22,163,74,.18);color:var(--pos)}
 .mk-c.dn{background:rgba(239,68,68,.18);color:var(--neg)}
-.mk-c.neu{background:var(--bg3);color:var(--muted)}
+.mk-c.neu{background:var(--bg4);color:var(--muted)}
+.mk-arrow{width:9px;height:9px;flex-shrink:0}
 
 .hdr-r{display:flex;align-items:center;gap:6px;padding-left:8px;flex-shrink:0}
 .ibtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);
@@ -244,16 +257,26 @@ td{padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:middle}
 td.r{text-align:right;font-family:var(--mono);font-size:12px}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--bg3)}
-tr.total-row td{background:var(--bg3);border-top:2px solid var(--border2);font-weight:600}
-tr.total-row:hover td{background:var(--bg4)}
+tr.total-row td{
+  background:linear-gradient(180deg,var(--bg3),var(--bg4));
+  border-top:2px solid var(--gold);
+  font-weight:700;font-size:13px;padding-top:13px;padding-bottom:13px;
+  color:var(--text);white-space:nowrap;
+}
+tr.total-row:hover td{background:linear-gradient(180deg,var(--bg4),var(--bg3))}
+tr.total-row td:first-child{
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);white-space:nowrap;
+}
+tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em}
+.tot-cur{font-size:10px;font-weight:500;color:var(--muted);margin-right:1px}
 .tk{font-weight:600;font-size:13px}
 .co{font-size:11px;color:var(--muted);margin-top:1px}
-.ativo-logo{width:22px;height:22px;border-radius:5px;object-fit:contain;background:var(--bg3);
+.ativo-logo{width:36px;height:36px;border-radius:8px;object-fit:contain;background:var(--bg3);
   border:1px solid var(--border);flex-shrink:0;vertical-align:middle}
-.ativo-initials{width:22px;height:22px;border-radius:5px;background:var(--gold-bg);
+.ativo-initials{width:36px;height:36px;border-radius:8px;background:var(--gold-bg);
   border:1px solid var(--gold-dim);flex-shrink:0;display:flex;align-items:center;
-  justify-content:center;font-size:8px;font-weight:700;color:var(--gold);letter-spacing:-.02em}
-.ativo-cell{display:flex;align-items:center;gap:8px}
+  justify-content:center;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:-.02em}
+.ativo-cell{display:flex;align-items:center;gap:10px}
 .usd2{font-size:10px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
 
 /* teto mini bar */
@@ -262,6 +285,14 @@ tr.total-row:hover td{background:var(--bg4)}
 .tfill{height:100%;border-radius:4px;position:absolute;top:0;left:0;transition:width .7s ease;min-width:2px}
 .tline{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--gold);border-radius:1px}
 .ttxt{font-family:var(--mono);font-size:10px;white-space:nowrap}
+.ttxt.ov{color:var(--neg);font-weight:700}
+.ttxt.ok{color:var(--muted)}
+.info-ic{display:inline-flex;align-items:center;justify-content:center;
+  width:14px;height:14px;border-radius:50%;font-size:9.5px;font-weight:700;cursor:help;
+  color:var(--muted);background:var(--bg4);border:1px solid var(--border2);
+  opacity:.85;margin-left:4px;vertical-align:middle;transition:all .15s;
+  font-family:var(--font);line-height:1}
+.info-ic:hover{opacity:1;color:#fff;background:var(--gold);border-color:var(--gold);transform:scale(1.08)}
 .ttxt.ok{color:var(--muted)}.ttxt.ov{color:var(--neg);font-weight:600}
 
 .sel{font-family:var(--font);font-size:11px;font-weight:500;padding:3px 20px 3px 7px;
@@ -287,11 +318,13 @@ tr.total-row:hover td{background:var(--bg4)}
 .hbar-fill{height:100%;border-radius:4px;transition:width .7s ease}
 .hbar-pct{position:absolute;right:5px;top:0;bottom:0;display:flex;align-items:center;
   font-size:10px;font-family:var(--mono);font-weight:500}
-.dy-row{display:flex;align-items:flex-end;gap:4px;height:68px;margin-top:6px}
-.dy-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;justify-content:flex-end}
-.dy-bar{width:100%;border-radius:3px 3px 1px 1px;background:var(--gold)}
-.dy-lbl{font-size:9px;color:var(--muted);text-align:center;line-height:1.2;word-break:break-all}
-.dy-val{font-size:9px;font-family:var(--mono);color:var(--gold)}
+.dy-hlist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.dy-hrow{display:grid;grid-template-columns:48px 1fr 38px;align-items:center;gap:8px}
+.dy-hlbl{font-size:11px;font-weight:600;font-family:var(--mono);color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dy-htrack{height:8px;border-radius:4px;background:var(--bg4);overflow:hidden}
+.dy-hfill{height:100%;border-radius:4px;transition:width .5s ease;min-width:3px}
+.dy-hval{font-size:11px;font-weight:700;font-family:var(--mono);color:var(--gold);text-align:right}
 
 /* ─── ALLOC ──────────────────────────── */
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:12px}
@@ -384,14 +417,33 @@ tr.total-row:hover td{background:var(--bg4)}
 .add-btn:hover{background:var(--gold);color:#fff}
 
 /* ─── FOOTER ──────────────────────────── */
-.footer{background:var(--bg2);border-top:1px solid var(--border);padding:14px 18px;
+.footer{
+  background:var(--bg2);
+  border-top:1px solid var(--border2);
+  padding:0;font-size:11px;color:var(--muted);overflow:hidden;
+}
+.f-top{
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
-  gap:8px;font-size:11px;color:var(--muted)}
-.f-brand{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--text)}
-.f-links{display:flex;gap:12px}
-.f-links a{color:var(--muted)}.f-links a:hover{color:var(--text)}
-.f-ver{color:var(--gold);cursor:pointer}.f-ver:hover{text-decoration:underline}
-.f-note{font-size:10px;color:var(--faint);text-align:right}
+  gap:12px 24px;padding:20px 24px 16px;
+}
+.f-brand{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.f-brand .logo-m{width:38px;height:38px;font-size:17px;border-radius:9px}
+.f-brand-txt{display:flex;flex-direction:column;gap:2px}
+.f-brand-title{font-weight:700;color:var(--text);font-size:14px}
+.f-brand-sub{font-size:11px;color:var(--muted)}
+.f-right{text-align:right;display:flex;flex-direction:column;gap:3px}
+.f-right-credit{font-size:11.5px;color:var(--muted)}
+.f-right-credit b{color:var(--gold);font-weight:700;cursor:pointer}
+.f-right-credit b:hover{text-decoration:underline}
+.f-right-meta{font-size:10.5px;color:var(--faint)}
+.f-ver{color:var(--gold);cursor:pointer;font-weight:700}
+.f-ver:hover{text-decoration:underline}
+.f-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border2) 20%,var(--border2) 80%,transparent)}
+.f-status{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 24px;font-size:10.5px;color:var(--faint);
+}
+.f-status .dot{width:6px;height:6px;border-radius:50%;background:var(--pos);flex-shrink:0}
 
 @media(max-width:800px){
   .two,.two.eq{grid-template-columns:1fr}
@@ -453,7 +505,7 @@ tr.total-row:hover td{background:var(--bg4)}
   .tw table{font-size:11px}
   .tw th,.tw td{padding:6px 8px;white-space:nowrap}
   .ativo-cell{gap:6px}
-  .ativo-logo,.ativo-initials{width:24px;height:24px;font-size:9px}
+  .ativo-logo,.ativo-initials{width:30px;height:30px;font-size:10px;border-radius:7px}
   .tk{font-size:12px}
   .co{font-size:10px}
 
@@ -478,8 +530,10 @@ tr.total-row:hover td{background:var(--bg4)}
   .side-menu{width:84vw;max-width:300px}
 
   /* Footer: empilha verticalmente */
-  .footer{flex-direction:column;gap:8px;text-align:center;padding:16px 12px}
-  .f-note{text-align:center}
+  .f-top{flex-direction:column;text-align:center;padding:18px 16px 14px}
+  .f-brand{flex-direction:column;text-align:center}
+  .f-right{text-align:center}
+  .f-status{padding:10px 16px;text-align:center}
 }
 
 @media(max-width:420px){
@@ -535,12 +589,14 @@ tr.total-row:hover td{background:var(--bg4)}
   <div id="hdrSpacer" style="flex:1;min-width:0"></div>
   <!-- Índices: só os confiáveis (IBOV e USD/BRL) -->
   <div class="mkt-strip" id="mktStrip">
-    <div class="mkt-item">
+    <div class="mkt-item ibov">
+      <span class="mk-dot"></span>
       <span class="mk-n">IBOVESPA</span>
       <span class="mk-c neu" id="mk-ibov-c">—</span>
       <span class="mk-v" id="mk-ibov-v">—</span>
     </div>
-    <div class="mkt-item">
+    <div class="mkt-item usd">
+      <span class="mk-dot"></span>
       <span class="mk-n">DÓLAR</span>
       <span class="mk-c neu" id="mk-usd-c">—</span>
       <span class="mk-v" id="mk-usd-v">—</span>
@@ -567,7 +623,7 @@ tr.total-row:hover td{background:var(--bg4)}
       <div class="patr-sub">
         <span id="hSub">Meta: —</span>
         <span class="falta-pill" id="hFalta">—</span>
-        <span class="snap-chip" id="snapChip" title="Clique para ver fonte dos preços">aguardando…</span>
+        <span class="snap-chip" id="snapChip" title="'Ao vivo' significa que os preços foram atualizados agora há pouco direto da fonte de cotações. 'Snapshot' significa que está mostrando o último preço salvo, porque não foi possível buscar uma cotação mais recente no momento.">aguardando…</span>
       </div>
     </div>
     <!-- hstats removido — dados nos cards abaixo -->
@@ -579,7 +635,7 @@ tr.total-row:hover td{background:var(--bg4)}
     </div>
   </div>
   <div class="meta-row">
-    <span class="meta-lbl">Meta <strong id="metaLbl">R$ 97.000</strong></span>
+    <span class="meta-lbl">Meta <strong id="metaLbl">R$ 97.000</strong> <span class="info-ic" title="Valor total que você definiu como objetivo para o patrimônio investido (excluindo Reserva de Emergência e itens fora da meta). A barra ao lado mostra seu progresso até chegar lá. Edite em ⚙ Metas.">?</span></span>
     <div style="flex:1;min-width:180px"><div class="metabar" id="metaBar"></div></div>
     <span class="meta-pct" id="metaPct">—%</span>
     <button class="meta-cog" onclick="openMod('metas')">⚙️ Metas</button>
@@ -635,18 +691,21 @@ tr.total-row:hover td{background:var(--bg4)}
 <section class="panel" id="p-acoes">
   <div class="two">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="ac-src" style="color:var(--gold)">snapshot</span><button class="add-btn" onclick="openAddAtivo('acoes')">＋ Adicionar ação</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="ac-src" style="color:var(--gold)">snapshot</span><button class="add-btn" onclick="openAddAtivo('acoes')">＋ Adicionar ação</button><button class="refbtn" onclick="openColunasModal('ac')" style="font-size:11px">⚙ Colunas</button></div>
       <div class="tw">
-        <table>
+        <table data-tbl="ac">
           <thead><tr>
             <th class="sort" data-col="tk" data-t="ac">Ativo</th>
-            <th class="r sort" data-col="tot" data-t="ac">Total inv.</th>
-            <th class="r sort" data-col="totb3" data-t="ac">Total B3</th>
+            <th class="r sort" data-col="tot" data-t="ac">Total inv. <span class="info-ic" title="Quanto você efetivamente pagou: preço médio de compra × quantidade de cotas/ações.">?</span></th>
+            <th class="r sort" data-col="totb3" data-t="ac">Total B3 <span class="info-ic" title="Quanto vale hoje na bolsa: preço atual de mercado × quantidade de cotas/ações.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="ac">Lucro</th>
             <th class="r sort" data-col="price" data-t="ac">Cotação</th>
             <th class="r sort" data-col="cotas" data-t="ac">Cotas</th>
-            <th class="r">% / Teto</th>
-            <th>Objetivo</th>
+            <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos/JCP pagos nos últimos 12 meses, em relação ao preço atual da ação. Atualizado em tempo real via Brapi quando disponível.">?</span></th>
+            <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este ativo dentro da carteira de Ações BR. Clique no valor na linha para editar.">?</span></th>
+            <th class="r">% Teto Setor <span class="info-ic" title="Concentração do setor inteiro deste ativo (ex: Financeiro, Energia) em relação ao teto que você definiu para o setor. Diferente do teto individual, este olha pro grupo todo. Clique no valor para editar.">?</span></th>
+            <th>Objetivo <span class="info-ic" title="Sua intenção pessoal para este ativo: Comprar (quer aumentar a posição), Manter (está satisfeito com a quantidade atual) ou Vender (quer reduzir ou sair). É só um lembrete visual, não executa nenhuma ordem.">?</span></th>
+            <th></th>
           </tr></thead>
           <tbody id="acTbl"></tbody>
         </table>
@@ -655,12 +714,12 @@ tr.total-row:hover td{background:var(--bg4)}
     <div class="chart-col">
       <div class="cbox"><div class="c-ttl">% Carteira por empresa</div><div id="ac-hbars"></div></div>
       <div class="cbox">
-        <div class="c-ttl">% Setores B3</div>
+        <div class="c-ttl" style="display:flex;align-items:center;gap:0">% Setores B3 <span class="info-ic" title="Mostra quanto da sua carteira de Ações BR está concentrado em cada setor (Financeiro, Energia, etc), comparado ao teto máximo que você definiu para cada um.">?</span></div>
         <div style="display:flex;justify-content:center"><svg id="ac-donut" width="130" height="130"></svg></div>
         <div id="ac-donut-leg" style="margin-top:8px;display:flex;flex-direction:column;gap:3px"></div>
       </div>
       <div class="cbox"><div class="c-ttl">Dividend Yield %</div><div class="dy-row" id="ac-dy"></div></div>
-      <div class="st" style="margin-top:4px">Teto por setor</div>
+      <div class="st" style="margin-top:4px;display:flex;align-items:center;gap:0">Teto por setor <span class="info-ic" title="Limite máximo combinado para todos os ativos de um mesmo setor. Diferente do teto individual, este controla a concentração por categoria inteira. Clique no valor para editar.">?</span></div>
       <div id="ac-setores"></div>
     </div>
   </div>
@@ -670,18 +729,21 @@ tr.total-row:hover td{background:var(--bg4)}
 <section class="panel" id="p-fiis">
   <div class="two">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="fi-src" style="color:var(--gold)">snapshot</span><button class="add-btn" onclick="openAddAtivo('fiis')">＋ Adicionar FII</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="fi-src" style="color:var(--gold)">snapshot</span><button class="add-btn" onclick="openAddAtivo('fiis')">＋ Adicionar FII</button><button class="refbtn" onclick="openColunasModal('fi')" style="font-size:11px">⚙ Colunas</button></div>
       <div class="tw">
-        <table>
+        <table data-tbl="fi">
           <thead><tr>
             <th class="sort" data-col="tk" data-t="fi">Fundo</th>
-            <th class="r sort" data-col="tot" data-t="fi">Total inv.</th>
-            <th class="r sort" data-col="totb3" data-t="fi">Total B3</th>
+            <th class="r sort" data-col="tot" data-t="fi">Total inv. <span class="info-ic" title="Quanto você efetivamente pagou: preço médio de compra × quantidade de cotas.">?</span></th>
+            <th class="r sort" data-col="totb3" data-t="fi">Total B3 <span class="info-ic" title="Quanto vale hoje na bolsa: preço atual de mercado × quantidade de cotas.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="fi">Lucro</th>
             <th class="r sort" data-col="price" data-t="fi">Cotação</th>
             <th class="r sort" data-col="cotas" data-t="fi">Cotas</th>
-            <th class="r sort" data-col="dy" data-t="fi">DY%</th>
-            <th>Status</th>
+            <th class="r sort" data-col="dy" data-t="fi">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em proventos pagos nos últimos 12 meses, em relação ao preço atual da cota. Quanto maior, mais o fundo está distribuindo proporcionalmente ao seu valor.">?</span></th>
+            <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este FII dentro da carteira de FIIs. Clique no valor na linha para editar.">?</span></th>
+            <th class="r">% Teto Setor <span class="info-ic" title="Concentração do segmento inteiro deste FII (ex: Logística, Papel HG) em relação ao teto que você definiu para o segmento. Clique no valor para editar.">?</span></th>
+            <th>Status <span class="info-ic" title="Sua avaliação pessoal do preço atual deste FII: CARO (acima do que considera justo), NEUTRO (preço razoável) ou BARATO (oportunidade de compra). É uma anotação sua, não um indicador automático.">?</span></th>
+            <th></th>
           </tr></thead>
           <tbody id="fiTbl"></tbody>
         </table>
@@ -690,11 +752,13 @@ tr.total-row:hover td{background:var(--bg4)}
     <div class="chart-col">
       <div class="cbox"><div class="c-ttl">% Carteira FIIs</div><div id="fi-hbars"></div></div>
       <div class="cbox">
-        <div class="c-ttl">% por Segmento</div>
+        <div class="c-ttl" style="display:flex;align-items:center;gap:0">% por Segmento <span class="info-ic" title="Mostra quanto da sua carteira de FIIs está em cada segmento (Logística, Papel HG, Shopping, etc), comparado ao teto máximo definido para cada um.">?</span></div>
         <div style="display:flex;justify-content:center"><svg id="fi-donut" width="130" height="130"></svg></div>
         <div id="fi-donut-leg" style="margin-top:8px;display:flex;flex-direction:column;gap:3px"></div>
       </div>
       <div class="cbox"><div class="c-ttl">DY% por fundo</div><div class="dy-row" id="fi-dy"></div></div>
+      <div class="st" style="margin-top:4px;display:flex;align-items:center;gap:0">Teto por setor <span class="info-ic" title="Limite máximo combinado para todos os ativos de um mesmo setor. Diferente do teto individual, este controla a concentração por categoria inteira. Clique no valor para editar.">?</span></div>
+      <div id="fi-setores"></div>
       <div class="st" style="margin-top:4px">Proventos acumulados</div>
       <div class="tw"><table><thead><tr><th>Fundo</th><th class="r">Proventos</th><th class="r">DY%</th></tr></thead><tbody id="fiProvTbl"></tbody></table></div>
     </div>
@@ -718,16 +782,20 @@ tr.total-row:hover td{background:var(--bg4)}
 <section class="panel" id="p-etfs">
   <div class="two">
     <div>
-      <div class="st">Posições ETFs — USD e BRL</div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições ETFs — USD e BRL <button class="refbtn" onclick="openColunasModal('et')" style="font-size:11px">⚙ Colunas</button></div>
       <div class="tw">
-        <table>
+        <table data-tbl="et">
           <thead><tr>
             <th class="sort" data-col="tk" data-t="et">ETF</th>
             <th class="r sort" data-col="inv" data-t="et">Inv. (USD)</th><th class="r">Inv. (BRL)</th>
             <th class="r">Cotação</th>
             <th class="r sort" data-col="atual" data-t="et">Atual (USD)</th><th class="r">Atual (BRL)</th>
             <th class="r sort" data-col="lucro" data-t="et">Lucro</th>
-            <th class="r">DY%</th><th>Papel</th>
+            <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pelo ETF nos últimos 12 meses, em relação ao preço atual da cota.">?</span></th>
+            <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este ETF dentro da carteira de ETFs. Clique no valor na linha para editar.">?</span></th>
+            <th class="r">% Teto Setor <span class="info-ic" title="Concentração da categoria inteira deste ETF (ex: S&P 500, Industrial) em relação ao teto que você definiu para a categoria. Clique no valor para editar.">?</span></th>
+            <th>Papel</th>
+            <th></th>
           </tr></thead>
           <tbody id="etTbl"></tbody>
         </table>
@@ -736,6 +804,8 @@ tr.total-row:hover td{background:var(--bg4)}
     <div class="chart-col">
       <div class="cbox"><div class="c-ttl">% Carteira ETFs</div><div id="et-hbars"></div></div>
       <div class="cbox"><div class="c-ttl">DY% ETFs</div><div class="dy-row" id="et-dy"></div></div>
+      <div class="st" style="margin-top:4px;display:flex;align-items:center;gap:0">Teto por setor <span class="info-ic" title="Limite máximo combinado para todos os ativos de um mesmo setor. Diferente do teto individual, este controla a concentração por categoria inteira. Clique no valor para editar.">?</span></div>
+      <div id="et-setores"></div>
     </div>
   </div>
 </section>
@@ -744,16 +814,20 @@ tr.total-row:hover td{background:var(--bg4)}
 <section class="panel" id="p-stocks">
   <div class="two">
     <div>
-      <div class="st">Posições Stocks — USD e BRL</div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições Stocks — USD e BRL <button class="refbtn" onclick="openColunasModal('sk')" style="font-size:11px">⚙ Colunas</button></div>
       <div class="tw">
-        <table>
+        <table data-tbl="sk">
           <thead><tr>
             <th class="sort" data-col="tk" data-t="sk">Stock</th>
             <th class="r sort" data-col="inv" data-t="sk">Inv. (USD)</th><th class="r">Inv. (BRL)</th>
             <th class="r">Cotação</th>
             <th class="r sort" data-col="atual" data-t="sk">Atual (USD)</th><th class="r">Atual (BRL)</th>
             <th class="r sort" data-col="lucro" data-t="sk">Lucro</th>
-            <th class="r">DY%</th><th>Objetivo</th>
+            <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pela empresa nos últimos 12 meses, em relação ao preço atual da ação.">?</span></th>
+            <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para esta Stock dentro da carteira de Stocks. Clique no valor na linha para editar.">?</span></th>
+            <th class="r">% Teto Setor <span class="info-ic" title="Concentração do setor inteiro desta Stock (ex: Tecnologia, Financeiro) em relação ao teto que você definiu para o setor. Clique no valor para editar.">?</span></th>
+            <th>Objetivo <span class="info-ic" title="Sua intenção pessoal para este ativo: Comprar (quer aumentar a posição), Manter (está satisfeito com a quantidade atual) ou Vender (quer reduzir ou sair). É só um lembrete visual, não executa nenhuma ordem.">?</span></th>
+            <th></th>
           </tr></thead>
           <tbody id="skTbl"></tbody>
         </table>
@@ -762,11 +836,11 @@ tr.total-row:hover td{background:var(--bg4)}
     <div class="chart-col">
       <div class="cbox"><div class="c-ttl">% Carteira Stocks</div><div id="sk-hbars"></div></div>
       <div class="cbox">
-        <div class="c-ttl">% por Setor</div>
+        <div class="c-ttl" style="display:flex;align-items:center;gap:0">% por Setor <span class="info-ic" title="Mostra quanto da sua carteira de Stocks está concentrado em cada setor (Tecnologia, Financeiro, Saúde, etc), comparado ao teto máximo definido para cada um.">?</span></div>
         <div style="display:flex;justify-content:center"><svg id="sk-donut" width="130" height="130"></svg></div>
         <div id="sk-donut-leg" style="margin-top:8px;display:flex;flex-direction:column;gap:3px"></div>
       </div>
-      <div class="st" style="margin-top:4px">Teto por setor</div>
+      <div class="st" style="margin-top:4px;display:flex;align-items:center;gap:0">Teto por setor <span class="info-ic" title="Limite máximo combinado para todos os ativos de um mesmo setor. Diferente do teto individual, este controla a concentração por categoria inteira. Clique no valor para editar.">?</span></div>
       <div id="sk-setores"></div>
     </div>
   </div>
@@ -774,19 +848,21 @@ tr.total-row:hover td{background:var(--bg4)}
 
 <!-- CRIPTO -->
 <section class="panel" id="p-cripto">
-  <div class="st" style="display:flex;align-items:center;gap:8px">Posições — Cripto <span id="cripto-src" style="color:var(--gold)">snapshot</span><button class="add-btn" onclick="openAddAtivo('cripto')">＋ Adicionar moeda</button></div>
+  <div class="st" style="display:flex;align-items:center;gap:8px">Posições — Cripto <span id="cripto-src" style="color:var(--gold)">snapshot</span><button class="add-btn" onclick="openAddAtivo('cripto')">＋ Adicionar moeda</button><button class="refbtn" onclick="openColunasModal('cr')" style="font-size:11px">⚙ Colunas</button></div>
   <div class="tw">
-    <table>
+    <table data-tbl="cr">
       <thead><tr>
         <th>Moeda</th>
         <th class="r">Qtd.</th>
-        <th class="r">Total Investido</th>
-        <th class="r">Total Corretora</th>
+        <th class="r">Total Investido <span class="info-ic" title="Quanto você efetivamente pagou: preço médio de compra × quantidade da moeda.">?</span></th>
+        <th class="r">Total Corretora <span class="info-ic" title="Quanto vale hoje na corretora: cotação atual × quantidade da moeda. Mostra 'PM' quando não há cotação ao vivo disponível para essa moeda.">?</span></th>
         <th class="r">Preço</th>
         <th class="r">Lucro</th>
+        <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para esta moeda dentro da carteira de Cripto. Clique no valor na linha para editar.">?</span></th>
+        <th></th>
       </tr></thead>
       <tbody id="cryptoTbl">
-        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px 0">
+        <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px 0">
           Nenhuma posição em cripto ainda. Clique em "+ Adicionar moeda" para começar.
         </td></tr>
       </tbody>
@@ -855,17 +931,42 @@ tr.total-row:hover td{background:var(--bg4)}
   </div>
 </div>
 
-
-
-  <div class="f-brand"><div class="logo-m" style="width:22px;height:22px;font-size:11px">A</div>ativo·br</div>
-  <div class="f-links">
-    <a href="#">Painel</a><a href="#">Proventos</a>
-    <span class="f-ver" onclick="openMod('changelog')">📋 v5.0</span>
+<!-- Modal: Gerenciar Colunas -->
+<div class="mbg" id="modColunas" onclick="if(event.target===this)closeColunasModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:360px">
+    <div class="m-title">
+      <span id="colunasModalTitle">Colunas</span>
+      <button class="m-close" onclick="closeColunasModal()">×</button>
+    </div>
+    <div style="padding:16px">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">Escolha quais colunas aparecem nesta tabela. A preferência fica salva no seu navegador.</p>
+      <div id="colunasModalList"></div>
+      <button class="btn-pri" style="width:100%;margin-top:14px" onclick="closeColunasModal()">Concluído</button>
+    </div>
   </div>
-  <div class="f-note">
-    <span id="sbStatus" style="margin-right:8px;font-size:10px">○ conectando…</span>
-    Cotações: Brapi.dev · Banco: Supabase<br/>
-    Painel pessoal — não constitui recomendação de investimento.
+</div>
+
+
+
+
+<footer class="footer">
+  <div class="f-top">
+    <div class="f-brand">
+      <div class="logo-m">A</div>
+      <div class="f-brand-txt">
+        <span class="f-brand-title">ativo·br</span>
+        <span class="f-brand-sub">Painel pessoal de investimentos · Acompanhamento de carteira</span>
+      </div>
+    </div>
+    <div class="f-right">
+      <span class="f-right-credit">Concebido e desenvolvido por <b onclick="goHome()">Denys Ricucci</b></span>
+      <span class="f-right-meta">© 2026 Denys Ricucci · Todos os direitos reservados · <span class="f-ver" id="footerVer" onclick="openMod('changelog')">v15.0</span></span>
+    </div>
+  </div>
+  <div class="f-divider"></div>
+  <div class="f-status">
+    <span class="dot" id="sbStatusDot"></span>
+    <span id="sbStatus">Cotações: Brapi.dev + Yahoo Finance + AwesomeAPI · Banco: Supabase · Não constitui recomendação de investimento</span>
   </div>
 </footer>
 
@@ -979,9 +1080,17 @@ tr.total-row:hover td{background:var(--bg4)}
     </div>
 
     <div id="mt-app" style="display:none">
-      <div style="padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)">
+      <div style="padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);margin-bottom:14px">
         <p style="font-size:12px;color:var(--pos);font-weight:600;margin-bottom:6px">✓ Cotações via Yahoo Finance</p>
         <p style="font-size:11px;color:var(--muted);line-height:1.6">Sem necessidade de token. Preços atualizados automaticamente a cada 60s para todas as classes de ativos.</p>
+      </div>
+      <p style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Colunas das tabelas</p>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="refbtn" style="justify-content:flex-start" onclick="closeMod();openColunasModal('ac')">Ações BR</button>
+        <button class="refbtn" style="justify-content:flex-start" onclick="closeMod();openColunasModal('fi')">FIIs</button>
+        <button class="refbtn" style="justify-content:flex-start" onclick="closeMod();openColunasModal('et')">ETFs</button>
+        <button class="refbtn" style="justify-content:flex-start" onclick="closeMod();openColunasModal('sk')">Stocks</button>
+        <button class="refbtn" style="justify-content:flex-start" onclick="closeMod();openColunasModal('cr')">Cripto</button>
       </div>
     </div>
 
@@ -1052,35 +1161,36 @@ const SB = {
   }
 };
 
-// ─── LOGOS via Clearbit ──────────────────────────────────────────────
-// Carrega direto via <img> — sem CORS, sem API, sem token
-// Funciona em file:// e GitHub Pages
-const LOGO_DOMAINS = {
-  'WEGE3':'weg.net','BBSE3':'bb.com.br','CPLE3':'copel.com',
-  'ITSA4':'itausa.com.br','SAPR4':'sanepar.com.br','EQTL3':'equatorialenergia.com.br',
-  'BBAS3':'bb.com.br','GGPS3':'grupogps.com.br','CXSE3':'caixaseguridade.com.br',
-  'BTLG11':'btgpactual.com','KNSC11':'kinea.com.br','XPML11':'xpinvestimentos.com.br',
-  'GGRC11':'grupogps.com.br','GARE11':'guardianfii.com.br','TRXF11':'trxre.com.br',
-  'HSLG11':'hsicapital.com.br','SNEL11':'sunoenergia.com.br','BTCI11':'btgpactual.com',
-  'VOO':'vanguard.com','XLI':'ssga.com','XLV':'ssga.com',
-  'AVGO':'broadcom.com','GOOGL':'google.com','JNJ':'jnj.com',
-  'KO':'coca-cola.com','JPM':'jpmorganchase.com','V':'visa.com',
-  'ACN':'accenture.com','NU':'nubank.com.br',
-};
+// ─── LOGOS ──────────────────────────────────────────────────────────
+// Fonte primária: ícones oficiais B3 (thefintz/icones-b3) — por TICKER exato.
+// Cobre Ações, FIIs, BDRs brasileiros.
+// Fonte secundária: Logo.dev — por TICKER direto (/ticker/{symbol}), cobre Stocks EUA.
+//   Clearbit foi descontinuado em dez/2025; Logo.dev é o substituto oficial recomendado.
+// Último recurso: iniciais do ticker.
+const B3_ICONS_BASE = 'https://raw.githubusercontent.com/thefintz/icones-b3/main/icones/';
+const LOGODEV_TOKEN = 'pk_UgAEYVDeS2KdwrS88BRsuw'; // token embutido — nunca exposto em campo de UI
+const LOGODEV_TICKER_BASE = 'https://img.logo.dev/ticker/';
+
 const LOGOS = {};
 
-function logoErr(el,tk){ el.outerHTML='<span class="ativo-initials">'+tk.slice(0,2)+'</span>'; }
+// Cadeia de fallback: ícone B3 (ações/FIIs BR) → Logo.dev por ticker (stocks EUA) → iniciais
+function logoErr(el,tk){
+  if(el.dataset.stage!=='logodev'){
+    // 1ª falha (ícone B3 não existe pra esse ticker — comum em Stocks EUA) → tenta Logo.dev
+    el.dataset.stage='logodev';
+    el.src=`${LOGODEV_TICKER_BASE}${tk}?token=${LOGODEV_TOKEN}&fallback=404`;
+    return;
+  }
+  // 2ª falha → iniciais
+  el.outerHTML='<span class="ativo-initials">'+tk.slice(0,2)+'</span>';
+}
 
 function logoImg(tk){
   const cached=LOGOS[tk];
   if(cached) return `<img src="${cached}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="logoErr(this,'${tk}')"/>`;
-  const domain=LOGO_DOMAINS[tk];
-  if(domain){
-    const url=`https://logo.clearbit.com/${domain}`;
-    LOGOS[tk]=url;
-    return `<img src="${url}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="logoErr(this,'${tk}')"/>`;
-  }
-  return `<span class="ativo-initials">${tk.slice(0,2)}</span>`;
+  const url=`${B3_ICONS_BASE}${tk}.png`;
+  LOGOS[tk]=url;
+  return `<img src="${url}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="logoErr(this,'${tk}')"/>`;
 }
 
 // ─── CORS helper para fetches de dados (cotações) ────────────────────
@@ -1123,12 +1233,47 @@ const TICKERS_BR = [
   'SNAG11','SNEL11','TGAR11','TPFT11','TRXF11','URPR11','VGIR11','VILG11','VISC11',
   'VOTS11','VRTA11','VTLT11','XPML11','XPLG11','XPPR11',
 ];
+
+// Mapa ticker → setor (combina com as categorias usadas em D.tetosBR) para auto-associar ao digitar
+const TICKER_SETOR_BR = {
+  // Financeiro
+  BBAS3:"Financeiro", BBDC3:"Financeiro", BBDC4:"Financeiro", BBSE3:"Financeiro",
+  BPAC11:"Financeiro", B3SA3:"Financeiro", CXSE3:"Financeiro", ITSA4:"Financeiro",
+  ITUB4:"Financeiro", IRBR3:"Financeiro", WIZC3:"Financeiro",
+  // Energia
+  CPFE3:"Energia", CPLE3:"Energia", CMIG4:"Energia", EGIE3:"Energia",
+  ELET3:"Energia", ELET6:"Energia", ENEV3:"Energia", EQTL3:"Energia",
+  TAEE11:"Energia", VBBR3:"Energia", PRIO3:"Energia", PETR3:"Energia", PETR4:"Energia",
+  // Indústria
+  WEGE3:"Indústria", EMBR3:"Indústria", BRKM5:"Indústria", GGBR4:"Indústria",
+  GOAU4:"Indústria", CSNA3:"Indústria", USIM5:"Indústria", KLBN11:"Indústria",
+  SUZB3:"Indústria", DXCO3:"Indústria", MYPK3:"Indústria",
+  // Saneamento
+  SAPR4:"Saneamento", SBSP3:"Saneamento", CSMG3:"Saneamento",
+  // Serviços
+  GGPS3:"Serviços", RENT3:"Serviços", RAIL3:"Serviços", CCRO3:"Serviços",
+  ECOR3:"Serviços", SIMH3:"Serviços", AZUL4:"Serviços", GOLL4:"Serviços",
+  TOTS3:"Serviços", LWSA3:"Serviços", POSI3:"Serviços",
+  // Consumo / Saúde / Outros — fallback genérico mapeado para Serviços
+  ABEV3:"Serviços", ASAI3:"Serviços", PCAR3:"Serviços", LREN3:"Serviços",
+  ARZZ3:"Serviços", SOMA3:"Serviços", NTCO3:"Serviços", HAPV3:"Serviços",
+  RDOR3:"Serviços", FLRY3:"Serviços", QUAL3:"Serviços", RADL3:"Serviços",
+  HYPE3:"Serviços", MGLU3:"Serviços", PETZ3:"Serviços", COGN3:"Serviços",
+  YDUQ3:"Serviços", JHSF3:"Serviços", MULT3:"Serviços", CYRE3:"Serviços",
+  MRVE3:"Serviços", JBSS3:"Serviços", MRFG3:"Serviços", BEEF3:"Serviços",
+  VIVT3:"Serviços", TIMS3:"Serviços", UGPA3:"Serviços", CSAN3:"Serviços",
+  BRFS3:"Serviços", SLCE3:"Serviços", SMFT3:"Serviços", BRAP4:"Indústria",
+  RRRP3:"Energia", SBFG3:"Serviços", VALE3:"Indústria",
+};
+
 function setSbStatus(ok){
   sbOK = ok;
+  const dot = document.getElementById('sbStatusDot');
   const el = document.getElementById('sbStatus');
+  if(dot) dot.style.background = ok ? 'var(--pos)' : 'var(--muted)';
   if(el){
-    el.textContent = ok ? '● Banco conectado' : '○ Offline (local)';
-    el.style.color = ok ? 'var(--pos)' : 'var(--muted)';
+    el.textContent = (ok ? 'Banco conectado' : 'Offline (local)') +
+      ' · Cotações: Brapi.dev + Yahoo Finance + AwesomeAPI · Não constitui recomendação de investimento';
   }
 }
 
@@ -1263,6 +1408,13 @@ const D={
     {s:"Financeiro",teto:35},{s:"Energia",teto:25},
     {s:"Indústria",teto:20},{s:"Saneamento",teto:15},{s:"Serviços",teto:5}
   ],
+  tetosFII:[
+    {s:"Logística",teto:35},{s:"Papel HG",teto:30},
+    {s:"Shopping",teto:20},{s:"Híbrido",teto:20},{s:"Energia",teto:10}
+  ],
+  tetosETF:[
+    {s:"S&P 500 — âncora",teto:60},{s:"Industrial",teto:25},{s:"Saúde/Biotech",teto:25}
+  ],
   fiis:[
     {tk:"BTLG11",seg:"Logística",pm:102.73,cotas:23, dy:9.18, prov:183.54,st:"CARO"},
     {tk:"KNSC11",seg:"Papel HG",  pm:8.65,  cotas:143,dy:12.5, prov:160.06,st:"CARO"},
@@ -1318,6 +1470,9 @@ const D={
 /* ═══════════════════ HELPERS ═════════════════════ */
 const brl=(n,d=0)=>"R$ "+Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
 const usd=(n,d=2)=>"$ "+Math.abs(+n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+/* Versão para a linha de TOTAL: símbolo pequeno/sutil + número em destaque, sem quebrar linha */
+const brlTotal=(n,d=0)=>`<span class="tot-cur">R$</span> ${Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})}`;
+const usdTotal=(n,d=2)=>`<span class="tot-cur">$</span> ${Math.abs(+n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}`;
 const sgn=n=>n>=0?"+":"−";
 let usdBRL=5.80, sortSt={}, pricesArelive=false;
 
@@ -1336,10 +1491,11 @@ function addTotals(tbodyId, cols){
     if(c.cs) td.colSpan=c.cs;
     if(c.label){
       td.textContent=c.label;
-      td.style.cssText="font-size:10px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase";
+      td.style.cssText="font-size:11px;letter-spacing:.1em;color:var(--gold);text-transform:uppercase;font-weight:700";
     } else {
       td.style.fontFamily="var(--mono)";
-      td.style.fontSize="12px";
+      td.style.fontSize="14px";
+      td.style.fontWeight="700";
       if(c.color) td.style.color=c.color;
       td.innerHTML=c.val||"";
     }
@@ -1388,31 +1544,105 @@ function mkHBars(data,id,color){
 }
 
 /* ── DY BARS ────────────────────────── */
+/* Cores por setor — reaproveitadas em todos os gráficos de DY% e donuts */
+const SETOR_CORES = {
+  // Ações BR
+  "Financeiro":"#3B82F6", "Energia":"#F97316", "Indústria":"#818CF8",
+  "Saneamento":"#06B6D4", "Serviços":"#A78BFA",
+  // FIIs
+  "Logística":"#38BDF8", "Papel HG":"#F59E0B", "Shopping":"#EC4899", "Híbrido":"#16A34A",
+  // Stocks EUA
+  "Tecnologia":"#818CF8", "Saúde":"#16A34A", "Consumo":"#F59E0B",
+};
+function corDoSetor(setor){ return SETOR_CORES[setor] || "var(--gold)"; }
+
+/* Gráfico de DY% em barras horizontais — nome completo do ticker, cor por setor, ordenado do maior pro menor */
 function mkDY(data,id){
   const c=document.getElementById(id); if(!c) return; c.innerHTML="";
-  const mx=Math.max(...data.map(d=>d.v),1);
-  data.forEach(d=>{
-    const h=Math.max(3,d.v/mx*54);
-    const div=document.createElement("div"); div.className="dy-col";
-    div.innerHTML=`<div class="dy-val">${d.v.toFixed(1)}</div><div class="dy-bar" style="height:${h}px"></div><div class="dy-lbl">${d.label}</div>`;
-    c.appendChild(div);
-  });
+  if(!data.length){ c.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0">Sem dados</div>'; return; }
+  const sorted=[...data].sort((a,b)=>b.v-a.v);
+  const mx=Math.max(...sorted.map(d=>d.v),0.1);
+  c.className="dy-hlist";
+  c.innerHTML = sorted.map(d=>{
+    const w = Math.max(4,(d.v/mx)*100);
+    const cor = d.setor ? corDoSetor(d.setor) : "var(--gold)";
+    return `<div class="dy-hrow" title="${d.label}${d.setor?' — '+d.setor:''}: ${d.v.toFixed(2)}%">
+      <span class="dy-hlbl">${d.label}</span>
+      <div class="dy-htrack"><div class="dy-hfill" style="width:${w.toFixed(0)}%;background:${cor}"></div></div>
+      <span class="dy-hval">${d.v.toFixed(1)}%</span>
+    </div>`;
+  }).join("");
 }
 
 /* ── SECTOR BARS ────────────────────── */
-function mkSetores(data,id,pctFn){
+/* ─── TETO POR SETOR (genérico — Ações, FIIs, ETFs, Stocks) ──────────── */
+const TETOS_SETOR_KEY = "tetosPorSetor";
+function getTetosSetorCustom(){
+  try{ return JSON.parse(localStorage.getItem(TETOS_SETOR_KEY)||"{}"); }
+  catch(e){ return {}; }
+}
+function saveTetoSetor(classe, setor, valor){
+  const t = getTetosSetorCustom();
+  const key = classe+"::"+setor;
+  t[key] = valor;
+  localStorage.setItem(TETOS_SETOR_KEY, JSON.stringify(t));
+}
+function getTetoSetor(classe, setor, padrao){
+  const custom = getTetosSetorCustom();
+  const key = classe+"::"+setor;
+  return custom[key]!==undefined ? custom[key] : padrao;
+}
+
+function mkSetores(data,id,pctFn,classe){
   const c=document.getElementById(id); if(!c) return; c.innerHTML="";
   data.forEach(t=>{
-    const atual=pctFn(t.s), over=atual>t.teto;
-    const w=Math.min(100,atual/Math.max(t.teto,atual)*100), cap=t.teto/Math.max(t.teto,atual)*100;
+    const tetoAtual = classe ? getTetoSetor(classe, t.s, t.teto) : t.teto;
+    const atual=pctFn(t.s), over=atual>tetoAtual;
+    const w=Math.min(100,atual/Math.max(tetoAtual,atual)*100), cap=tetoAtual/Math.max(tetoAtual,atual)*100;
     const el=document.createElement("div"); el.className="sbar";
     el.innerHTML=`<div class="sbar-h"><span class="sbar-n">${t.s}</span>
-      <span class="sbar-c" style="color:${over?"var(--neg)":"var(--muted)"}">${atual.toFixed(1)}% / ${t.teto}%</span></div>
+      <span class="sbar-c" style="color:${over?"var(--neg)":"var(--muted)"};cursor:pointer" onclick="editTetoSetor('${classe}','${t.s}',${tetoAtual})" title="Clique para editar o teto deste setor">
+        ${atual.toFixed(1)}% / <u>${tetoAtual}%</u>
+      </span></div>
       <div class="sbar-t"><div class="sbar-f" style="width:${w.toFixed(0)}%;background:${over?"var(--neg)":"var(--blue)"}"></div>
       <div class="sbar-l" style="left:${cap.toFixed(0)}%"></div></div>
-      <div class="sbar-note${over?" ov":""}">${over?`⚠ Acima em ${(atual-t.teto).toFixed(1)} p.p.`:`Folga de ${(t.teto-atual).toFixed(1)} p.p.`}</div>`;
+      <div class="sbar-note${over?" ov":""}">${over?`⚠ Acima em ${(atual-tetoAtual).toFixed(1)} p.p.`:`Folga de ${(tetoAtual-atual).toFixed(1)} p.p.`}</div>`;
     c.appendChild(el);
   });
+}
+
+function editTetoSetor(classe, setor, tetoAtual){
+  if(!classe || classe==="undefined"){
+    alert("Esta tabela de setores ainda não suporta edição.");
+    return;
+  }
+  const novo = prompt(`Teto máximo do setor "${setor}" em ${classe} (%):`, tetoAtual);
+  if(novo===null) return;
+  const v = parseFloat(novo.replace(",","."));
+  if(isNaN(v)||v<=0){ alert("Digite um valor numérico válido maior que zero."); return; }
+
+  // Trava: soma dos tetos de setor dentro da mesma classe não pode passar de 100%
+  const todosOsSetores = classe==="Ações BR" ? D.tetosBR.map(t=>t.s)
+    : classe==="FIIs" ? D.tetosFII.map(t=>t.s)
+    : classe==="ETFs" ? D.tetosETF.map(t=>t.s)
+    : classe==="Stocks" ? D.setoresEUA.map(t=>t.s) : [];
+  const padraoOrig = classe==="Ações BR" ? D.tetosBR
+    : classe==="FIIs" ? D.tetosFII
+    : classe==="ETFs" ? D.tetosETF
+    : classe==="Stocks" ? D.setoresEUA : [];
+  const outrosSetores = todosOsSetores.filter(s=>s!==setor);
+  const somaOutros = outrosSetores.reduce((s,st)=>{
+    const padrao = padraoOrig.find(p=>p.s===st)?.teto||0;
+    return s+getTetoSetor(classe, st, padrao);
+  },0);
+  const somaTotal = somaOutros + v;
+  if(somaTotal > 100){
+    alert(`A soma dos tetos por setor em ${classe} não pode passar de 100%.\n\nSoma atual dos outros setores: ${somaOutros.toFixed(1)}%\nVocê está tentando definir: ${v}%\nTotal ficaria: ${somaTotal.toFixed(1)}%\n\nReduza o teto de outro setor primeiro, ou use um valor menor.`);
+    return;
+  }
+
+  saveTetoSetor(classe, setor, v);
+  render();
 }
 
 /* ═══════════════════ BRAPI FETCH ═════════════════ */
@@ -1441,11 +1671,13 @@ async function refreshPrices(manual=false){
   const tksBR   =[...tksAcoes,...tksFiis,'^BVSP']; // inclui índice na mesma chamada
   let brOK=0;
 
-  /* 1. BR + IBOV via Brapi (token embutido — plano free, 15k req/mês, atualiza a cada 15min) */
+  /* 1. BR + IBOV via Brapi (token embutido — plano free, 15k req/mês, atualiza a cada 15min)
+        modules=defaultKeyStatistics traz dividendYield real (DY%) na mesma chamada, sem custo extra */
   let ibovOK=false;
+  window._dyBR = window._dyBR || {}; // cache de DY% real por ticker
   try{
     const symStr = tksBR.map(s=>s.replace('^','%5E')).join(',');
-    const url=`https://brapi.dev/api/quote/${symStr}?token=${BRAPI_TOKEN}`;
+    const url=`https://brapi.dev/api/quote/${symStr}?modules=defaultKeyStatistics&token=${BRAPI_TOKEN}`;
     const j=await corsGetJSON(url);
     console.log('Brapi resposta completa:', j);
     if(j.results&&j.results.length){
@@ -1456,10 +1688,13 @@ async function refreshPrices(manual=false){
           ibovOK=true;
         } else {
           prices[q.symbol]=q.regularMarketPrice; brOK++;
+          // dividendYield vem como fração (ex: 0.0843 = 8.43%) — guarda já em %
+          const dy = q.defaultKeyStatistics?.dividendYield;
+          if(dy!=null && !isNaN(dy)) window._dyBR[q.symbol] = dy*100;
         }
       });
     }
-    console.log(`Brapi: ${brOK} ativos BR + IBOV ${ibovOK?'OK':'FALTOU'}`);
+    console.log(`Brapi: ${brOK} ativos BR + IBOV ${ibovOK?'OK':'FALTOU'}, DY% obtido para ${Object.keys(window._dyBR).length} tickers`);
   }catch(e){ console.warn('Brapi falhou:',e.message); }
 
   /* 1b. Fallback: busca ^BVSP isolado se não veio no batch (alguns planos limitam mix de índice+ações) */
@@ -1540,7 +1775,13 @@ function updMkt(key,val,chPct){
   vEl.textContent=val;
   const ch=parseFloat(chPct)||0, up=ch>0, dn=ch<0;
   cEl.className="mk-c "+(up?"up":dn?"dn":"neu");
-  cEl.textContent=(up?"▲ ":dn?"▼ ":"")+Math.abs(ch).toFixed(2)+"%";
+  // Seta angular de tendência (estilo "trending up/down") em vez do triângulo ▲▼
+  const arrowSvg = up
+    ? `<svg class="mk-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>`
+    : dn
+    ? `<svg class="mk-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 7 9 13 13 9 21 17"/><polyline points="14 17 21 17 21 10"/></svg>`
+    : "";
+  cEl.innerHTML = arrowSvg + Math.abs(ch).toFixed(2)+"%";
   // Cache local — garante que nunca mostra "—" na próxima carga, mesmo com delay
   try{
     localStorage.setItem("mktCache_"+key, JSON.stringify({val,chPct:ch,ts:Date.now()}));
@@ -1844,12 +2085,13 @@ function renderCripto(){
   saveCriptoAtivos();
 
   if(!D.cripto.length){
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px 0">
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px 0">
       Nenhuma posição em cripto ainda. Clique em "+ Adicionar moeda" para começar.
     </td></tr>`;
     return;
   }
 
+  const totCriptoCarteira = getCriptoTotal();
   let algumAoVivo=false;
   tbody.innerHTML = D.cripto.map((c,idx)=>{
     const precoVivo = cryptoPrecoBRL(c.moeda);
@@ -1861,6 +2103,8 @@ function renderCripto(){
     const lucroColor = lucro>0?'var(--pos)':lucro<0?'var(--neg)':'var(--muted)';
     const chg = window._cryptoChange && window._cryptoChange[c.moeda];
     const chgTxt = (precoVivo && chg!==undefined) ? `<div style="font-size:9px;color:${chg>=0?'var(--pos)':'var(--neg)'}">${chg>=0?'▲':'▼'} ${Math.abs(chg).toFixed(2)}%</div>` : '';
+    const pctCart = totCriptoCarteira>0 ? totCorretora/totCriptoCarteira*100 : 0;
+    const tetoAtual = getTetoTicker(c.moeda, 50); // padrão 50% se não definido
     return `<tr>
       <td><div class="ativo-cell">
         <span class="ativo-initials" style="background:${c.c};color:#fff">${c.moeda.slice(0,2)}</span>
@@ -1870,9 +2114,9 @@ function renderCripto(){
       <td class="r" style="font-family:var(--mono)">${brl(totInv,2)}</td>
       <td class="r" style="font-family:var(--mono)">${brl(totCorretora,2)}</td>
       <td class="r" style="font-family:var(--mono);color:${precoVivo?'var(--text)':'var(--muted)'}">${precoVivo?brl(preco,2):'PM'}${chgTxt}</td>
-      <td class="r" style="font-family:var(--mono);color:${lucroColor};font-weight:600">${lucro>=0?'+':''}${brl(lucro,2)}
-        <span onclick="deleteCripto(${idx})" style="cursor:pointer;color:var(--neg);margin-left:8px;font-size:12px" title="Remover">✕</span>
-      </td>
+      <td class="r" style="font-family:var(--mono);color:${lucroColor};font-weight:600">${lucro>=0?'+':''}${brl(lucro,2)}</td>
+      <td>${tetoCell(c.moeda, pctCart, tetoAtual)}</td>
+      <td class="r"><button class="refbtn" onclick="deleteCripto(${idx})" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover esta posição">✕ Excluir</button></td>
     </tr>`;
   }).join("");
 
@@ -1891,6 +2135,16 @@ function deleteCripto(idx){
   renderMetasAloc();
 }
 
+/* Exclui um ativo de Ações BR, FIIs, ETFs ou Stocks pelo ticker */
+function deleteAtivo(classe, tk){
+  if(!confirm(`Remover ${tk} da sua carteira?`)) return;
+  if(classe==="acoes") D.acoes = D.acoes.filter(a=>a.tk!==tk);
+  else if(classe==="fiis") D.fiis = D.fiis.filter(f=>f.tk!==tk);
+  else if(classe==="etfs") D.etfs = D.etfs.filter(e=>e.tk!==tk);
+  else if(classe==="stocks") D.stocks = D.stocks.filter(s=>s.tk!==tk);
+  render(); // re-renderiza tudo (tabelas, alocação, metas)
+}
+
 function getCriptoTotal(){
   return D.cripto.reduce((s,c)=>{
     const precoVivo = cryptoPrecoBRL(c.moeda);
@@ -1898,6 +2152,229 @@ function getCriptoTotal(){
     return s + preco*c.qtd;
   },0);
 }
+
+/* ─── COLUNAS OCULTÁVEIS (genérico — Ações, FIIs, ETFs, Stocks, Cripto) ── */
+const COLS_KEY = "colunasVisiveis";
+
+// Registro de colunas por tabela: nome amigável + índice (1-based, igual nth-child)
+const COLUNAS_REGISTRO = {
+  ac: [
+    {idx:1, label:"Ativo", obrigatoria:true},
+    {idx:2, label:"Total Inv."},
+    {idx:3, label:"Total B3"},
+    {idx:4, label:"Lucro"},
+    {idx:5, label:"Cotação"},
+    {idx:6, label:"Cotas"},
+    {idx:7, label:"DY%"},
+    {idx:8, label:"% Teto Individual"},
+    {idx:9, label:"% Teto Setor"},
+    {idx:10, label:"Objetivo"},
+    {idx:11, label:"Excluir", obrigatoria:true},
+  ],
+  fi: [
+    {idx:1, label:"Fundo", obrigatoria:true},
+    {idx:2, label:"Total Inv."},
+    {idx:3, label:"Total B3"},
+    {idx:4, label:"Lucro"},
+    {idx:5, label:"Cotação"},
+    {idx:6, label:"Cotas"},
+    {idx:7, label:"DY%"},
+    {idx:8, label:"% Teto Individual"},
+    {idx:9, label:"% Teto Setor"},
+    {idx:10, label:"Status"},
+    {idx:11, label:"Excluir", obrigatoria:true},
+  ],
+  et: [
+    {idx:1, label:"ETF", obrigatoria:true},
+    {idx:2, label:"Inv. (USD)"},
+    {idx:3, label:"Inv. (BRL)"},
+    {idx:4, label:"Cotação"},
+    {idx:5, label:"Atual (USD)"},
+    {idx:6, label:"Atual (BRL)"},
+    {idx:7, label:"Lucro"},
+    {idx:8, label:"DY%"},
+    {idx:9, label:"% Teto Individual"},
+    {idx:10, label:"% Teto Setor"},
+    {idx:11, label:"Papel"},
+    {idx:12, label:"Excluir", obrigatoria:true},
+  ],
+  sk: [
+    {idx:1, label:"Stock", obrigatoria:true},
+    {idx:2, label:"Inv. (USD)"},
+    {idx:3, label:"Inv. (BRL)"},
+    {idx:4, label:"Cotação"},
+    {idx:5, label:"Atual (USD)"},
+    {idx:6, label:"Atual (BRL)"},
+    {idx:7, label:"Lucro"},
+    {idx:8, label:"DY%"},
+    {idx:9, label:"% Teto Individual"},
+    {idx:10, label:"% Teto Setor"},
+    {idx:11, label:"Objetivo"},
+    {idx:12, label:"Excluir", obrigatoria:true},
+  ],
+  cr: [
+    {idx:1, label:"Moeda", obrigatoria:true},
+    {idx:2, label:"Qtd."},
+    {idx:3, label:"Total Investido"},
+    {idx:4, label:"Total Corretora"},
+    {idx:5, label:"Preço"},
+    {idx:6, label:"Lucro"},
+    {idx:7, label:"% Teto Individual"},
+    {idx:8, label:"Excluir", obrigatoria:true},
+  ],
+};
+const TABELA_NOMES = {ac:"Ações BR", fi:"FIIs", et:"ETFs", sk:"Stocks", cr:"Cripto"};
+const TABELA_IDS = {ac:"acTbl", fi:"fiTbl", et:"etTbl", sk:"skTbl", cr:"cryptoTbl"};
+
+function getColunasOcultas(){
+  try{ return JSON.parse(localStorage.getItem(COLS_KEY)||"{}"); }
+  catch(e){ return {}; }
+}
+function saveColunasOcultas(obj){
+  localStorage.setItem(COLS_KEY, JSON.stringify(obj));
+}
+function isColunaOculta(tabela, idx){
+  const ocultas = getColunasOcultas();
+  return (ocultas[tabela]||[]).includes(idx);
+}
+function toggleColuna(tabela, idx){
+  const ocultas = getColunasOcultas();
+  if(!ocultas[tabela]) ocultas[tabela]=[];
+  const pos = ocultas[tabela].indexOf(idx);
+  if(pos>=0) ocultas[tabela].splice(pos,1);
+  else ocultas[tabela].push(idx);
+  saveColunasOcultas(ocultas);
+  applyColumnVisibility();
+}
+
+/* Aplica display:none via CSS injetado dinamicamente — funciona pra qualquer tabela sem reescrever HTML.
+   Cada <table> precisa do atributo data-tbl="ac|fi|et|sk|cr" pra isso funcionar. */
+function applyColumnVisibility(){
+  const ocultas = getColunasOcultas();
+  let css = "";
+  Object.entries(TABELA_IDS).forEach(([tabela])=>{
+    const cols = ocultas[tabela]||[];
+    cols.forEach(idx=>{
+      css += `table[data-tbl="${tabela}"] th:nth-child(${idx}), table[data-tbl="${tabela}"] td:nth-child(${idx}) { display:none!important; }\n`;
+    });
+  });
+  let styleEl = document.getElementById("colVisibilityStyle");
+  if(!styleEl){
+    styleEl = document.createElement("style");
+    styleEl.id = "colVisibilityStyle";
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = css;
+}
+
+/* Modal de seleção de colunas — reutilizado pelo botão rápido e por Configurações */
+let _colunasTabelaAtual = null;
+function openColunasModal(tabela){
+  _colunasTabelaAtual = tabela;
+  const cols = COLUNAS_REGISTRO[tabela];
+  const ocultas = getColunasOcultas()[tabela]||[];
+  document.getElementById("colunasModalTitle").textContent = `Colunas — ${TABELA_NOMES[tabela]}`;
+  const list = document.getElementById("colunasModalList");
+  list.innerHTML = cols.map(c=>{
+    const checked = !ocultas.includes(c.idx);
+    const disabled = c.obrigatoria;
+    return `<label style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);cursor:${disabled?'default':'pointer'};opacity:${disabled?0.55:1}">
+      <input type="checkbox" ${checked?'checked':''} ${disabled?'disabled':''} onchange="toggleColuna('${tabela}',${c.idx})" style="width:16px;height:16px;accent-color:var(--gold)"/>
+      <span style="font-size:13px">${c.label}${disabled?' <span style="font-size:10px;color:var(--muted)">(sempre visível)</span>':''}</span>
+    </label>`;
+  }).join("");
+  document.getElementById("modColunas").classList.add("open");
+}
+function closeColunasModal(){
+  document.getElementById("modColunas").classList.remove("open");
+}
+
+
+const TETOS_KEY = "tetosPorTicker";
+function getTetosCustom(){
+  try{ return JSON.parse(localStorage.getItem(TETOS_KEY)||"{}"); }
+  catch(e){ return {}; }
+}
+function saveTetoTicker(tk, valor){
+  const t = getTetosCustom();
+  t[tk] = valor;
+  localStorage.setItem(TETOS_KEY, JSON.stringify(t));
+}
+function getTetoTicker(tk, padrao){
+  const custom = getTetosCustom();
+  return custom[tk]!==undefined ? custom[tk] : (padrao!==undefined ? padrao : 100);
+}
+
+/* DY% real via Brapi (defaultKeyStatistics.dividendYield) — cai pro valor manual/snapshot se ainda não buscou */
+function getDY(tk, padrao){
+  const real = window._dyBR && window._dyBR[tk];
+  return (real!=null) ? real : (padrao||0);
+}
+
+/* Renderiza célula de teto editável com barra de progresso + clique para editar */
+function tetoCell(tk, pctCart, tetoAtual){
+  const ov = pctCart > tetoAtual;
+  const w = Math.min(100, tetoAtual>0 ? pctCart/tetoAtual*100 : 0);
+  return `<div class="tbar" data-tk="${tk}">
+    <div class="ttrack"><div class="tfill" style="width:${w.toFixed(0)}%;background:${ov?"var(--neg)":"var(--blue)"}"></div>
+    <div class="tline" style="left:100%"></div></div>
+    <span class="ttxt${ov?" ov":" ok"}" style="cursor:pointer" onclick="editTetoTicker('${tk}',${tetoAtual})" title="Clique para editar o teto deste ativo">
+      ${pctCart.toFixed(1)}% / <u>${tetoAtual}%</u>
+    </span>
+  </div>`;
+}
+
+/* Renderiza a célula de Teto por Setor numa linha — mostra a concentração do SETOR inteiro, não só do ticker */
+function tetoSetorCell(classe, setor, pctSetorAtual, tetoSetorAtual){
+  const ov = pctSetorAtual > tetoSetorAtual;
+  const w = Math.min(100, tetoSetorAtual>0 ? pctSetorAtual/tetoSetorAtual*100 : 0);
+  return `<div class="tbar">
+    <div class="ttrack"><div class="tfill" style="width:${w.toFixed(0)}%;background:${ov?"var(--neg)":"var(--blue)"}"></div>
+    <div class="tline" style="left:100%"></div></div>
+    <span class="ttxt${ov?" ov":" ok"}" style="cursor:pointer" onclick="editTetoSetor('${classe}','${setor}',${tetoSetorAtual})" title="Clique para editar o teto do setor '${setor}'">
+      ${pctSetorAtual.toFixed(1)}% / <u>${tetoSetorAtual}%</u>
+    </span>
+  </div>`;
+}
+
+/* Descobre a qual classe um ticker pertence, para aplicar a trava de 100% por classe */
+function getClasseDoTicker(tk){
+  if(D.acoes.some(a=>a.tk===tk)) return {lista:D.acoes, campo:'tk', nome:'Ações BR'};
+  if(D.fiis.some(f=>f.tk===tk)) return {lista:D.fiis, campo:'tk', nome:'FIIs'};
+  if(D.etfs.some(e=>e.tk===tk)) return {lista:D.etfs, campo:'tk', nome:'ETFs'};
+  if(D.stocks.some(s=>s.tk===tk)) return {lista:D.stocks, campo:'tk', nome:'Stocks'};
+  if(D.cripto.some(c=>c.moeda===tk)) return {lista:D.cripto, campo:'moeda', nome:'Cripto'};
+  return null;
+}
+
+function editTetoTicker(tk, tetoAtual){
+  const novo = prompt(`Teto máximo de "${tk}" na carteira (%):`, tetoAtual);
+  if(novo===null) return;
+  const v = parseFloat(novo.replace(",","."));
+  if(isNaN(v)||v<=0){ alert("Digite um valor numérico válido maior que zero."); return; }
+
+  // Trava: soma dos tetos individuais dentro da mesma classe não pode passar de 100%
+  const classe = getClasseDoTicker(tk);
+  if(classe){
+    const outrosTickers = classe.lista.map(item=>item[classe.campo]).filter(t=>t!==tk);
+    const somaOutros = outrosTickers.reduce((s,t)=>s+getTetoTicker(t,
+      classe.nome==='FIIs'?25:classe.nome==='Cripto'?50:classe.nome==='Ações BR'?20:30),0);
+    const somaTotal = somaOutros + v;
+    if(somaTotal > 100){
+      alert(`A soma dos tetos em ${classe.nome} não pode passar de 100%.\n\nSoma atual dos outros ativos: ${somaOutros.toFixed(1)}%\nVocê está tentando definir: ${v}%\nTotal ficaria: ${somaTotal.toFixed(1)}%\n\nReduza o teto de outro ativo primeiro, ou use um valor menor.`);
+      return;
+    }
+  }
+
+  saveTetoTicker(tk, v);
+  render(); // re-renderiza tudo pra refletir o novo teto
+}
+
+/* ⓘ Tooltip helper — ícone de ajuda inline reutilizável */
+function infoIcon(texto){
+  return `<span class="info-ic" title="${texto.replace(/"/g,'&quot;')}">?</span>`;
+}
+
 function renderAlloc(){
   // Cripto agora usa total real calculado das posições (não mais valor manual avulso)
   const cripto = D.invest.find(c=>c.n==="Cripto");
@@ -2081,8 +2558,13 @@ function renderAcoes(totAcoes,sc,sd){
   });
   if(sc) rows.sort((x,y)=>{let a=x[sc],b=y[sc];if(typeof a==="string"){a=a.toLowerCase();b=b.toLowerCase();}return sd==="asc"?(a>b?1:-1):(a<b?1:-1)});
   const tb=g("acTbl"); tb.innerHTML="";
+  // Soma por setor (pra calcular % do setor inteiro vs teto do setor)
+  const mapSetorAC={}; rows.forEach(a=>{mapSetorAC[a.st]=(mapSetorAC[a.st]||0)+a.totb3;});
   rows.forEach(a=>{
-    const ov=a.pctCart>a.teto, w=Math.min(100,a.pctCart/a.teto*100);
+    const tetoAtual = getTetoTicker(a.tk, a.teto);
+    const pctSetor = totAcoes>0 ? (mapSetorAC[a.st]||0)/totAcoes*100 : 0;
+    const tetoBR = D.tetosBR.find(t=>t.s===a.st);
+    const tetoSetorAtual = getTetoSetor("Ações BR", a.st, tetoBR?tetoBR.teto:20);
     const opts=objs.map(o=>`<option${o===a.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(a.tk)}<div><div class="tk">${a.tk}</div><div class="co">${a.co}</div></div></div></td>
@@ -2092,19 +2574,18 @@ function renderAcoes(totAcoes,sc,sd){
       <td class="r" style="color:${hasPrice(a.tk)?a.lucro>=0?"var(--pos)":"var(--neg)":"var(--muted)"}">
         ${hasPrice(a.tk)?brl(a.price,2):"aguard."}</td>
       <td class="r">${a.cotas}</td>
-      <td><div class="tbar">
-        <div class="ttrack"><div class="tfill" style="width:${w.toFixed(0)}%;background:${ov?"var(--neg)":"var(--blue)"}"></div>
-        <div class="tline" style="left:100%"></div></div>
-        <span class="ttxt${ov?" ov":"ok"}">${a.pctCart.toFixed(1)}%/${a.teto}%</span>
-      </div></td>
-      <td><select class="sel" onchange="saveObj('${a.tk}',this.value)">${opts}</select></td>`;
+      <td class="r" style="color:var(--gold);font-weight:600">${getDY(a.tk,a.dy).toFixed(2)}%${window._dyBR&&window._dyBR[a.tk]!=null?'':' <span style="font-size:9px;color:var(--muted)">(snap)</span>'}</td>
+      <td>${tetoCell(a.tk, a.pctCart, tetoAtual)}</td>
+      <td>${tetoSetorCell("Ações BR", a.st, pctSetor, tetoSetorAtual)}</td>
+      <td><select class="sel" onchange="saveObj('${a.tk}',this.value)">${opts}</select></td>
+      <td class="r"><button class="refbtn" onclick="deleteAtivo('acoes','${a.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover este ativo">✕</button></td>`;
     tb.appendChild(tr);
   });
   const totI=rows.reduce((s,a)=>s+a.tot,0), totB=rows.reduce((s,a)=>s+a.totb3,0), totL=rows.reduce((s,a)=>s+a.lucro,0);
   addTotals("acTbl",[
-    {label:"TOTAL"},{val:brl(totI,2),r:true},{val:brl(totB,2),r:true},
-    {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brl(Math.abs(totL),2)}</span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {label:"TOTAL"},{val:brlTotal(totI,2),r:true},{val:brlTotal(totB,2),r:true},
+    {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brlTotal(Math.abs(totL),2)}</span>`,r:true},
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   /* charts */
   const mapSt={};rows.forEach(a=>{mapSt[a.st]=(mapSt[a.st]||0)+a.totb3});
@@ -2112,8 +2593,8 @@ function renderAcoes(totAcoes,sc,sd){
   mkHBars(rows.map(a=>({label:a.tk,v:a.totb3,pct:tot>0?a.totb3/tot*100:0})),"ac-hbars","#F59E0B");
   const SC={"Financeiro":"#3B82F6","Energia":"#F59E0B","Indústria":"#16A34A","Saneamento":"#38BDF8","Serviços":"#A78BFA"};
   mkDonut(Object.entries(mapSt).map(([k,v])=>({label:k,v,c:SC[k]||"#888"})),"ac-donut","ac-donut-leg");
-  mkDY(D.acoes.map(a=>({label:a.tk,v:a.dy})),"ac-dy");
-  mkSetores(D.tetosBR,"ac-setores",s=>{const t=Object.values(mapSt).reduce((a,b)=>a+b,0);return t>0?(mapSt[s]||0)/t*100:0});
+  mkDY(D.acoes.map(a=>({label:a.tk,v:getDY(a.tk,a.dy),setor:a.st})),"ac-dy");
+  mkSetores(D.tetosBR,"ac-setores",s=>{const t=Object.values(mapSt).reduce((a,b)=>a+b,0);return t>0?(mapSt[s]||0)/t*100:0},"Ações BR");
 }
 
 /* fiis */
@@ -2124,34 +2605,43 @@ function renderFiis(totFiis,sc,sd){
     const tot=+(f.pm*f.cotas).toFixed(2);
     const totb3=p>0 ? +(p*f.cotas).toFixed(2) : tot; // sem cotação = mostra investido
     const lucro=p>0 ? +(totb3-tot).toFixed(2) : 0;   // sem cotação = lucro 0 (não mostra perda falsa)
-    return{...f,price:p,tot,totb3,lucro};
+    return{...f,price:p,tot,totb3,lucro,pctCart:totFiis>0?totb3/totFiis*100:0};
   });
   if(sc) rows.sort((x,y)=>{let a=x[sc],b=y[sc];if(typeof a==="string"){a=a.toLowerCase();b=b.toLowerCase();}return sd==="asc"?(a>b?1:-1):(a<b?1:-1)});
   const tb=g("fiTbl"); tb.innerHTML="";
+  const mapSegFI={}; rows.forEach(f=>{mapSegFI[f.seg]=(mapSegFI[f.seg]||0)+f.totb3;});
   rows.forEach(f=>{
     const opts=sts.map(o=>`<option${o===f.st?" selected":""}>${o}</option>`).join("");
+    const tetoAtual = getTetoTicker(f.tk, 25); // padrão 25% se não definido
+    const pctSetor = totFiis>0 ? (mapSegFI[f.seg]||0)/totFiis*100 : 0;
+    const tetoFII = D.tetosFII.find(t=>t.s===f.seg);
+    const tetoSetorAtual = getTetoSetor("FIIs", f.seg, tetoFII?tetoFII.teto:20);
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(f.tk)}<div><div class="tk">${f.tk}</div><div class="co">${f.seg}</div></div></div></td>
       <td class="r">${brl(f.tot,2)}</td><td class="r">${brl(f.totb3,2)}</td>
       <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(f.lucro)}${brl(Math.abs(f.lucro),2)}</td>
       <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"}">${brl(f.price,2)}</td>
       <td class="r">${f.cotas}</td>
-      <td class="r" style="color:var(--gold);font-weight:600">${f.dy.toFixed(2)}%</td>
-      <td><select class="sel" onchange="saveObj('${f.tk}',this.value)">${opts}</select></td>`;
+      <td class="r" style="color:var(--gold);font-weight:600">${getDY(f.tk,f.dy).toFixed(2)}%${window._dyBR&&window._dyBR[f.tk]!=null?'':' <span style="font-size:9px;color:var(--muted)">(snap)</span>'}</td>
+      <td>${tetoCell(f.tk, f.pctCart, tetoAtual)}</td>
+      <td>${tetoSetorCell("FIIs", f.seg, pctSetor, tetoSetorAtual)}</td>
+      <td><select class="sel" onchange="saveObj('${f.tk}',this.value)">${opts}</select></td>
+      <td class="r"><button class="refbtn" onclick="deleteAtivo('fiis','${f.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover este ativo">✕</button></td>`;
     tb.appendChild(tr);
   });
   const totI=rows.reduce((s,f)=>s+f.tot,0), totB=rows.reduce((s,f)=>s+f.totb3,0), totL=rows.reduce((s,f)=>s+f.lucro,0);
   addTotals("fiTbl",[
-    {label:"TOTAL"},{val:brl(totI,2),r:true},{val:brl(totB,2),r:true},
-    {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brl(Math.abs(totL),2)}</span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {label:"TOTAL"},{val:brlTotal(totI,2),r:true},{val:brlTotal(totB,2),r:true},
+    {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brlTotal(Math.abs(totL),2)}</span>`,r:true},
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   const tot=rows.reduce((s,f)=>s+f.totb3,0);
   const mapSeg={};rows.forEach(f=>{mapSeg[f.seg]=(mapSeg[f.seg]||0)+f.totb3});
   const FI_COL={"Logística":"#38BDF8","Papel HG":"#F59E0B","Shopping":"#A78BFA","Híbrido":"#16A34A","Energia":"#F97316"};
   mkHBars(rows.map(f=>({label:f.tk,v:f.totb3,pct:tot>0?f.totb3/tot*100:0})),"fi-hbars","#A78BFA");
   mkDonut(Object.entries(mapSeg).map(([k,v])=>({label:k,v,c:FI_COL[k]||"#888"})),"fi-donut","fi-donut-leg");
-  mkDY(D.fiis.filter(f=>f.cotas>0).map(f=>({label:f.tk.replace("11",""),v:f.dy})),"fi-dy");
+  mkDY(D.fiis.filter(f=>f.cotas>0).map(f=>({label:f.tk.replace("11",""),v:getDY(f.tk,f.dy),setor:f.seg})),"fi-dy");
+  mkSetores(D.tetosFII,"fi-setores",s=>{const t=Object.values(mapSeg).reduce((a,b)=>a+b,0);return t>0?(mapSeg[s]||0)/t*100:0},"FIIs");
   const pt=g("fiProvTbl"); pt.innerHTML="";
   D.fiis.filter(f=>f.cotas>0).forEach(f=>{
     const tr=document.createElement("tr");
@@ -2192,30 +2682,42 @@ function renderETFs(sc,sd){
   if(sc) rows.sort((x,y)=>sd==="asc"?(x[sc]>y[sc]?1:-1):(x[sc]<y[sc]?1:-1));
   const tb=g("etTbl"); tb.innerHTML="";
   const tot=rows.reduce((s,e)=>s+e.atual,0);
+  const mapFunET={}; rows.forEach(e=>{mapFunET[e.fun]=(mapFunET[e.fun]||0)+e.atual;});
   rows.forEach(e=>{
     const tr=document.createElement("tr");
     const eLive=e.priceUSD||null;
     const eLiveChg=eLive&&e.prevClose ? eLive>=e.prevClose : null;
+    const pctCart=tot>0?e.atual/tot*100:0;
+    const tetoAtual=getTetoTicker(e.tk, 30); // padrão 30% se não definido
+    const pctSetor = tot>0 ? (mapFunET[e.fun]||0)/tot*100 : 0;
+    const tetoET = D.tetosETF.find(t=>t.s===e.fun);
+    const tetoSetorAtual = getTetoSetor("ETFs", e.fun, tetoET?tetoET.teto:30);
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
       <td class="r">${usd(e.inv)}</td><td class="r" style="color:var(--muted)">${brl(e.inv*usdBRL,2)}</td>
       <td class="r" style="${eLive?`color:${eLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`:"color:var(--muted)"}">${eLive?usd(eLive):"—"}</td>
       <td class="r">${usd(e.atual)}</td><td class="r" style="color:var(--muted)">${brl(e.atual*usdBRL,2)}</td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),2)}</div></td>
-      <td class="r">${e.dy.toFixed(2)}%</td><td><span class="pill core">CORE</span></td>`;
+      <td class="r">${e.dy.toFixed(2)}%</td>
+      <td>${tetoCell(e.tk, pctCart, tetoAtual)}</td>
+      <td>${tetoSetorCell("ETFs", e.fun, pctSetor, tetoSetorAtual)}</td>
+      <td><span class="pill core">CORE</span></td>
+      <td class="r"><button class="refbtn" onclick="deleteAtivo('etfs','${e.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover este ativo">✕</button></td>`;
     tb.appendChild(tr);
   });
   const tI=rows.reduce((s,e)=>s+e.inv,0), tA=rows.reduce((s,e)=>s+e.atual,0), tL=rows.reduce((s,e)=>s+e.lucro,0);
   addTotals("etTbl",[
     {label:"TOTAL"},
-    {val:usd(tI),r:true},{val:brl(tI*usdBRL,2),r:true},
-    {val:usd(tA),r:true},{val:brl(tA*usdBRL,2),r:true},
+    {val:usdTotal(tI),r:true},{val:brlTotal(tI*usdBRL,2),r:true},
+    {val:usdTotal(tA),r:true},{val:brlTotal(tA*usdBRL,2),r:true},
     {val:"",r:true},
-    {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usd(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brl(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
-    {val:"",r:true},{val:"",r:true}
+    {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usdTotal(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brlTotal(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   mkHBars(rows.map(e=>({label:e.tk,v:e.atual,pct:tot>0?e.atual/tot*100:0})),"et-hbars","#38BDF8");
-  mkDY(rows.map(e=>({label:e.tk,v:e.dy})),"et-dy");
+  mkDY(rows.map(e=>({label:e.tk,v:e.dy})),"et-dy"); // ETFs sem mapa de cor por categoria — usa dourado padrão
+  const mapFun={};rows.forEach(e=>{mapFun[e.fun]=(mapFun[e.fun]||0)+e.atual});
+  mkSetores(D.tetosETF,"et-setores",s=>{const t=Object.values(mapFun).reduce((a,b)=>a+b,0);return t>0?(mapFun[s]||0)/t*100:0},"ETFs");
 }
 
 /* Stocks */
@@ -2225,11 +2727,17 @@ function renderStocks(sc,sd){
   if(sc) rows.sort((x,y)=>sd==="asc"?(x[sc]>y[sc]?1:-1):(x[sc]<y[sc]?1:-1));
   const tb=g("skTbl"); tb.innerHTML="";
   const tot=rows.reduce((s,s2)=>s+s2.atual,0);
+  const mapSetorSK={}; rows.forEach(s=>{mapSetorSK[s.setor]=(mapSetorSK[s.setor]||0)+s.atual;});
   rows.forEach(s=>{
     const opts=objs.map(o=>`<option${o===s.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
     const sLive=s.priceUSD||null;
     const sLiveChg=sLive&&s.prevClose ? sLive>=s.prevClose : null;
+    const pctCart=tot>0?s.atual/tot*100:0;
+    const tetoAtual=getTetoTicker(s.tk, 30); // padrão 30% se não definido
+    const pctSetor = tot>0 ? (mapSetorSK[s.setor]||0)/tot*100 : 0;
+    const tetoSK = D.setoresEUA.find(t=>t.s===s.setor);
+    const tetoSetorAtual = getTetoSetor("Stocks", s.setor, tetoSK?tetoSK.teto:30);
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
       <td class="r">${usd(s.inv)}</td><td class="r" style="color:var(--muted)">${brl(s.inv*usdBRL,2)}</td>
       <td class="r" style="${sLive?`color:${sLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`:"color:var(--muted)"}">${sLive?usd(sLive):"—"}</td>
@@ -2237,23 +2745,26 @@ function renderStocks(sc,sd){
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
       <td class="r">${s.dy.toFixed(2)}%</td>
-      <td><select class="sel" onchange="saveObj('${s.tk}',this.value)">${opts}</select></td>`;
+      <td>${tetoCell(s.tk, pctCart, tetoAtual)}</td>
+      <td>${tetoSetorCell("Stocks", s.setor, pctSetor, tetoSetorAtual)}</td>
+      <td><select class="sel" onchange="saveObj('${s.tk}',this.value)">${opts}</select></td>
+      <td class="r"><button class="refbtn" onclick="deleteAtivo('stocks','${s.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover este ativo">✕</button></td>`;
     tb.appendChild(tr);
   });
   const tI=rows.reduce((s,s2)=>s+s2.inv,0), tA=rows.reduce((s,s2)=>s+s2.atual,0), tL=rows.reduce((s,s2)=>s+s2.lucro,0);
   addTotals("skTbl",[
     {label:"TOTAL"},
-    {val:usd(tI),r:true},{val:brl(tI*usdBRL,2),r:true},
-    {val:usd(tA),r:true},{val:brl(tA*usdBRL,2),r:true},
+    {val:usdTotal(tI),r:true},{val:brlTotal(tI*usdBRL,2),r:true},
+    {val:usdTotal(tA),r:true},{val:brlTotal(tA*usdBRL,2),r:true},
     {val:"",r:true},
-    {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usd(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brl(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
-    {val:"",r:true},{val:"",r:true}
+    {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usdTotal(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brlTotal(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   mkHBars(rows.map(s=>({label:s.tk,v:s.atual,pct:tot>0?s.atual/tot*100:0})),"sk-hbars","#818CF8");
   const mapSt={};rows.forEach(s=>{mapSt[s.setor]=(mapSt[s.setor]||0)+s.atual});
   const SK_COL={"Tecnologia":"#818CF8","Financeiro":"#3B82F6","Saúde":"#16A34A","Consumo":"#F59E0B"};
   mkDonut(Object.entries(mapSt).map(([k,v])=>({label:k,v,c:SK_COL[k]||"#888"})),"sk-donut","sk-donut-leg");
-  mkSetores(D.setoresEUA,"sk-setores",s=>{const t=Object.values(mapSt).reduce((a,b)=>a+b,0);return t>0?(mapSt[s]||0)/t*100:0});
+  mkSetores(D.setoresEUA,"sk-setores",s=>{const t=Object.values(mapSt).reduce((a,b)=>a+b,0);return t>0?(mapSt[s]||0)/t*100:0},"Stocks");
 }
 
 /* Proventos */
@@ -2411,23 +2922,50 @@ function closeAddAtivo(){ document.getElementById("modAdd").classList.remove("op
 // Auto-preenche Preço Médio sugerido ao digitar ticker de cripto conhecido (evita erro de casa decimal)
 const CRYPTO_PRICE_HINTS = { BTC:"BTCBRL", ETH:"ETHBRL", LTC:"LTCBRL" }; // AwesomeAPI suporta esses pares diretos
 document.getElementById("addTicker")?.addEventListener("blur", async function(){
-  if(addAtivoTipo!=="cripto") return;
   const tk=this.value.toUpperCase().trim();
+  if(!tk) return;
   const pmField=document.getElementById("addPM");
-  if(pmField.value) return; // não sobrescreve se usuário já digitou algo
-  const pair=CRYPTO_PRICE_HINTS[tk];
-  if(!pair) return;
-  try{
-    const j=await corsGetJSON(`https://economia.awesomeapi.com.br/json/last/${tk}-BRL`);
-    const key=tk+"BRL";
-    if(j[key]&&j[key].bid){
-      const precoSugerido=parseFloat(j[key].bid);
-      pmField.value=precoSugerido.toFixed(2);
-      pmField.style.borderColor="var(--pos)";
-      pmField.title=`Sugestão automática: cotação atual de ${tk}. Edite se necessário.`;
-      setTimeout(()=>{pmField.style.borderColor="";},2000);
+
+  // Cripto: sugere preço via AwesomeAPI
+  if(addAtivoTipo==="cripto"){
+    if(pmField.value) return; // não sobrescreve se usuário já digitou algo
+    const pair=CRYPTO_PRICE_HINTS[tk];
+    if(!pair) return;
+    try{
+      const j=await corsGetJSON(`https://economia.awesomeapi.com.br/json/last/${tk}-BRL`);
+      const key=tk+"BRL";
+      if(j[key]&&j[key].bid){
+        const precoSugerido=parseFloat(j[key].bid);
+        pmField.value=precoSugerido.toFixed(2);
+        pmField.style.borderColor="var(--pos)";
+        pmField.title=`Sugestão automática: cotação atual de ${tk}. Edite se necessário.`;
+        setTimeout(()=>{pmField.style.borderColor="";},2000);
+      }
+    }catch(e){ console.warn("Não foi possível sugerir preço para",tk,e.message); }
+    return;
+  }
+
+  // Ações BR e FIIs: busca preço atual via Brapi + auto-associa setor
+  if(addAtivoTipo==="acoes" || addAtivoTipo==="fiis"){
+    // Auto-associa setor (só pra Ações BR — FIIs usa "Segmento" com opções diferentes no select)
+    if(addAtivoTipo==="acoes" && TICKER_SETOR_BR[tk]){
+      const setorField=document.getElementById("addSetor");
+      if(setorField) setorField.value=TICKER_SETOR_BR[tk];
     }
-  }catch(e){ console.warn("Não foi possível sugerir preço para",tk,e.message); }
+    // Auto-preenche preço atual via Brapi (token embutido)
+    if(!pmField.value){
+      try{
+        const j=await corsGetJSON(`https://brapi.dev/api/quote/${tk}?token=${BRAPI_TOKEN}`);
+        const q=j.results&&j.results[0];
+        if(q&&q.regularMarketPrice){
+          pmField.value=q.regularMarketPrice.toFixed(2);
+          pmField.style.borderColor="var(--pos)";
+          pmField.title=`Sugestão automática: cotação atual de ${tk}. Edite se necessário (ex: se seu preço médio de compra for diferente).`;
+          setTimeout(()=>{pmField.style.borderColor="";},2000);
+        }
+      }catch(e){ console.warn("Não foi possível sugerir preço para",tk,e.message); }
+    }
+  }
 });
 
 async function confirmarAddAtivo(){
@@ -2679,7 +3217,10 @@ function applyTVTheme(){ /* TradingView removido — mkt-strip estático */ }
   setLdStatus("Aguardando cotações…");
   // Carrega cache local de mercado imediatamente — evita "—" enquanto a rede não responde
   loadMktCache();
+  const fv=document.getElementById("footerVer");
+  if(fv && CHANGELOG[0]) fv.textContent="📋 "+CHANGELOG[0].v;
   loadCriptoAtivos();
+  applyColumnVisibility();
 
   /* 2. Carrega dados do Supabase */
   setLdStatus("Conectando ao banco…");
