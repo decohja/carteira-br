@@ -500,14 +500,34 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
   .refbar{font-size:10px;gap:5px;flex-wrap:wrap}
   #btnAtualizar{padding:5px 10px;font-size:11px}
 
-  /* Tabelas: mantém scroll horizontal nativo do .tw, mas reduz fonte */
-  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .tw table{font-size:11px}
-  .tw th,.tw td{padding:6px 8px;white-space:nowrap}
+  /* Tabelas: scroll horizontal de verdade — a tabela mantém largura natural,
+     o wrapper rola por cima dela. Sem isso, o conteúdo cortava ao invés de rolar. */
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative}
+  .tw table{font-size:11px;width:max-content;min-width:100%}
+  .tw th,.tw td{padding:8px 10px;white-space:nowrap}
   .ativo-cell{gap:6px}
   .ativo-logo,.ativo-initials{width:30px;height:30px;font-size:10px;border-radius:7px}
   .tk{font-size:12px}
   .co{font-size:10px}
+  /* primeira coluna (nome do ativo) fica fixa ao rolar — sempre visível qual ativo é qual */
+  .tw table th:first-child,.tw table td:first-child{
+    position:sticky;left:0;z-index:5;
+    background:var(--card);
+    box-shadow:2px 0 6px rgba(0,0,0,.1);
+  }
+  .tw table tr.total-row td:first-child{background:var(--bg3)}
+  [data-theme="dark"] .tw table th:first-child,
+  [data-theme="dark"] .tw table td:first-child{box-shadow:2px 0 8px rgba(0,0,0,.4)}
+
+  /* Indicador "arraste pra ver mais" — aparece só se a tabela realmente tiver overflow */
+  .tw{margin-bottom:6px}
+  .tw-hint{
+    display:flex;align-items:center;justify-content:center;gap:5px;
+    font-size:10px;color:var(--muted);padding:5px 0 10px;
+    opacity:.75;
+  }
+  .tw-hint svg{width:11px;height:11px;animation:twSwipe 1.6s ease-in-out infinite}
+  @keyframes twSwipe{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
 
   /* Modais: ocupam quase a tela toda, sem margem lateral excessiva */
   .modal{width:94vw;padding:16px;max-height:90vh}
@@ -534,6 +554,18 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
   .f-brand{flex-direction:column;text-align:center}
   .f-right{text-align:center}
   .f-status{padding:10px 16px;text-align:center}
+
+  /* Polimento geral — sensação de app nativo */
+  html{scroll-behavior:smooth}
+  button,a,.acard,.dcard,select{-webkit-tap-highlight-color:transparent}
+  /* área de toque mínima confortável em botões pequenos */
+  .ibtn,.avt,.ham-btn{min-width:38px;min-height:38px}
+  .refbtn{min-height:34px;padding:7px 12px}
+  /* padding lateral mais respirável no mobile */
+  .content{padding:14px 12px 80px}
+  .hero{padding:14px 12px 12px}
+  /* desativa seleção de texto acidental em elementos interativos (sensação mais nativa) */
+  .acard,.dcard,.tbar,.mkt-item{-webkit-user-select:none;user-select:none}
 }
 
 @media(max-width:420px){
@@ -2000,6 +2032,7 @@ function render(){
   renderETFs();
   renderStocks();
   renderProv();
+  setupTableScrollHints(); // reavalia hints de scroll depois que as tabelas foram (re)montadas
 }
 
 function g(id){return document.getElementById(id)}
@@ -2265,6 +2298,28 @@ function applyColumnVisibility(){
     document.head.appendChild(styleEl);
   }
   styleEl.textContent = css;
+  setupTableScrollHints(); // colunas mudaram → reavalia se ainda há overflow
+}
+
+/* Detecta tabelas com scroll horizontal real (conteúdo > largura visível) e injeta um aviso discreto */
+function debounce(fn, ms){
+  let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); };
+}
+function setupTableScrollHints(){
+  document.querySelectorAll(".tw").forEach(wrap=>{
+    // remove hint antigo se existir, pra não duplicar
+    const next = wrap.nextElementSibling;
+    if(next && next.classList.contains("tw-hint")) next.remove();
+    const table = wrap.querySelector("table");
+    if(!table) return;
+    const hasOverflow = table.scrollWidth > wrap.clientWidth + 2;
+    if(hasOverflow && window.innerWidth <= 768){
+      const hint=document.createElement("div");
+      hint.className="tw-hint";
+      hint.innerHTML=`Arraste para o lado <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>`;
+      wrap.insertAdjacentElement("afterend", hint);
+    }
+  });
 }
 
 /* Modal de seleção de colunas — reutilizado pelo botão rápido e por Configurações */
@@ -3027,6 +3082,8 @@ function goTab(id,btn){
   document.querySelectorAll(".dcard").forEach(c=>c.classList.remove("on"));
   const dc=document.querySelector(`.dcard[data-tab="${id}"]`);
   if(dc){ dc.classList.add("on"); dc.scrollIntoView({behavior:"smooth",inline:"nearest",block:"nearest"}); }
+  // painel recém-visível pode ter tabela que só agora consegue medir scrollWidth corretamente
+  setTimeout(setupTableScrollHints, 50);
 }
 function goHome(){ goTab('visao'); }
 function closeMenu(){
@@ -3285,6 +3342,10 @@ function applyTVTheme(){ /* TradingView removido — mkt-strip estático */ }
 
   /* 5. Auto-refresh a cada 60s */
   setInterval(()=>refreshPrices(false), 60*1000);
+
+  /* Indicador de scroll horizontal em tabelas — só aparece se a tabela realmente excede a largura */
+  setupTableScrollHints();
+  window.addEventListener('resize', debounce(setupTableScrollHints, 250));
 
   } catch(fatalErr) {
     console.error("INIT ERRO:", fatalErr);
