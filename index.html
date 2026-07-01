@@ -423,11 +423,16 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 @media(max-width:480px){.sdon-wrap{justify-content:center}.sdon-legend{max-width:100%}}
 
 /* ─── PROV ───────────────────────────── */
-.mbar-wrap{display:flex;align-items:flex-end;gap:6px;height:80px;padding-top:4px}
+.mbar-wrap{display:flex;align-items:flex-end;gap:6px;height:130px;padding-top:4px}
 .mb{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;height:100%;justify-content:flex-end}
-.mb-b{width:100%;max-width:30px;border-radius:3px 3px 1px 1px;
-  background:linear-gradient(180deg,var(--gold-l),var(--gold));min-height:3px}
+.mb-stack{width:100%;max-width:30px;display:flex;flex-direction:column-reverse;border-radius:3px 3px 1px 1px;overflow:hidden;min-height:3px}
+.mb-seg-recebido{width:100%;background:linear-gradient(180deg,var(--gold-l),var(--gold))}
+.mb-seg-futuro{width:100%;background:var(--gold-dim)}
 .mb-l{font-size:9px;color:var(--muted)}.mb-v{font-size:9px;font-family:var(--mono)}
+
+.prov-sug-box{background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:var(--r);padding:14px;margin-bottom:16px}
+.prov-sug-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--border)}
+.prov-sug-info{flex:1;min-width:0}
 
 /* ─── PROV FORM ──────────────────────── */
 .pform{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:12px}
@@ -1045,9 +1050,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 <!-- PROVENTOS -->
 <section class="panel" id="p-prov">
+  <div id="provSugeridos" class="prov-sug-box" style="display:none"></div>
   <div class="two eq">
     <div>
-      <div class="st">Lançar provento</div>
+      <div class="st">Lançar provento manualmente</div>
       <div class="pform">
         <div class="frow3">
           <div><label class="flbl">Ativo</label>
@@ -1071,8 +1077,16 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       <div class="tw"><table><thead><tr><th>Ativo</th><th>Tipo</th><th class="r">Data</th><th class="r">Val/cota</th><th class="r">Cotas</th><th class="r">Total</th></tr></thead><tbody id="provLog"></tbody></table></div>
     </div>
     <div>
-      <div class="st">Ações BR — por mês</div>
-      <div class="bx" style="margin-bottom:12px"><div class="mbar-wrap" id="provBRbars"></div></div>
+      <div class="st">Evolução de proventos — últimos 12 meses</div>
+      <div class="bx" style="margin-bottom:12px">
+        <div style="display:flex;gap:14px;margin-bottom:10px;font-size:11px;color:var(--muted)">
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--gold);margin-right:5px"></span>Recebido</span>
+          <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--gold-dim);margin-right:5px"></span>A receber</span>
+        </div>
+        <div class="mbar-wrap" id="provBRbars"></div>
+      </div>
+      <div class="st">Distribuição por ativo</div>
+      <div class="bx" style="margin-bottom:12px" id="provDonut"></div>
       <div class="st">Resumo</div>
       <div class="bx" id="provResumo"></div>
     </div>
@@ -1636,6 +1650,18 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v18.2",d:"Jun/2026",items:[
+    "PROVENTOS AUTOMÁTICOS: o app agora detecta dividendos/JCP anunciados oficialmente (via CVM/Brapi) pros ativos que você tem, e sugere o lançamento — você só confirma, não digita mais na mão",
+    "Novo gráfico de Evolução de Proventos (últimos 12 meses), com barras empilhadas Recebido + A Receber",
+    "Nova rosca de Distribuição por Ativo — quais tickers mais contribuíram pros seus proventos",
+    "CORRIGIDO: gráfico de proventos mostrava 6 meses de valores fixos no código, iguais pra qualquer conta — agora calcula 100% a partir do seu histórico real",
+    "Resumo lateral com Média mensal, Total 12 meses e A receber, tudo calculado ao vivo",
+  ]},
+  {v:"v18.1",d:"Jun/2026",items:[
+    "CORRIGIDO BUG GRAVE: quando a Brapi falhava em confirmar a cotação de um ticker específico (ex: baixa liquidez), o preço ficava CONGELADO indefinidamente sem nenhum aviso — o app continuava mostrando como se fosse ao vivo, colorido normalmente",
+    "Agora cada ticker guarda o horário da última cotação confirmada de verdade; se passar de 40 minutos sem confirmação, mostra '⚠︎ desatualizado' na célula da cotação (Ações, FIIs, ETFs, Stocks)",
+    "Status do topo fica honesto: se algum ativo específico não confirmou cotação nova, mostra '(X ativos sem confirmação)' em vez de dizer que está tudo ao vivo",
+  ]},
   {v:"v18.0",d:"Jun/2026",items:[
     "CORREÇÃO ESTRUTURAL: adicionar um ativo que você já tem agora SOMA na posição existente (preço médio ponderado recalculado) em vez de criar um ticker duplicado — vale pra Ações, FIIs, ETFs, Stocks e Cripto",
     "Novo botão '+' em cada linha das tabelas — compra mais daquele ativo específico sem precisar digitar o ticker de novo",
@@ -2156,22 +2182,26 @@ async function refreshPrices(manual=false){
         modules=defaultKeyStatistics traz dividendYield real (DY%) na mesma chamada, sem custo extra */
   let ibovOK=false;
   window._dyBR = window._dyBR || {}; // cache de DY% real por ticker
+  window._priceUpdatedAt = window._priceUpdatedAt || {}; // timestamp da última cotação CONFIRMADA por ticker
   try{
     const symStr = tksBR.map(s=>s.replace('^','%5E')).join(',');
-    const url=`https://brapi.dev/api/quote/${symStr}?modules=defaultKeyStatistics&token=${BRAPI_TOKEN}`;
+    const url=`https://brapi.dev/api/quote/${symStr}?modules=defaultKeyStatistics&dividends=true&token=${BRAPI_TOKEN}`;
     const j=await corsGetJSON(url);
     console.log('Brapi resposta completa:', j);
     if(j.results&&j.results.length){
       j.results.forEach(q=>{
-        if(!q.regularMarketPrice) { console.warn('Sem regularMarketPrice para',q.symbol,q); return; }
+        if(!q.regularMarketPrice) { console.warn('⚠ Brapi sem regularMarketPrice para',q.symbol,'— preço desse ticker vai ficar desatualizado até a próxima tentativa'); return; }
         if(q.symbol==='^BVSP'){
           updMkt('ibov',q.regularMarketPrice.toLocaleString('pt-BR',{maximumFractionDigits:0}),q.regularMarketChangePercent||0);
           ibovOK=true;
         } else {
           prices[q.symbol]=q.regularMarketPrice; brOK++;
+          window._priceUpdatedAt[q.symbol]=Date.now();
           // dividendYield vem como fração (ex: 0.0843 = 8.43%) — guarda já em %
           const dy = q.defaultKeyStatistics?.dividendYield;
           if(dy!=null && !isNaN(dy)) window._dyBR[q.symbol] = dy*100;
+          // Proventos anunciados pela fonte oficial (CVM via Brapi) — vira sugestão de lançamento
+          if(q.dividendsData?.cashDividends?.length) coletarProventosSugeridos(q.symbol, q.dividendsData.cashDividends);
         }
       });
     }
@@ -2223,6 +2253,7 @@ async function refreshPrices(manual=false){
       if(m?.regularMarketPrice){
         const p=m.regularMarketPrice,prev=m.chartPreviousClose||0;
         prices[tk]=p;
+        window._priceUpdatedAt[tk]=Date.now();
         D.etfs.filter(e=>e.tk===tk).forEach(e=>{e.priceUSD=p;e.prevClose=prev;});
         D.stocks.filter(s=>s.tk===tk).forEach(s=>{s.priceUSD=p;s.prevClose=prev;});
       }
@@ -2231,9 +2262,13 @@ async function refreshPrices(manual=false){
 
   // Status
   const nowTs=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const tksEsperadosBR = tksAcoes.length + tksFiis.length; // sem contar o índice
+  const faltaram = tksEsperadosBR - brOK;
   if(brOK>0){
     pricesArelive=true;
-    document.getElementById('lastUpd').textContent=`Preços atualizados — ${nowTs}`;
+    document.getElementById('lastUpd').textContent = faltaram>0
+      ? `Preços atualizados — ${nowTs} (${faltaram} ativo${faltaram>1?"s":""} sem confirmação)`
+      : `Preços atualizados — ${nowTs}`;
     document.getElementById('lastUpd').style.color='';
     const chip=document.getElementById('snapChip');
     if(chip){chip.textContent=`Ao vivo — ${nowTs}`;chip.className='snap-chip live';}
@@ -2393,6 +2428,12 @@ function saveMetas(){
 // Helper global — preço ao vivo ou fallback snapshot
 function px(tk){ return prices[tk]||0; }
 function hasPrice(tk){ return !!prices[tk]; }
+const PRECO_STALE_MS = 40*60*1000; // 40 minutos sem confirmação da fonte = trata como desatualizado
+function isPriceStale(tk){
+  const ts = window._priceUpdatedAt && window._priceUpdatedAt[tk];
+  if(!ts) return true; // nunca foi confirmado por uma cotação de verdade
+  return (Date.now()-ts) > PRECO_STALE_MS;
+}
 // valor da posição: se tem preço ao vivo usa, senão usa PM (valor investido)
 function posVal(ativo){
   if(prices[ativo.tk]) return prices[ativo.tk]*ativo.cotas;
@@ -3102,8 +3143,8 @@ function renderAcoes(totAcoes,sc,sd){
       <td class="r">${brl(a.totb3,2)}</td>
       <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(a.lucro)}${brl(Math.abs(a.lucro),2)}</td>
       <td class="r" style="font-family:var(--mono);color:var(--muted)">${brl(a.pm,2)}</td>
-      <td class="r" style="color:${hasPrice(a.tk)?a.lucro>=0?"var(--pos)":"var(--neg)":"var(--muted)"}">
-        ${hasPrice(a.tk)?brl(a.price,2):"aguard."}</td>
+      <td class="r" style="color:${hasPrice(a.tk)?(isPriceStale(a.tk)?"var(--muted)":(a.lucro>=0?"var(--pos)":"var(--neg)")):"var(--muted)"}" title="${hasPrice(a.tk)&&isPriceStale(a.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">
+        ${hasPrice(a.tk)?brl(a.price,2)+(isPriceStale(a.tk)?' <span style="font-size:9px">⚠︎ desatualizado</span>':""):"aguard."}</td>
       <td class="r">${a.cotas}</td>
       <td class="r" style="color:var(--gold);font-weight:600">${getDY(a.tk,a.dy).toFixed(2)}%${window._dyBR&&window._dyBR[a.tk]!=null?'':' <span style="font-size:9px;color:var(--muted)">(aguardando)</span>'}</td>
       <td>${tetoCell(a.tk, a.pctCart, tetoAtual, rows.length===1)}</td>
@@ -3157,7 +3198,7 @@ function renderFiis(totFiis,sc,sd){
       <td class="r">${brl(f.tot,2)}</td><td class="r">${brl(f.totb3,2)}</td>
       <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(f.lucro)}${brl(Math.abs(f.lucro),2)}</td>
       <td class="r" style="font-family:var(--mono);color:var(--muted)">${brl(f.pm,2)}</td>
-      <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"}">${brl(f.price,2)}</td>
+      <td class="r" style="color:${isPriceStale(f.tk)?"var(--muted)":(f.lucro>=0?"var(--pos)":"var(--neg)")}" title="${isPriceStale(f.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${brl(f.price,2)}${isPriceStale(f.tk)?' <span style="font-size:9px">⚠︎ desatualizado</span>':""}</td>
       <td class="r">${f.cotas}</td>
       <td class="r" style="color:var(--gold);font-weight:600">${getDY(f.tk,f.dy).toFixed(2)}%${window._dyBR&&window._dyBR[f.tk]!=null?'':' <span style="font-size:9px;color:var(--muted)">(aguardando)</span>'}</td>
       <td>${tetoCell(f.tk, f.pctCart, tetoAtual, rows.length===1)}</td>
@@ -3327,7 +3368,7 @@ function renderETFs(sc,sd){
     const pmET = e.cotas>0 ? e.inv/e.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
       <td class="r">${usd(e.inv)}</td><td class="r" style="color:var(--muted)">${brl(e.inv*usdBRL,2)}</td>
-      <td class="r" style="${eLive?`color:${eLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`:"color:var(--muted)"}">${eLive?usd(eLive):"—"}</td>
+      <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":`color:${eLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`):"color:var(--muted)"}" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${eLive?usd(eLive)+(isPriceStale(e.tk)?' <span style="font-size:9px">⚠︎</span>':""):"—"}</td>
       <td class="r">${usd(e.atual)}</td><td class="r" style="color:var(--muted)">${brl(e.atual*usdBRL,2)}</td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),2)}</div></td>
@@ -3379,7 +3420,7 @@ function renderStocks(sc,sd){
     const pmSK = s.cotas>0 ? s.inv/s.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
       <td class="r">${usd(s.inv)}</td><td class="r" style="color:var(--muted)">${brl(s.inv*usdBRL,2)}</td>
-      <td class="r" style="${sLive?`color:${sLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`:"color:var(--muted)"}">${sLive?usd(sLive):"—"}</td>
+      <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":`color:${sLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`):"color:var(--muted)"}" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${sLive?usd(sLive)+(isPriceStale(s.tk)?' <span style="font-size:9px">⚠︎</span>':""):"—"}</td>
       <td class="r">${usd(s.atual)}</td><td class="r" style="color:var(--muted)">${brl(s.atual*usdBRL,2)}</td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
@@ -3409,11 +3450,19 @@ function renderStocks(sc,sd){
 
 /* Proventos */
 function renderProv(){
-  const mx=Math.max(...D.provBR.map(m=>m.v),1);
+  atualizarProvBR();
+  const mx=Math.max(...D.provBR.map(m=>m.v+m.futuro),1);
   const c=g("provBRbars"); c.innerHTML="";
   D.provBR.forEach(m=>{
     const el=document.createElement("div"); el.className="mb";
-    el.innerHTML=`<div class="mb-v">${brl(m.v,0)}</div><div class="mb-b" style="height:${Math.max(3,m.v/mx*62)}px"></div><div class="mb-l">${m.m}</div>`;
+    const hRec=Math.max(m.v>0?3:0, m.v/mx*100);
+    const hFut=Math.max(m.futuro>0?3:0, m.futuro/mx*100);
+    el.innerHTML=`<div class="mb-v">${brl(m.v+m.futuro,0)}</div>
+      <div class="mb-stack" style="height:${(hRec+hFut).toFixed(0)}px">
+        <div class="mb-seg-recebido" style="height:${hRec.toFixed(0)}px"></div>
+        <div class="mb-seg-futuro" style="height:${hFut.toFixed(0)}px"></div>
+      </div>
+      <div class="mb-l">${m.m}</div>`;
     c.appendChild(el);
   });
   const fl=g("provLog"); fl.innerHTML="";
@@ -3425,11 +3474,145 @@ function renderProv(){
       <td class="r" style="color:var(--gold);font-weight:600">${brl(l.total,2)}</td>`;
     fl.appendChild(tr);
   });
+
+  // Distribuição por ativo — rosca, mesmo padrão visual do Teto por Setor
+  const mapAtivo={}; D.provLog.forEach(l=>{ mapAtivo[l.tk]=(mapAtivo[l.tk]||0)+l.total; });
+  const dc=g("provDonut");
+  if(dc){
+    const totalProv=Object.values(mapAtivo).reduce((a,b)=>a+b,0);
+    if(!totalProv){
+      dc.innerHTML=`<div style="font-size:11px;color:var(--muted);text-align:center;padding:18px 0">Nenhum provento lançado ainda.</div>`;
+    } else {
+      const entradas=Object.entries(mapAtivo).sort((a,b)=>b[1]-a[1]);
+      const R=46,cx=58,cy=58,sw=15,circ=2*Math.PI*R;
+      let arcs=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="${sw}"/>`;
+      let off=circ/4;
+      entradas.forEach(([tk,v],i)=>{
+        const pct=v/totalProv*100, arc=pct/100*circ, gap=circ-arc;
+        const color=SETOR_PALETTE[i%SETOR_PALETTE.length];
+        arcs+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${color}" stroke-width="${sw}"
+          stroke-dasharray="${arc.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"/>`;
+        off-=arc;
+      });
+      const legend=entradas.slice(0,8).map(([tk,v],i)=>`
+        <div class="sdon-row">
+          <span class="sdon-dot" style="background:${SETOR_PALETTE[i%SETOR_PALETTE.length]}"></span>
+          <span class="sdon-n">${tk}</span>
+          <span class="sdon-val" style="color:var(--text)">${(v/totalProv*100).toFixed(1)}%</span>
+          <span class="sdon-sep"></span><span class="sdon-cap"></span><span class="sdon-warn"></span>
+        </div>`).join("");
+      dc.innerHTML = `<div class="sdon-wrap">
+        <svg width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}" style="flex-shrink:0">${arcs}</svg>
+        <div class="sdon-legend">${legend}</div>
+      </div>`;
+    }
+  }
+
   const totBR=D.provBR.reduce((s,m)=>s+m.v,0);
+  const totFuturo=D.provBR.reduce((s,m)=>s+m.futuro,0);
   const totFII=D.fiis.reduce((s,f)=>s+f.prov,0);
+  const mediaMensal=D.provBR.length ? totBR/D.provBR.length : 0;
   const pr=g("provResumo");
-  const rows=[["Ações BR (lançados)",brl(totBR,2),"var(--text)"],["FIIs acumulado",brl(totFII,2),"var(--gold)"],["Total geral",brl(totBR+totFII,2),"var(--gold)"],["Média mensal FIIs",brl(totFII/12,2),"var(--muted)"]];
+  const rows=[
+    ["Média mensal (recebido)",brl(mediaMensal,2),"var(--text)"],
+    ["Total 12 meses (recebido)",brl(totBR,2),"var(--gold)"],
+    ["A receber (anunciado)",brl(totFuturo,2),"var(--muted)"],
+    ["FIIs acumulado (histórico)",brl(totFII,2),"var(--gold)"],
+  ];
   pr.innerHTML=rows.map((r,i)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;${i<rows.length-1?"border-bottom:1px solid var(--border)":""}"><span style="font-size:11px;color:var(--muted)">${r[0]}</span><span style="font-family:var(--mono);font-size:13px;font-weight:500;color:${r[2]}">${r[1]}</span></div>`).join("");
+  renderProvSugeridos();
+}
+
+/* ── Proventos detectados automaticamente (via Brapi/CVM) ─────────── */
+window._provSugeridos = window._provSugeridos || []; // {tk,tipo,pg,vc,cotas,total,dataCom}
+
+function coletarProventosSugeridos(tk, cashDividends){
+  const ativo = D.acoes.find(a=>a.tk===tk) || D.fiis.find(f=>f.tk===tk);
+  if(!ativo || !ativo.cotas) return; // não possui esse ativo — ignora
+  const cotas = ativo.cotas;
+  cashDividends.forEach(cd=>{
+    if(!cd.paymentDate || !cd.rate) return; // sem data de pagamento definida ainda — não dá pra sugerir lançamento
+    const pg = cd.paymentDate.split("-").reverse().join("/"); // YYYY-MM-DD → DD/MM/YYYY
+    const vc = cd.rate;
+    // já foi lançado manualmente ou já está na lista de sugestões? não duplica
+    const jaLancado = D.provLog.some(l=>l.tk===tk && l.pg===pg && Math.abs(l.vc-vc)<0.0001);
+    const jaSugerido = window._provSugeridos.some(s=>s.tk===tk && s.pg===pg && Math.abs(s.vc-vc)<0.0001);
+    if(jaLancado || jaSugerido) return;
+    window._provSugeridos.push({
+      tk, tipo: cd.label==="JCP" ? "JSCP" : "Dividendos",
+      pg, vc, cotas, total:+(vc*cotas).toFixed(2),
+      dataCom: cd.lastDatePrior ? cd.lastDatePrior.split("-").reverse().join("/") : null,
+      futuro: new Date(cd.paymentDate) > new Date(),
+    });
+  });
+  renderProvSugeridos();
+}
+
+function renderProvSugeridos(){
+  const el=g("provSugeridos"); if(!el) return;
+  if(!window._provSugeridos.length){ el.style.display="none"; return; }
+  el.style.display="block";
+  const itens = window._provSugeridos.map((s,i)=>`
+    <div class="prov-sug-row">
+      <div class="prov-sug-info">
+        <strong>${s.tk}</strong> <span style="color:var(--muted);font-size:11px">${s.tipo} · ${s.cotas} cotas · ${brl(s.vc,4)}/cota</span>
+        <div style="font-size:10px;color:var(--muted)">${s.futuro?"A receber":"Recebido"} em ${s.pg}${s.dataCom?` · Data-com ${s.dataCom}`:""}</div>
+      </div>
+      <span style="font-family:var(--mono);font-weight:600;color:var(--gold)">${brl(s.total,2)}</span>
+      <button class="btn-sec" style="font-size:11px;padding:5px 10px" onclick="confirmarProvSugerido(${i})">+ Adicionar</button>
+    </div>`).join("");
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:600">🔍 ${window._provSugeridos.length} provento${window._provSugeridos.length>1?"s":""} detectado${window._provSugeridos.length>1?"s":""} automaticamente</span>
+      <button class="btn-pri" style="font-size:11px;padding:6px 12px" onclick="confirmarTodosProvSugeridos()">Adicionar todos</button>
+    </div>
+    ${itens}`;
+}
+
+async function confirmarProvSugerido(idx){
+  const s = window._provSugeridos[idx];
+  if(!s) return;
+  const row={tk:s.tk, tipo:s.tipo, pg:s.pg, vc:s.vc, cotas:s.cotas, total:s.total};
+  D.provLog.unshift(row);
+  if(sbOK && currentUser){
+    try{
+      const [dd,mm,yyyy]=s.pg.split("/");
+      await SB.post('proventos',{
+        ticker:s.tk, tipo:s.tipo, data_pagamento:`${yyyy}-${mm}-${dd}`,
+        valor_por_cota:s.vc, quantidade_cotas:s.cotas, total:s.total, user_id: currentUser.id
+      });
+    }catch(e){ console.warn('Provento sugerido — erro ao salvar:',e); }
+  }
+  window._provSugeridos.splice(idx,1);
+  atualizarProvBR();
+  renderProv();
+  renderProvSugeridos();
+}
+async function confirmarTodosProvSugeridos(){
+  while(window._provSugeridos.length) await confirmarProvSugerido(0);
+}
+
+/* Recalcula D.provBR (últimos meses) a partir do histórico real — nunca mais valor de exemplo fixo */
+function atualizarProvBR(){
+  const meses=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  const hoje=new Date();
+  const buckets=[];
+  for(let i=11;i>=0;i--){
+    const d=new Date(hoje.getFullYear(), hoje.getMonth()-i, 1);
+    buckets.push({key:`${d.getFullYear()}-${d.getMonth()}`, m:`${meses[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`, v:0, futuro:0});
+  }
+  D.provLog.forEach(l=>{
+    const [dd,mm,yyyy]=l.pg.split("/");
+    if(!dd||!mm||!yyyy) return;
+    const key=`${yyyy}-${parseInt(mm)-1}`;
+    const b=buckets.find(x=>x.key===key);
+    if(b){
+      const dataPg=new Date(`${yyyy}-${mm}-${dd}`);
+      if(dataPg>hoje) b.futuro=+(b.futuro+l.total).toFixed(2);
+      else b.v=+(b.v+l.total).toFixed(2);
+    }
+  });
+  D.provBR = buckets;
 }
 
 /* Prov form */
