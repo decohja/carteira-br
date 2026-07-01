@@ -1050,10 +1050,13 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 <!-- PROVENTOS -->
 <section class="panel" id="p-prov">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+    <button class="refbtn" id="btnBuscarProv" onclick="buscarProventosManual()" style="font-size:11px">🔄 Buscar proventos agora</button>
+  </div>
   <div id="provSugeridos" class="prov-sug-box" style="display:none"></div>
   <div class="two eq">
     <div>
-      <div class="st">Lançar provento manualmente</div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Lançar manualmente <span style="font-weight:400;color:var(--muted);font-size:11px">(backup — a busca automática já roda sozinha)</span></div>
       <div class="pform">
         <div class="frow3">
           <div><label class="flbl">Ativo</label>
@@ -1650,6 +1653,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v18.3",d:"Jun/2026",items:[
+    "CORRIGIDO BUG GRAVE (regressão da v18.2): juntar a busca de proventos na mesma chamada de cotação deixou o payload grande demais e derrubou a atualização de preço inteira ('Sem conexão'). Separadas em duas chamadas independentes — cotação nunca mais depende de proventos",
+    "Busca de proventos agora é ticker por ticker: se um falhar, os outros continuam normalmente",
+    "Novo botão '🔄 Buscar proventos agora' — força uma busca manual a qualquer momento, sem esperar o próximo carregamento",
+    "Aba Proventos: lançamento manual agora é claramente marcado como backup — a busca automática é o fluxo principal",
+  ]},
   {v:"v18.2",d:"Jun/2026",items:[
     "PROVENTOS AUTOMÁTICOS: o app agora detecta dividendos/JCP anunciados oficialmente (via CVM/Brapi) pros ativos que você tem, e sugere o lançamento — você só confirma, não digita mais na mão",
     "Novo gráfico de Evolução de Proventos (últimos 12 meses), com barras empilhadas Recebido + A Receber",
@@ -2185,7 +2194,7 @@ async function refreshPrices(manual=false){
   window._priceUpdatedAt = window._priceUpdatedAt || {}; // timestamp da última cotação CONFIRMADA por ticker
   try{
     const symStr = tksBR.map(s=>s.replace('^','%5E')).join(',');
-    const url=`https://brapi.dev/api/quote/${symStr}?modules=defaultKeyStatistics&dividends=true&token=${BRAPI_TOKEN}`;
+    const url=`https://brapi.dev/api/quote/${symStr}?modules=defaultKeyStatistics&token=${BRAPI_TOKEN}`;
     const j=await corsGetJSON(url);
     console.log('Brapi resposta completa:', j);
     if(j.results&&j.results.length){
@@ -2200,8 +2209,6 @@ async function refreshPrices(manual=false){
           // dividendYield vem como fração (ex: 0.0843 = 8.43%) — guarda já em %
           const dy = q.defaultKeyStatistics?.dividendYield;
           if(dy!=null && !isNaN(dy)) window._dyBR[q.symbol] = dy*100;
-          // Proventos anunciados pela fonte oficial (CVM via Brapi) — vira sugestão de lançamento
-          if(q.dividendsData?.cashDividends?.length) coletarProventosSugeridos(q.symbol, q.dividendsData.cashDividends);
         }
       });
     }
@@ -3523,8 +3530,33 @@ function renderProv(){
   renderProvSugeridos();
 }
 
+async function buscarProventosManual(){
+  const btn=g("btnBuscarProv");
+  if(btn){ btn.disabled=true; btn.textContent="Buscando…"; }
+  await buscarProventosAutomaticos();
+  renderProv();
+  if(btn){
+    btn.disabled=false; btn.textContent="🔄 Buscar proventos agora";
+    if(!window._provSugeridos.length) alert("Nenhum provento novo encontrado pra seus ativos no momento.");
+  }
+}
+
 /* ── Proventos detectados automaticamente (via Brapi/CVM) ─────────── */
 window._provSugeridos = window._provSugeridos || []; // {tk,tipo,pg,vc,cotas,total,dataCom}
+
+// Busca dividends=true SEPARADO da cotação, um ticker por vez — se um ticker
+// específico falhar ou vier com payload grande, não derruba a atualização de preço.
+async function buscarProventosAutomaticos(){
+  const tks=[...D.acoes.map(a=>a.tk), ...D.fiis.map(f=>f.tk)];
+  await Promise.allSettled(tks.map(async tk=>{
+    try{
+      const url=`https://brapi.dev/api/quote/${tk}?dividends=true&token=${BRAPI_TOKEN}`;
+      const j=await corsGetJSON(url);
+      const q=j.results&&j.results[0];
+      if(q?.dividendsData?.cashDividends?.length) coletarProventosSugeridos(tk, q.dividendsData.cashDividends);
+    }catch(e){ console.warn(`Proventos: falhou pra ${tk}:`,e.message); }
+  }));
+}
 
 function coletarProventosSugeridos(tk, cashDividends){
   const ativo = D.acoes.find(a=>a.tk===tk) || D.fiis.find(f=>f.tk===tk);
@@ -4369,6 +4401,7 @@ async function startApp(){
     if(dlSk) TICKERS_STOCKS_US.forEach(t=>{ const o=document.createElement('option'); o.value=t; dlSk.appendChild(o); });
     render(); // re-renderiza com dados do banco
     atualizarIndicadoresMacroRF().catch(()=>{}); // best-effort, não bloqueia o carregamento
+    buscarProventosAutomaticos().then(()=>renderProv()).catch(()=>{}); // idem — roda em paralelo, não trava nada se falhar
   } catch(e){
     console.warn('Supabase init error:', e);
     setSbStatus(false);
