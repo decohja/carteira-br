@@ -1628,6 +1628,15 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v17.0",d:"Jun/2026",items:[
+    "Cripto e itens extras (Reserva de Emergência, Caixa Obra) agora vão pra nuvem junto com o resto da carteira — antes só existiam no navegador",
+    "Proventos e Objetivos agora são vinculados à conta que os criou — mesma correção que já fizemos na carteira e na Meta (precisa rodar 2 SQLs novos no Supabase)",
+    "Ações BR, FIIs, ETFs e Stocks ganharam mensagem de 'nenhuma posição ainda' quando a tabela está vazia, igual já tinha em Renda Fixa",
+  ]},
+  {v:"v16.12",d:"Jun/2026",items:[
+    "CORRIGIDO: aviso de 'carteira vazia' continuava aparecendo depois de adicionar Cripto — a função de adicionar cripto tinha um atalho que pulava o desligamento do aviso",
+    "O mesmo aviso também não volta mais depois de recarregar a página se você já tem posições em Cripto",
+  ]},
   {v:"v16.11",d:"Jun/2026",items:[
     "CORRIGIDO: alinhamento torto da legenda em Teto por Setor — trocado o hack de flexbox por CSS grid de verdade, coluna de números agora alinha certinho em todas as linhas",
   ]},
@@ -2585,6 +2594,7 @@ function deleteCripto(idx){
   renderCripto();
   renderAlloc();
   renderMetasAloc();
+  if(currentUser) salvarCarteiraNaNuvem().catch(e=>console.warn("Sync cripto:",e));
 }
 
 /* Exclui um ativo de Ações BR, FIIs, ETFs ou Stocks pelo ticker */
@@ -3012,6 +3022,7 @@ function saveExtraItem(){
   saveCustomExtra(custom);
   closeExtraItem();
   renderAllocExtra();
+  if(currentUser) salvarCarteiraNaNuvem().catch(e=>console.warn("Sync extra:",e));
 }
 
 function deleteExtraItem(){
@@ -3022,6 +3033,7 @@ function deleteExtraItem(){
   saveCustomExtra(custom);
   closeExtraItem();
   renderAllocExtra();
+  if(currentUser) salvarCarteiraNaNuvem().catch(e=>console.warn("Sync extra:",e));
 }
 
 /* ações */
@@ -3036,6 +3048,11 @@ function renderAcoes(totAcoes,sc,sd){
   });
   if(sc) rows.sort((x,y)=>{let a=x[sc],b=y[sc];if(typeof a==="string"){a=a.toLowerCase();b=b.toLowerCase();}return sd==="asc"?(a>b?1:-1):(a<b?1:-1)});
   const tb=g("acTbl"); tb.innerHTML="";
+  if(!rows.length){
+    tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
+      Nenhuma posição em Ações BR ainda. Clique em "+ Adicionar ação" para começar.
+    </td></tr>`;
+  }
   // Soma por setor (pra calcular % do setor inteiro vs teto do setor)
   const mapSetorAC={}; rows.forEach(a=>{mapSetorAC[a.st]=(mapSetorAC[a.st]||0)+a.totb3;});
   rows.forEach(a=>{
@@ -3087,6 +3104,11 @@ function renderFiis(totFiis,sc,sd){
   });
   if(sc) rows.sort((x,y)=>{let a=x[sc],b=y[sc];if(typeof a==="string"){a=a.toLowerCase();b=b.toLowerCase();}return sd==="asc"?(a>b?1:-1):(a<b?1:-1)});
   const tb=g("fiTbl"); tb.innerHTML="";
+  if(!rows.length){
+    tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
+      Nenhuma posição em FIIs ainda. Clique em "+ Adicionar FII" para começar.
+    </td></tr>`;
+  }
   const mapSegFI={}; rows.forEach(f=>{mapSegFI[f.seg]=(mapSegFI[f.seg]||0)+f.totb3;});
   rows.forEach(f=>{
     const opts=sts.map(o=>`<option${o===f.st?" selected":""}>${o}</option>`).join("");
@@ -3249,6 +3271,11 @@ function renderETFs(sc,sd){
   let rows=[...D.etfs];
   if(sc) rows.sort((x,y)=>sd==="asc"?(x[sc]>y[sc]?1:-1):(x[sc]<y[sc]?1:-1));
   const tb=g("etTbl"); tb.innerHTML="";
+  if(!rows.length){
+    tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
+      Nenhuma posição em ETFs ainda. Clique em "+ Adicionar ETF" para começar.
+    </td></tr>`;
+  }
   const tot=rows.reduce((s,e)=>s+e.atual,0);
   const mapFunET={}; rows.forEach(e=>{mapFunET[e.fun]=(mapFunET[e.fun]||0)+e.atual;});
   rows.forEach(e=>{
@@ -3293,6 +3320,11 @@ function renderStocks(sc,sd){
   let rows=[...D.stocks];
   if(sc) rows.sort((x,y)=>sd==="asc"?(x[sc]>y[sc]?1:-1):(x[sc]<y[sc]?1:-1));
   const tb=g("skTbl"); tb.innerHTML="";
+  if(!rows.length){
+    tb.innerHTML=`<tr><td colspan="12" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
+      Nenhuma posição em Stocks ainda. Clique em "+ Adicionar Stock" para começar.
+    </td></tr>`;
+  }
   const tot=rows.reduce((s,s2)=>s+s2.atual,0);
   const mapSetorSK={}; rows.forEach(s=>{mapSetorSK[s.setor]=(mapSetorSK[s.setor]||0)+s.atual;});
   rows.forEach(s=>{
@@ -3371,11 +3403,11 @@ async function addProv(){
   const total=+(vc*ct).toFixed(2);
   const row={tk,tipo,pg:dt.split("-").reverse().join("/"),vc,cotas:ct,total};
   // salva no Supabase
-  if(sbOK){
+  if(sbOK && currentUser){
     try{
       await SB.post('proventos',{
         ticker:tk, tipo, data_pagamento:dt,
-        valor_por_cota:vc, quantidade_cotas:ct, total
+        valor_por_cota:vc, quantidade_cotas:ct, total, user_id: currentUser.id
       });
     }catch(e){ console.warn('Supabase provento error:',e); }
   }
@@ -3431,8 +3463,8 @@ async function saveObj(tk, val){
   const f=D.fiis.find(x=>x.tk===tk);  if(f) f.st=val;
   const s=D.stocks.find(x=>x.tk===tk);if(s) s.obj=val;
   // salva no banco
-  if(sbOK){
-    try{ await SB.upsert('objetivos',{ticker:tk,objetivo:val,updated_at:new Date().toISOString()}); }
+  if(sbOK && currentUser){
+    try{ await SB.upsert('objetivos',{ticker:tk,objetivo:val,user_id:currentUser.id,updated_at:new Date().toISOString()}); }
     catch(e){ console.warn('saveObj error:',e); }
   }
 }
@@ -3662,13 +3694,18 @@ async function confirmarAddAtivo(){
     renderCripto();
     closeAddAtivo();
     renderAlloc(); renderMetasAloc();
+    if(currentUser && primeiroAcessoVazio){
+      primeiroAcessoVazio=false;
+      atualizaBannerMigracao();
+    }
+    if(currentUser) salvarCarteiraNaNuvem().catch(e=>console.warn("Sync cripto:",e));
     return;
   }
 
-  // salva no Supabase se conectado (tabela futura)
-  if(sbOK){
+  // salva no Supabase se conectado
+  if(sbOK && currentUser){
     try{
-      await SB.upsert("objetivos",{ticker:tk,objetivo:"Manter",updated_at:new Date().toISOString()});
+      await SB.upsert("objetivos",{ticker:tk,objetivo:"Manter",user_id:currentUser.id,updated_at:new Date().toISOString()});
     }catch(e){}
   }
 
@@ -3916,6 +3953,9 @@ async function carregarCarteiraDaNuvem(){
     D.etfs   = pd.etfs   && pd.etfs.length   ? pd.etfs   : [];
     D.stocks = pd.stocks && pd.stocks.length ? pd.stocks : [];
     D.rf     = pd.rf     && pd.rf.length     ? pd.rf     : [];
+    D.cripto = pd.cripto || []; // a nuvem passa a ser a fonte da verdade — sobrescreve o cache local
+    saveCriptoAtivos();
+    saveCustomExtra(pd.extra || []);
     carteiraEhSemente = false;
   } else if(currentUser.email === OWNER_EMAIL){
     // primeiro acesso do DONO — mantém os valores atuais (semente) em memória
@@ -3925,10 +3965,14 @@ async function carregarCarteiraDaNuvem(){
     D.etfs = JSON.parse(JSON.stringify(SEED_PORTFOLIO.etfs));
     D.stocks = JSON.parse(JSON.stringify(SEED_PORTFOLIO.stocks));
     D.rf = JSON.parse(JSON.stringify(SEED_PORTFOLIO.rf));
+    // Cripto e itens extras do dono: o que já estiver no cache local (loadCriptoAtivos já rodou) vira a semente
     carteiraEhSemente = true;
   } else {
     // primeiro acesso de QUALQUER OUTRA conta — carteira 100% zerada, sem herdar nada
-    D.acoes = []; D.fiis = []; D.etfs = []; D.stocks = []; D.rf = [];
+    // (inclui Cripto e Extras, que antes viviam só no navegador e podiam vazar entre contas do mesmo PC)
+    D.acoes = []; D.fiis = []; D.etfs = []; D.stocks = []; D.rf = []; D.cripto = [];
+    saveCriptoAtivos();
+    saveCustomExtra([]);
     carteiraEhSemente = false;
     primeiroAcessoVazio = true;
   }
@@ -3939,6 +3983,7 @@ async function salvarCarteiraNaNuvem(){
   await SB.upsert('portfolio_data', {
     user_id: currentUser.id,
     acoes: D.acoes, fiis: D.fiis, etfs: D.etfs, stocks: D.stocks, rf: D.rf,
+    cripto: D.cripto, extra: getCustomExtra(),
     updated_at: new Date().toISOString()
   });
   carteiraEhSemente = false;
@@ -3976,10 +4021,11 @@ async function startApp(){
     // carteira do usuário logado (Ações, FIIs, ETFs, Stocks, RF)
     await carregarCarteiraDaNuvem();
 
-    // proventos
-    const provs = await SB.get('proventos','order=created_at.desc');
-    if(provs && provs.length){
-      D.provLog = provs.map(p=>({
+    // proventos — só os da conta logada
+    // try isolado: se a coluna user_id ainda não existir no banco, não derruba o resto
+    try{
+      const provs = await SB.get('proventos', {'user_id':'eq.'+currentUser.id, 'order':'created_at.desc'});
+      D.provLog = (provs||[]).map(p=>({
         tk:p.ticker, tipo:p.tipo,
         pg: p.data_pagamento ? p.data_pagamento.split('-').reverse().join('/') : '—',
         vc: p.valor_por_cota, cotas: p.quantidade_cotas, total: p.total
@@ -3990,6 +4036,9 @@ async function startApp(){
         const fi=D.fiis.find(f=>f.tk===p.tk);
         if(fi) fi.prov=+(fi.prov+p.total).toFixed(2);
       });
+    }catch(e){
+      console.warn('Proventos: rode o setup-proventos-objetivos-scoping.sql no Supabase. Erro:', e.message);
+      D.provLog = [];
     }
 
     // metas — só as da conta logada (RLS já garante isso no banco, filtro aqui é só clareza)
@@ -4009,14 +4058,18 @@ async function startApp(){
       D.metas = [];
     }
 
-    // objetivos
-    const objs = await SB.get('objetivos','select=ticker,objetivo');
-    if(objs && objs.length){
-      objs.forEach(o=>{
-        const a=D.acoes.find(x=>x.tk===o.ticker); if(a) a.obj=o.objetivo;
-        const f=D.fiis.find(x=>x.tk===o.ticker);  if(f) f.st=o.objetivo;
-        const s=D.stocks.find(x=>x.tk===o.ticker);if(s) s.obj=o.objetivo;
-      });
+    // objetivos — só os da conta logada
+    try{
+      const objs = await SB.get('objetivos', {'user_id':'eq.'+currentUser.id, 'select':'ticker,objetivo'});
+      if(objs && objs.length){
+        objs.forEach(o=>{
+          const a=D.acoes.find(x=>x.tk===o.ticker); if(a) a.obj=o.objetivo;
+          const f=D.fiis.find(x=>x.tk===o.ticker);  if(f) f.st=o.objetivo;
+          const s=D.stocks.find(x=>x.tk===o.ticker);if(s) s.obj=o.objetivo;
+        });
+      }
+    }catch(e){
+      console.warn('Objetivos: rode o setup-proventos-objetivos-scoping.sql no Supabase. Erro:', e.message);
     }
 
     setSbStatus(true);
