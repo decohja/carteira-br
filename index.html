@@ -1556,6 +1556,12 @@ async function corsGetJSON(url){
     lastErr = r.status===402 ? 'Limite mensal da Brapi atingido (402)' : `HTTP ${r.status} (via corsproxy)`;
     console.warn('corsGetJSON corsproxy failed:',r.status);
   }catch(e){ lastErr=e.message; console.warn('corsGetJSON corsproxy error:',e.message); }
+  try{
+    const r=await fetch('https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url));
+    if(r.ok) return await r.json();
+    lastErr = r.status===402 ? 'Limite mensal da Brapi atingido (402)' : `HTTP ${r.status} (via codetabs)`;
+    console.warn('corsGetJSON codetabs failed:',r.status);
+  }catch(e){ lastErr=e.message; console.warn('corsGetJSON codetabs error:',e.message); }
   window._lastFetchError = lastErr;
   throw new Error('Todos os proxies falharam: '+lastErr);
 }
@@ -1661,6 +1667,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v18.5",d:"Jun/2026",items:[
+    "Adicionado um 4º proxy de contorno de CORS (codetabs) — o corsproxy.io estava devolvendo 403, provavelmente por excesso de uso hoje. Mais uma opção na fila aumenta a chance de passar",
+  ]},
   {v:"v18.4",d:"Jun/2026",items:[
     "DIAGNÓSTICO: quando a busca de cotação falha, agora mostra o motivo real na tela (ex: 'Limite mensal da Brapi atingido') em vez de só 'Sem conexão' genérico — próxima vez que travar, dá pra saber exatamente por quê sem precisar adivinhar",
   ]},
