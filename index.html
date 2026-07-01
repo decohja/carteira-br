@@ -1534,22 +1534,30 @@ function logoImg(tk){
 
 // ─── CORS helper para fetches de dados (cotações) ────────────────────
 async function corsGetJSON(url){
+  let lastErr='desconhecido';
   try{
     const r=await fetch(url,{headers:{Accept:'application/json'}});
     if(r.ok) return await r.json();
+    lastErr = r.status===402 ? 'Limite mensal da Brapi atingido (402)' : `HTTP ${r.status}`;
     console.warn('corsGetJSON direct failed:',r.status,url);
-  }catch(e){ console.warn('corsGetJSON direct error:',e.message,url); }
+  }catch(e){ lastErr='Bloqueio de CORS ou rede indisponível'; console.warn('corsGetJSON direct error:',e.message,url); }
   try{
     const r=await fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url));
     const j=await r.json();
+    if(j.status && j.status.http_code && j.status.http_code!==200){
+      lastErr = j.status.http_code===402 ? 'Limite mensal da Brapi atingido (402)' : `HTTP ${j.status.http_code} (via allorigins)`;
+      throw new Error(lastErr);
+    }
     return JSON.parse(j.contents||'{}');
-  }catch(e){ console.warn('corsGetJSON allorigins error:',e.message); }
+  }catch(e){ if(e.message!==lastErr) lastErr=e.message; console.warn('corsGetJSON allorigins error:',e.message); }
   try{
     const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url));
     if(r.ok) return await r.json();
+    lastErr = r.status===402 ? 'Limite mensal da Brapi atingido (402)' : `HTTP ${r.status} (via corsproxy)`;
     console.warn('corsGetJSON corsproxy failed:',r.status);
-  }catch(e){ console.warn('corsGetJSON corsproxy error:',e.message); }
-  throw new Error('Todos os proxies falharam');
+  }catch(e){ lastErr=e.message; console.warn('corsGetJSON corsproxy error:',e.message); }
+  window._lastFetchError = lastErr;
+  throw new Error('Todos os proxies falharam: '+lastErr);
 }
 
 
@@ -1653,6 +1661,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v18.4",d:"Jun/2026",items:[
+    "DIAGNÓSTICO: quando a busca de cotação falha, agora mostra o motivo real na tela (ex: 'Limite mensal da Brapi atingido') em vez de só 'Sem conexão' genérico — próxima vez que travar, dá pra saber exatamente por quê sem precisar adivinhar",
+  ]},
   {v:"v18.3",d:"Jun/2026",items:[
     "CORRIGIDO BUG GRAVE (regressão da v18.2): juntar a busca de proventos na mesma chamada de cotação deixou o payload grande demais e derrubou a atualização de preço inteira ('Sem conexão'). Separadas em duas chamadas independentes — cotação nunca mais depende de proventos",
     "Busca de proventos agora é ticker por ticker: se um falhar, os outros continuam normalmente",
@@ -2213,7 +2224,7 @@ async function refreshPrices(manual=false){
       });
     }
     console.log(`Brapi: ${brOK} ativos BR + IBOV ${ibovOK?'OK':'FALTOU'}, DY% obtido para ${Object.keys(window._dyBR).length} tickers`);
-  }catch(e){ console.warn('Brapi falhou:',e.message); }
+  }catch(e){ window._lastFetchError=e.message; console.warn('Brapi falhou:',e.message); }
 
   /* 1b. Fallback: busca ^BVSP isolado se não veio no batch (alguns planos limitam mix de índice+ações) */
   if(!ibovOK){
@@ -2284,7 +2295,9 @@ async function refreshPrices(manual=false){
   } else {
     const chip=document.getElementById('snapChip');
     if(chip&&!chip.classList.contains('live')){chip.textContent='Dados salvos';chip.className='snap-chip';}
-    document.getElementById('lastUpd').textContent='Sem conexão — usando snapshot';
+    document.getElementById('lastUpd').textContent = window._lastFetchError
+      ? `Sem conexão — ${window._lastFetchError}`
+      : 'Sem conexão — usando snapshot';
   }
   render();
   if(manual) hideRefreshToast();
