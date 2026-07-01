@@ -408,14 +408,18 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 /* ─── SECTOR BARS ────────────────────── */
 .sdon-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
 .sdon-wrap svg{flex-shrink:0}
-.sdon-legend{display:grid;grid-template-columns:auto auto auto;align-items:center;
-  column-gap:10px;row-gap:8px;width:max-content;max-width:320px}
+.sdon-legend{display:grid;grid-template-columns:auto auto auto auto auto auto;align-items:center;
+  column-gap:6px;row-gap:8px;width:max-content;max-width:340px}
 .sdon-row{display:contents}
 .sdon-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
-.sdon-n{color:var(--text);font-weight:500;font-size:12.5px;white-space:nowrap}
-.sdon-c{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);
-  white-space:nowrap;cursor:pointer;text-align:right;justify-self:end}
-.sdon-c u{text-decoration-style:dotted}
+.sdon-n{color:var(--text);font-weight:500;font-size:12.5px;white-space:nowrap;padding-right:8px}
+.sdon-val{font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap;
+  cursor:pointer;text-align:right;justify-self:end;min-width:3.6ch}
+.sdon-sep{font-family:var(--mono);font-size:12px;color:var(--faint);justify-self:center}
+.sdon-cap{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);
+  white-space:nowrap;cursor:pointer;text-align:left;justify-self:start;min-width:3.2ch}
+.sdon-cap u{text-decoration-style:dotted}
+.sdon-warn{font-size:11px;justify-self:start;width:14px}
 @media(max-width:480px){.sdon-wrap{justify-content:center}.sdon-legend{max-width:100%}}
 
 /* ─── PROV ───────────────────────────── */
@@ -1628,6 +1632,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v17.4",d:"Jun/2026",items:[
+    "Removido o botão '+ Configurar teto de outro setor' — desnecessário, o setor já aparece sozinho quando você adiciona um ativo nele",
+    "Teto por Setor: números realmente alinhados agora — % atual, '/' e % teto viraram colunas de verdade na grade, não texto solto",
+  ]},
   {v:"v17.3",d:"Jun/2026",items:[
     "CORRIGIDO: Teto por Setor mostrava todos os setores da classe (com tetos de exemplo fixos no código, tipo Saneamento 15%) mesmo sem nenhuma posição neles — confuso numa conta nova. Agora só mostra o setor que você realmente tem",
     "Novo link '+ Configurar teto de outro setor' pra quem quiser definir o limite de um setor antes mesmo de ter posição nele",
@@ -2062,28 +2070,15 @@ function mkSetores(data,id,map,classe,totalPosicoes){
     <div class="sdon-row">
       <span class="sdon-dot" style="background:${r.color}"></span>
       <span class="sdon-n">${r.s}</span>
-      <span class="sdon-c" style="color:${r.over?"var(--neg)":"var(--muted)"}" onclick="editTetoSetor('${classe}','${r.s}',${r.tetoAtual})" title="${unica?"Único ativo da classe — 100% é esperado até você diversificar. Clique para editar o teto.":"Clique para editar o teto deste setor"}">
-        ${r.atual.toFixed(1)}% / <u>${r.tetoAtual}%</u>${r.over?" ⚠":""}
-      </span>
+      <span class="sdon-val" style="color:${r.over?"var(--neg)":"var(--text)"}" onclick="editTetoSetor('${classe}','${r.s}',${r.tetoAtual})" title="${unica?"Único ativo da classe — 100% é esperado até você diversificar. Clique para editar o teto.":"Clique para editar o teto deste setor"}">${r.atual.toFixed(1)}%</span>
+      <span class="sdon-sep">/</span>
+      <span class="sdon-cap" onclick="editTetoSetor('${classe}','${r.s}',${r.tetoAtual})" title="Clique para editar o teto deste setor"><u>${r.tetoAtual}%</u></span>
+      <span class="sdon-warn">${r.over?"⚠":""}</span>
     </div>`).join("");
   c.innerHTML=`<div class="sdon-wrap">
     <svg width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}" style="flex-shrink:0">${arcs}</svg>
     <div class="sdon-legend">${legend}</div>
-  </div>
-  <div style="margin-top:10px">
-    <button class="refbtn" style="font-size:11px" onclick="addOutroSetorTeto('${classe}')">+ Configurar teto de outro setor</button>
   </div>`;
-}
-function addOutroSetorTeto(classe){
-  const origem = classe==="Ações BR" ? D.tetosBR : classe==="FIIs" ? D.tetosFII
-    : classe==="ETFs" ? D.tetosETF : classe==="Stocks" ? D.setoresEUA : [];
-  const todos = origem.map(t=>t.s);
-  const setor = prompt(`Configurar teto de qual setor?\n\nOpções disponíveis: ${todos.join(", ")}`, "");
-  if(!setor) return;
-  const match = todos.find(s=>s.toLowerCase()===setor.trim().toLowerCase());
-  if(!match){ alert("Setor não encontrado. Digite exatamente um dos nomes listados."); return; }
-  const padrao = origem.find(t=>t.s===match)?.teto || 20;
-  editTetoSetor(classe, match, getTetoSetor(classe, match, padrao));
 }
 
 function editTetoSetor(classe, setor, tetoAtual){
