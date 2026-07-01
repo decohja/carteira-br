@@ -408,12 +408,13 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 /* ─── SECTOR BARS ────────────────────── */
 .sdon-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
 .sdon-wrap svg{flex-shrink:0}
-.sdon-legend{display:flex;flex-direction:column;gap:9px;width:max-content;max-width:280px}
-.sdon-row{display:flex;align-items:center;gap:9px;font-size:12.5px}
-.sdon-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0;display:inline-block}
-.sdon-n{color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sdon-c{margin-left:auto;padding-left:14px;font-family:var(--mono);font-size:12px;font-weight:600;
-  color:var(--muted);white-space:nowrap;cursor:pointer}
+.sdon-legend{display:grid;grid-template-columns:auto auto auto;align-items:center;
+  column-gap:10px;row-gap:8px;width:max-content;max-width:320px}
+.sdon-row{display:contents}
+.sdon-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.sdon-n{color:var(--text);font-weight:500;font-size:12.5px;white-space:nowrap}
+.sdon-c{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);
+  white-space:nowrap;cursor:pointer;text-align:right;justify-self:end}
 .sdon-c u{text-decoration-style:dotted}
 @media(max-width:480px){.sdon-wrap{justify-content:center}.sdon-legend{max-width:100%}}
 
@@ -1627,6 +1628,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v16.11",d:"Jun/2026",items:[
+    "CORRIGIDO: alinhamento torto da legenda em Teto por Setor — trocado o hack de flexbox por CSS grid de verdade, coluna de números agora alinha certinho em todas as linhas",
+  ]},
   {v:"v16.10",d:"Jun/2026",items:[
     "Teto por Setor: legenda não estica mais até a borda da tela — fica compacta e agrupada, com fonte maior e mais legível",
     "CORRIGIDO: setores com cor repetida no mesmo gráfico — agora cada fatia tem uma cor garantidamente distinta das outras",
