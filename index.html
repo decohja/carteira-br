@@ -1628,6 +1628,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v17.3",d:"Jun/2026",items:[
+    "CORRIGIDO: Teto por Setor mostrava todos os setores da classe (com tetos de exemplo fixos no código, tipo Saneamento 15%) mesmo sem nenhuma posição neles — confuso numa conta nova. Agora só mostra o setor que você realmente tem",
+    "Novo link '+ Configurar teto de outro setor' pra quem quiser definir o limite de um setor antes mesmo de ter posição nele",
+  ]},
   {v:"v17.2",d:"Jun/2026",items:[
     "Teto por Setor (e as colunas % Teto Individual/Setor nas tabelas) não alarmam mais em vermelho quando é o único ativo da classe — 100% de concentração é matemática inevitável nesse caso, não um problema de verdade. Volta a alertar normalmente a partir do 2º ativo",
   ]},
@@ -2054,18 +2058,32 @@ function mkSetores(data,id,map,classe,totalPosicoes){
       stroke-dasharray="${arc.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"/>`;
     off-=arc;
   });
-  const legend=rows.map(r=>`
+  const legend=rows.filter(r=>r.atual>0).map(r=>`
     <div class="sdon-row">
       <span class="sdon-dot" style="background:${r.color}"></span>
       <span class="sdon-n">${r.s}</span>
-      <span class="sdon-c" style="color:${r.over?"var(--neg)":"var(--muted)"}" onclick="editTetoSetor('${classe}','${r.s}',${r.tetoAtual})" title="${unica&&r.atual>0?"Único ativo da classe — 100% é esperado até você diversificar. Clique para editar o teto.":"Clique para editar o teto deste setor"}">
+      <span class="sdon-c" style="color:${r.over?"var(--neg)":"var(--muted)"}" onclick="editTetoSetor('${classe}','${r.s}',${r.tetoAtual})" title="${unica?"Único ativo da classe — 100% é esperado até você diversificar. Clique para editar o teto.":"Clique para editar o teto deste setor"}">
         ${r.atual.toFixed(1)}% / <u>${r.tetoAtual}%</u>${r.over?" ⚠":""}
       </span>
     </div>`).join("");
   c.innerHTML=`<div class="sdon-wrap">
     <svg width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}" style="flex-shrink:0">${arcs}</svg>
     <div class="sdon-legend">${legend}</div>
+  </div>
+  <div style="margin-top:10px">
+    <button class="refbtn" style="font-size:11px" onclick="addOutroSetorTeto('${classe}')">+ Configurar teto de outro setor</button>
   </div>`;
+}
+function addOutroSetorTeto(classe){
+  const origem = classe==="Ações BR" ? D.tetosBR : classe==="FIIs" ? D.tetosFII
+    : classe==="ETFs" ? D.tetosETF : classe==="Stocks" ? D.setoresEUA : [];
+  const todos = origem.map(t=>t.s);
+  const setor = prompt(`Configurar teto de qual setor?\n\nOpções disponíveis: ${todos.join(", ")}`, "");
+  if(!setor) return;
+  const match = todos.find(s=>s.toLowerCase()===setor.trim().toLowerCase());
+  if(!match){ alert("Setor não encontrado. Digite exatamente um dos nomes listados."); return; }
+  const padrao = origem.find(t=>t.s===match)?.teto || 20;
+  editTetoSetor(classe, match, getTetoSetor(classe, match, padrao));
 }
 
 function editTetoSetor(classe, setor, tetoAtual){
