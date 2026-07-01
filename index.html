@@ -829,6 +829,9 @@ tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em
     <span>Metas de alocação</span>
     <button class="refbtn" onclick="saveMetas()" style="color:var(--pos)">💾 Salvar metas</button>
   </div>
+  <div id="metasAlocHint" style="display:none;font-size:11px;color:var(--muted);margin-bottom:8px">
+    💡 Defina quanto % da carteira você quer em cada classe na coluna <strong>% Meta</strong> e clique em <strong>Salvar metas</strong>.
+  </div>
   <div style="overflow-x:auto;margin-top:6px">
     <table class="atab" style="width:100%">
       <thead>
@@ -1621,6 +1624,11 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v16.9",d:"Jun/2026",items:[
+    "CORRIGIDO: a Meta (R$) vivia numa tabela compartilhada — qualquer conta nova via a meta de outra. Agora cada meta fica vinculada à conta que criou (precisa rodar setup-metas-scoping.sql uma vez no Supabase)",
+    "Agora dá pra excluir mesmo a última meta cadastrada (antes só liberava excluir com 2 ou mais)",
+    "Metas de Alocação (FIIs/Ações/Stocks/ETFs/RF) não vêm mais com % pré-preenchido — começam zeradas com uma dica de como configurar",
+  ]},
   {v:"v16.8",d:"Jun/2026",items:[
     "Botão de Integração B3 virou um badge dourado compacto no header (saiu do card grande) — igual ao estilo de referência que você mandou",
     "'Teto por Setor' virou um gráfico de rosca com legenda em Ações BR, FIIs, ETFs e Stocks — bem mais visual que a lista de barras de antes, mantendo o clique pra editar o teto",
@@ -2229,7 +2237,7 @@ function loadMktCache(){
 
 /* ─── METAS DE ALOCAÇÃO ─────────────────────────────────────────────── */
 const METAS_KEY = "aloc_metas";
-const METAS_DEFAULT = {acoes:20, fiis:22, etfs:20, stocks:15, rf:18, cripto:0};
+const METAS_DEFAULT = {acoes:0, fiis:0, etfs:0, stocks:0, rf:0, cripto:0};
 
 function getMetasAloc(){
   try{ return {...METAS_DEFAULT,...JSON.parse(localStorage.getItem(METAS_KEY)||"{}")}; }
@@ -2240,6 +2248,9 @@ function renderMetasAloc(){
   const tbody = document.getElementById("metasAlocTbody");
   if(!tbody) return;
   const metas = getMetasAloc();
+  const hint = document.getElementById("metasAlocHint");
+  const totalMetaConfig = Object.values(metas).reduce((a,b)=>a+b,0);
+  if(hint) hint.style.display = totalMetaConfig===0 ? "block" : "none";
   const rfVal = D.rf.reduce((s,r)=>s+(r.bruto||r.inv||0),0);
   // ETFs: usa cotas * priceUSD ao vivo quando disponível (idêntico à planilha com Google Finance)
   const etfVal = D.etfs.reduce((s,e)=>{
@@ -3816,7 +3827,7 @@ function renderMetasList(){
     const div=document.createElement("div"); div.className="mi";
     div.innerHTML=`<div style="flex:1"><div style="font-size:12px;font-weight:500">${m.lbl}</div><div style="font-family:var(--mono);font-size:15px;color:var(--gold)">${brl(m.v)}</div></div>
       <button class="btn-sec" style="font-size:11px;${D.activeMeta===i?"color:var(--gold);border-color:var(--gold-dim)":""}" onclick="setMeta(${i})">${D.activeMeta===i?"✓ Ativa":"Usar"}</button>
-      ${D.metas.length>1?`<button class="btn-sec" style="font-size:11px;color:var(--neg);margin-left:4px" onclick="delMeta(${i})">✕</button>`:""}`;
+      <button class="btn-sec" style="font-size:11px;color:var(--neg);margin-left:4px" onclick="delMeta(${i})">✕</button>`;
     el.appendChild(div);
   });
 }
@@ -3824,14 +3835,16 @@ async function addMeta(){
   const v=parseFloat(g("nMV").value), l=g("nML").value.trim()||`Meta ${D.metas.length+1}`;
   if(!v||isNaN(v)) return;
   const nova={v,lbl:l};
-  if(sbOK){
+  if(sbOK&&currentUser){
     try{
-      const res=await SB.post('metas',{label:l,valor:v,ativa:false});
+      const res=await SB.post('metas',{label:l,valor:v,ativa:D.metas.length===0,user_id:currentUser.id});
       if(res&&res[0]) nova.id=res[0].id;
     }catch(e){console.warn('meta save error:',e);}
   }
-  D.metas.push(nova); g("nMV").value=""; g("nML").value="";
-  renderMetasList();
+  D.metas.push(nova);
+  if(D.metas.length===1) D.activeMeta=0; // primeira meta criada já fica ativa
+  g("nMV").value=""; g("nML").value="";
+  renderMetasList(); render();
 }
 async function delMeta(i){
   const m=D.metas[i];
@@ -3968,12 +3981,21 @@ async function startApp(){
       });
     }
 
-    // metas
-    const mts = await SB.get('metas','order=id.asc');
-    if(mts && mts.length){
-      D.metas = mts.map(m=>({id:m.id, v:parseFloat(m.valor), lbl:m.label}));
-      const ativaIdx = mts.findIndex(m=>m.ativa);
-      D.activeMeta = ativaIdx >= 0 ? ativaIdx : 0;
+    // metas — só as da conta logada (RLS já garante isso no banco, filtro aqui é só clareza)
+    // try isolado: se a coluna user_id ainda não foi criada no banco (SQL de migração
+    // pendente), isso não pode derrubar o resto do carregamento
+    try{
+      const mts = await SB.get('metas', {'user_id':'eq.'+currentUser.id, 'order':'id.asc'});
+      if(mts && mts.length){
+        D.metas = mts.map(m=>({id:m.id, v:parseFloat(m.valor), lbl:m.label}));
+        const ativaIdx = mts.findIndex(m=>m.ativa);
+        D.activeMeta = ativaIdx >= 0 ? ativaIdx : 0;
+      } else {
+        D.metas = []; // conta sem metas configuradas — não herda a meta de ninguém
+      }
+    }catch(e){
+      console.warn('Metas: rode o setup-metas-scoping.sql no Supabase. Erro:', e.message);
+      D.metas = [];
     }
 
     // objetivos
