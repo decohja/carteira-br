@@ -340,7 +340,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 /* teto mini bar */
 .tbar{display:flex;align-items:center;gap:5px}
-.ttrack{width:50px;height:7px;border-radius:4px;background:var(--bg4);position:relative;flex-shrink:0;overflow:visible}
+.ttrack{width:36px;height:7px;border-radius:4px;background:var(--bg4);position:relative;flex-shrink:0;overflow:visible}
 .tfill{height:100%;border-radius:4px;position:absolute;top:0;left:0;transition:width .7s ease;min-width:2px}
 .tline{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--gold);border-radius:1px}
 .ttxt{font-family:var(--mono);font-size:10px;white-space:nowrap}
@@ -898,7 +898,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos/JCP pagos nos últimos 12 meses, em relação ao preço atual da ação. Atualizado em tempo real via Brapi quando disponível.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este ativo dentro da carteira de Ações BR. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração do setor inteiro deste ativo (ex: Financeiro, Energia) em relação ao teto que você definiu para o setor. Diferente do teto individual, este olha pro grupo todo. Clique no valor para editar.">?</span></th>
-            <th>Objetivo <span class="info-ic" title="Sua intenção pessoal para este ativo: Comprar (quer aumentar a posição), Manter (está satisfeito com a quantidade atual) ou Vender (quer reduzir ou sair). É só um lembrete visual, não executa nenhuma ordem.">?</span></th>
             <th></th>
           </tr></thead>
           <tbody id="acTbl"></tbody>
@@ -1025,7 +1024,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pela empresa nos últimos 12 meses, em relação ao preço atual da ação.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para esta Stock dentro da carteira de Stocks. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração do setor inteiro desta Stock (ex: Tecnologia, Financeiro) em relação ao teto que você definiu para o setor. Clique no valor para editar.">?</span></th>
-            <th>Objetivo <span class="info-ic" title="Sua intenção pessoal para este ativo: Comprar (quer aumentar a posição), Manter (está satisfeito com a quantidade atual) ou Vender (quer reduzir ou sair). É só um lembrete visual, não executa nenhuma ordem.">?</span></th>
             <th></th>
           </tr></thead>
           <tbody id="skTbl"></tbody>
@@ -1694,6 +1692,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v19.5",d:"Jun/2026",items:[
+    "Removida a coluna Objetivo (Comprar/Manter/Vender) de Ações BR e Stocks — ocupava uma coluna inteira pra pouca informação. Fica pra uma fase futura como selo compacto ao lado do ticker, em vez de coluna própria",
+  ]},
+  {v:"v19.4",d:"Jun/2026",items:[
+    "Compactados os botões '+/✕' e as barras de % Teto em Ações/FIIs/ETFs/Stocks — a tabela ficou mais estreita, precisa de menos (ou nenhum) scroll horizontal pra mostrar tudo",
+  ]},
   {v:"v19.3",d:"Jun/2026",items:[
     "Ajuste dos cards do topo: Carteira Total virou só contorno dourado (não fica igual ao hover dos outros cards)",
     "Cor da classe (Ações, FIIs, Stocks, etc.) voltou pro nome/rótulo do card, não mais no valor — valor ficou neutro",
@@ -2805,8 +2809,7 @@ const COLUNAS_REGISTRO = {
     {idx:8, label:"DY%"},
     {idx:9, label:"% Teto Individual"},
     {idx:10, label:"% Teto Setor"},
-    {idx:11, label:"Objetivo"},
-    {idx:12, label:"Excluir", obrigatoria:true},
+    {idx:11, label:"Excluir", obrigatoria:true},
   ],
   fi: [
     {idx:1, label:"Fundo", obrigatoria:true},
@@ -2844,8 +2847,7 @@ const COLUNAS_REGISTRO = {
     {idx:7, label:"DY%"},
     {idx:8, label:"% Teto Individual"},
     {idx:9, label:"% Teto Setor"},
-    {idx:10, label:"Objetivo"},
-    {idx:11, label:"Excluir", obrigatoria:true},
+    {idx:10, label:"Excluir", obrigatoria:true},
   ],
   cr: [
     {idx:1, label:"Moeda", obrigatoria:true},
@@ -3218,7 +3220,7 @@ function renderAcoes(totAcoes,sc,sd){
   if(sc) rows.sort((x,y)=>{let a=x[sc],b=y[sc];if(typeof a==="string"){a=a.toLowerCase();b=b.toLowerCase();}return sd==="asc"?(a>b?1:-1):(a<b?1:-1)});
   const tb=g("acTbl"); tb.innerHTML="";
   if(!rows.length){
-    tb.innerHTML=`<tr><td colspan="12" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
+    tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
       Nenhuma posição em Ações BR ainda. Clique em "+ Adicionar ação" para começar.
     </td></tr>`;
   }
@@ -3242,15 +3244,14 @@ function renderAcoes(totAcoes,sc,sd){
       <td class="r" style="color:var(--muted)">${getDY(a.tk,a.dy).toFixed(2)}%${window._dyBR&&window._dyBR[a.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
       <td>${tetoCell(a.tk, a.pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("Ações BR", a.st, pctSetor, tetoSetorAtual, rows.length===1)}</td>
-      <td><select class="sel" onchange="saveObj('${a.tk}',this.value)">${opts}</select></td>
-      <td class="r" style="white-space:nowrap"><button class="refbtn" onclick="openAddAtivo('acoes','${a.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 8px;font-size:11px;margin-right:4px" title="Comprar mais ${a.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('acoes','${a.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover este ativo">✕</button></td>`;
+      <td class="r" style="white-space:nowrap;padding-left:4px;padding-right:8px"><button class="refbtn" onclick="openAddAtivo('acoes','${a.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 6px;font-size:11px;margin-right:3px" title="Comprar mais ${a.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('acoes','${a.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Remover este ativo">✕</button></td>`;
     tb.appendChild(tr);
   });
   const totI=rows.reduce((s,a)=>s+a.tot,0), totB=rows.reduce((s,a)=>s+a.totb3,0), totL=rows.reduce((s,a)=>s+a.lucro,0);
   addTotals("acTbl",[
     {label:"TOTAL"},{val:brlTotal(totI,2),r:true},{val:brlTotal(totB,2),r:true},
     {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brlTotal(Math.abs(totL),2)}</span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   /* charts */
   const mapSt={};rows.forEach(a=>{mapSt[a.st]=(mapSt[a.st]||0)+a.totb3});
@@ -3297,7 +3298,7 @@ function renderFiis(totFiis,sc,sd){
       <td>${tetoCell(f.tk, f.pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("FIIs", f.seg, pctSetor, tetoSetorAtual, rows.length===1)}</td>
       <td><select class="sel" onchange="saveObj('${f.tk}',this.value)">${opts}</select></td>
-      <td class="r" style="white-space:nowrap"><button class="refbtn" onclick="openAddAtivo('fiis','${f.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 8px;font-size:11px;margin-right:4px" title="Comprar mais ${f.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('fiis','${f.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover este ativo">✕</button></td>`;
+      <td class="r" style="white-space:nowrap;padding-left:4px;padding-right:8px"><button class="refbtn" onclick="openAddAtivo('fiis','${f.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 6px;font-size:11px;margin-right:3px" title="Comprar mais ${f.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('fiis','${f.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Remover este ativo">✕</button></td>`;
     tb.appendChild(tr);
   });
   const totI=rows.reduce((s,f)=>s+f.tot,0), totB=rows.reduce((s,f)=>s+f.totb3,0), totL=rows.reduce((s,f)=>s+f.lucro,0);
@@ -3495,7 +3496,7 @@ function renderETFs(sc,sd){
       <td class="r">${e.dy.toFixed(2)}%</td>
       <td>${tetoCell(e.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("ETFs", e.fun, pctSetor, tetoSetorAtual, rows.length===1)}</td>
-      <td class="r" style="white-space:nowrap"><button class="refbtn" onclick="openAddAtivo('etfs','${e.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 8px;font-size:11px;margin-right:4px" title="Comprar mais ${e.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('etfs','${e.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover este ativo">✕</button></td>`;
+      <td class="r" style="white-space:nowrap;padding-left:4px;padding-right:8px"><button class="refbtn" onclick="openAddAtivo('etfs','${e.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 6px;font-size:11px;margin-right:3px" title="Comprar mais ${e.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('etfs','${e.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Remover este ativo">✕</button></td>`;
     tb.appendChild(tr);
   });
   const tI=rows.reduce((s,e)=>s+e.inv,0), tA=rows.reduce((s,e)=>s+e.atual,0), tL=rows.reduce((s,e)=>s+e.lucro,0);
@@ -3520,7 +3521,7 @@ function renderStocks(sc,sd){
   if(sc) rows.sort((x,y)=>sd==="asc"?(x[sc]>y[sc]?1:-1):(x[sc]<y[sc]?1:-1));
   const tb=g("skTbl"); tb.innerHTML="";
   if(!rows.length){
-    tb.innerHTML=`<tr><td colspan="13" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
+    tb.innerHTML=`<tr><td colspan="12" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
       Nenhuma posição em Stocks ainda. Clique em "+ Adicionar Stock" para começar.
     </td></tr>`;
   }
@@ -3547,8 +3548,7 @@ function renderStocks(sc,sd){
       <td class="r">${s.dy.toFixed(2)}%</td>
       <td>${tetoCell(s.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("Stocks", s.setor, pctSetor, tetoSetorAtual, rows.length===1)}</td>
-      <td><select class="sel" onchange="saveObj('${s.tk}',this.value)">${opts}</select></td>
-      <td class="r" style="white-space:nowrap"><button class="refbtn" onclick="openAddAtivo('stocks','${s.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 8px;font-size:11px;margin-right:4px" title="Comprar mais ${s.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('stocks','${s.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover este ativo">✕</button></td>`;
+      <td class="r" style="white-space:nowrap;padding-left:4px;padding-right:8px"><button class="refbtn" onclick="openAddAtivo('stocks','${s.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 6px;font-size:11px;margin-right:3px" title="Comprar mais ${s.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('stocks','${s.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Remover este ativo">✕</button></td>`;
     tb.appendChild(tr);
   });
   const tI=rows.reduce((s,s2)=>s+s2.inv,0), tA=rows.reduce((s,s2)=>s+s2.atual,0), tL=rows.reduce((s,s2)=>s+s2.lucro,0);
@@ -3558,7 +3558,7 @@ function renderStocks(sc,sd){
     {val:"",r:true},
     {val:`${usdTotal(tA)}<div class="usd2">${brlTotal(tA*usdBRL,2)}</div>`,r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usdTotal(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brlTotal(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   mkHBars(rows.map(s=>({label:s.tk,v:s.atual,pct:tot>0?s.atual/tot*100:0})),"sk-hbars","#818CF8");
   const mapSt={};rows.forEach(s=>{mapSt[s.setor]=(mapSt[s.setor]||0)+s.atual});
