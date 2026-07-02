@@ -1745,6 +1745,13 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v20.2",d:"Jun/2026",items:[
+    "CORRIGIDO: quando a meta era muito ultrapassada (ex: meta de teste pequena), a porcentagem mostrava números absurdos tipo '768%'. Agora trava em '100%+' assim que a meta é atingida",
+  ]},
+  {v:"v20.1",d:"Jun/2026",items:[
+    "CORRIGIDO: antes do primeiro refresh completar, a Cotação mostrava um preço fixo gravado no código há tempos (um 'snapshot' antigo) em vez do último preço real que o app já tinha confirmado numa sessão anterior",
+    "Novo cache local por ticker: todo preço confirmado ao vivo (Brapi, Yahoo BR ou Yahoo EUA) fica salvo no navegador — na próxima visita, mostra esse último valor real (marcado como desatualizado) até a busca ao vivo confirmar de novo",
+  ]},
   {v:"v20.0",d:"Jun/2026",items:[
     "Preço Médio movido pra logo depois de Cotação em todas as tabelas (Ações, FIIs, ETFs, Stocks)",
     "CORRIGIDO: Preço Médio de Stocks antigas mostrava R$0/US$0 (faltava quantidade de cotas nesses registros) — agora mostra '—' em vez de um zero enganoso",
@@ -2043,13 +2050,6 @@ const CHANGELOG=[
 /* SNAPSHOT: preços reais da sua planilha.
    Estes valores são usados IMEDIATAMENTE na abertura.
    A Brapi atualiza por cima quando disponível — se falhar, snapshot ainda é válido. */
-const SNAPSHOT_PRICES = {
-  'WEGE3':46.61,'BBSE3':38.68,'CPLE3':15.02,'ITSA4':13.05,
-  'SAPR4':7.17, 'EQTL3':38.00,'BBAS3':19.73,'GGPS3':11.68,'CXSE3':19.41,
-  'BTLG11':102.33,'KNSC11':9.12,'XPML11':102.99,'GGRC11':9.73,
-  'GARE11':8.13,'TRXF11':91.73,'HSLG11':86.60,'SNEL11':8.20,'BTCI11':8.97,
-};
-
 const D={
   metas:[],
   activeMeta:0,
@@ -2141,10 +2141,38 @@ const usdTotal=(n,d=2)=>`<span class="tot-cur">US$</span> ${Math.abs(+n).toLocal
 const sgn=n=>n>=0?"+":"−";
 let usdBRL=5.80, sortSt={}, pricesArelive=false;
 
-/* prices: pré-preenchido com snapshot para lucro aparecer imediatamente.
-   Brapi/Yahoo sobrescreve com preços ao vivo quando disponível. */
-let prices={...SNAPSHOT_PRICES};
+/* prices: começa vazio e é imediatamente populado pelo loadPriceCache() com o último preço
+   REAL confirmado numa sessão anterior (não mais um snapshot fixo gravado no código) —
+   assim, antes do primeiro refresh completar, mostra o último dado de verdade, não um
+   número antigo genérico. Brapi/Yahoo sobrescreve com preços ao vivo quando disponível. */
+let prices={};
 let pricesSource="snapshot";
+
+const PRICE_CACHE_KEY = 'priceCache_v1';
+function getPriceCacheStore(){
+  try{ return JSON.parse(localStorage.getItem(PRICE_CACHE_KEY)||'{}'); }catch(e){ return {}; }
+}
+function savePriceCache(tk, price){
+  try{
+    const store = getPriceCacheStore();
+    store[tk] = {price, ts: Date.now()};
+    localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(store));
+  }catch(e){}
+}
+// Carrega o último preço confirmado de cada ticker (sessão anterior) — só preenche `prices`,
+// NÃO marca como atualizado agora, então continua aparecendo como "desatualizado" até
+// uma busca ao vivo de verdade confirmar de novo.
+function loadPriceCache(){
+  const store = getPriceCacheStore();
+  Object.keys(store).forEach(tk=>{
+    if(!store[tk] || typeof store[tk].price !== 'number') return;
+    prices[tk] = store[tk].price;
+    // ETFs/Stocks leem de priceUSD/prevClose (não de `prices` direto) pra montar a coluna Cotação
+    const p = store[tk].price;
+    D.etfs.filter(e=>e.tk===tk).forEach(e=>{ if(!e.priceUSD){ e.priceUSD=p; e.prevClose=p; } });
+    D.stocks.filter(s=>s.tk===tk).forEach(s=>{ if(!s.priceUSD){ s.priceUSD=p; s.prevClose=p; } });
+  });
+}
 
 /* ── TOTALS ROW ─────────────────────── */
 function addTotals(tbodyId, cols){
@@ -2382,6 +2410,7 @@ async function refreshPrices(manual=false){
         } else {
           prices[q.symbol]=q.regularMarketPrice; brOK++;
           window._priceUpdatedAt[q.symbol]=Date.now();
+          savePriceCache(q.symbol, q.regularMarketPrice);
           // dividendYield vem como fração (ex: 0.0843 = 8.43%) — guarda já em %
           const dy = q.defaultKeyStatistics?.dividendYield;
           if(dy!=null && !isNaN(dy)) window._dyBR[q.symbol] = dy*100;
@@ -2423,6 +2452,7 @@ async function refreshPrices(manual=false){
         if(m?.regularMarketPrice){
           prices[tk]=m.regularMarketPrice;
           window._priceUpdatedAt[tk]=Date.now();
+          savePriceCache(tk, m.regularMarketPrice);
           brOK++; yhOK++;
         }
       }catch(e){ console.warn(`Fallback Yahoo falhou pra ${tk}.SA:`,e.message); }
@@ -2462,6 +2492,7 @@ async function refreshPrices(manual=false){
         const p=m.regularMarketPrice,prev=m.chartPreviousClose||0;
         prices[tk]=p;
         window._priceUpdatedAt[tk]=Date.now();
+        savePriceCache(tk, p);
         D.etfs.filter(e=>e.tk===tk).forEach(e=>{e.priceUSD=p;e.prevClose=prev;});
         D.stocks.filter(s=>s.tk===tk).forEach(s=>{s.priceUSD=p;s.prevClose=prev;});
       }
@@ -2726,7 +2757,7 @@ function render(){
   const lucroTotal=lucroAcoes+lucroFiis+lucroETF+lucroSTK;
   const ltEl=g("hLucroTotal"); ltEl.textContent=sgn(lucroTotal)+brl(Math.abs(lucroTotal),2);
   ltEl.className="hv "+(lucroTotal>=0?"pos":"neg");
-  g("metaPct").textContent= meta>0 ? pct.toFixed(1)+"%" : "—";
+  g("metaPct").textContent= !meta ? "—" : pct>=100 ? "100%+" : pct.toFixed(1)+"%";
   const metaAtiva = (D.metas.length && D.metas[D.activeMeta]) ? D.metas[D.activeMeta] : null;
   g("metaLbl").textContent= metaAtiva ? metaAtiva.lbl : "Meta não configurada";
   const mvEl=g("metaValSub"); if(mvEl) mvEl.textContent = meta>0 ? "de "+brl(meta,0) : "";
@@ -4632,6 +4663,7 @@ async function startApp(){
   setLdStatus("Aguardando cotações…");
   // Carrega cache local de mercado imediatamente — evita "—" enquanto a rede não responde
   loadMktCache();
+  loadPriceCache();
   const fv=document.getElementById("footerVer");
   if(fv && CHANGELOG[0]) fv.textContent="📋 "+CHANGELOG[0].v;
   loadCriptoAtivos();
