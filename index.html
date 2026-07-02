@@ -280,9 +280,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   cursor:pointer;transition:border-color .15s,transform .15s;
   min-width:155px;scroll-snap-align:start;}
 .dcard:hover,.dcard.on{border-color:var(--gold);background:var(--gold-bg);transform:translateY(-1px)}
-.dcard-hero{background:var(--gold-bg);border:1.5px solid var(--gold-dim);min-width:170px}
-.dcard-hero:hover{border-color:var(--gold)}
-.dcard-hero .dn-name{color:var(--gold)}
+.dcard-hero{background:var(--bg3);border:1.5px solid var(--gold);min-width:170px}
+.dcard-hero:hover{background:var(--gold-bg)}
 .dn-name{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 .dn-val{font-family:var(--mono);font-size:15px;font-weight:500;margin-top:2px}
 .dn-sub{font-size:10px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
@@ -1695,6 +1694,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v19.3",d:"Jun/2026",items:[
+    "Ajuste dos cards do topo: Carteira Total virou só contorno dourado (não fica igual ao hover dos outros cards)",
+    "Cor da classe (Ações, FIIs, Stocks, etc.) voltou pro nome/rótulo do card, não mais no valor — valor ficou neutro",
+  ]},
   {v:"v19.2",d:"Jun/2026",items:[
     "Cotação ganhou identidade visual própria: azul, negrito, com um ponto verde pulsando quando o preço está genuinamente em dia (some quando fica desatualizado)",
     "DY% ficou mais discreto — não é mais dourado/negrito em todas as colunas, dá mais espaço pra Cotação se destacar",
@@ -2679,8 +2682,8 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
     card.dataset.tab=it.tab;
     card.onclick=()=>{ goTab(it.tab); };
     card.innerHTML=svg+`<div>
-      <div class="dn-name">${it.name}</div>
-      <div class="dn-val" style="color:${it.c}">${it.val}</div>
+      <div class="dn-name" style="color:${it.c}">${it.name}</div>
+      <div class="dn-val">${it.val}</div>
       ${it.sub?`<div class="dn-sub">${it.sub}</div>`:""}
       ${it.sub2?`<div class="dn-sub ${it.sub2cls||""}" style="font-weight:600">${it.sub2}</div>`:""}
     </div>`;
