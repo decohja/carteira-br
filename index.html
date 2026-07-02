@@ -18,10 +18,10 @@
   --r:10px;--rm:6px;
 }
 [data-theme="dark"]{
-  --bg:#09090F;--bg2:#0F1117;--bg3:#14181F;--bg4:#1A1F28;
+  --bg:#0B0C12;--bg2:#111319;--bg3:#161A22;--bg4:#1C212B;
   --border:#1E2536;--border2:#2A3450;--border3:#3A4868;
   --text:#DDE4F0;--muted:#6E7E9A;--faint:#2E3D58;
-  --hdr:#0B0E16;--card:#0F1117;
+  --hdr:#0D0F16;--card:#111319;
 }
 [data-theme="light"]{
   --bg:#EDEEF2;--bg2:#FFFFFF;--bg3:#F2F4F8;--bg4:#E4E8F0;
@@ -31,9 +31,16 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+[data-theme="dark"] html,[data-theme="dark"] body{
+  background:
+    radial-gradient(ellipse 1100px 550px at 50% -8%, rgba(200,146,42,.05), transparent 62%),
+    radial-gradient(ellipse 800px 500px at 100% 100%, rgba(59,130,246,.025), transparent 60%),
+    var(--bg);
+}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.022;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:200px}
+[data-theme="dark"] body::before{opacity:.035}
 .wrap{position:relative;z-index:1}
 
 /* ─── LOADING SCREEN ─────────────────── */
@@ -936,7 +943,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
             <th class="r sort" data-col="dy" data-t="fi">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em proventos pagos nos últimos 12 meses, em relação ao preço atual da cota. Quanto maior, mais o fundo está distribuindo proporcionalmente ao seu valor.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este FII dentro da carteira de FIIs. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração do segmento inteiro deste FII (ex: Logística, Papel HG) em relação ao teto que você definiu para o segmento. Clique no valor para editar.">?</span></th>
-            <th>Status <span class="info-ic" title="Sua avaliação pessoal do preço atual deste FII: CARO (acima do que considera justo), NEUTRO (preço razoável) ou BARATO (oportunidade de compra). É uma anotação sua, não um indicador automático.">?</span></th>
             <th></th>
           </tr></thead>
           <tbody id="fiTbl"></tbody>
@@ -1692,6 +1698,14 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v19.7",d:"Jun/2026",items:[
+    "CORRIGIDO: Metas de Alocação mostrava 'Tesouro IPCA+' como nome da classe — deveria ser 'Renda Fixa' (IPCA+, LCI, CDB etc. são só tipos de título dentro dela)",
+    "CORRIGIDO: coluna GAP nas Metas de Alocação mostrava abaixo-da-meta em verde e sem sinal de menos — agora fica vermelho e negativo, como deveria",
+  ]},
+  {v:"v19.6",d:"Jun/2026",items:[
+    "Removida a coluna Status (Caro/Neutro/Barato) de FIIs — mesma categoria do Objetivo, era controle pessoal, fica pra fase futura como selo compacto",
+    "Modo escuro suavizado: preto esquentado (menos frio/vazio), brilho dourado sutil no topo da tela, textura de grão reforçada — reduz a sensação de fundo 'sólido' mantendo a identidade escura",
+  ]},
   {v:"v19.5",d:"Jun/2026",items:[
     "Removida a coluna Objetivo (Comprar/Manter/Vender) de Ações BR e Stocks — ocupava uma coluna inteira pra pouca informação. Fica pra uma fase futura como selo compacto ao lado do ticker, em vez de coluna própria",
   ]},
@@ -2456,7 +2470,7 @@ function renderMetasAloc(){
     {id:"acoes",  name:"Ações Brasil",         val: D.acoes.reduce((s,a)=>s+posVal(a),0)},
     {id:"stocks", name:"Stocks EUA",           val: stVal},
     {id:"etfs",   name:"ETFs Internacionais",  val: etfVal},
-    {id:"rf",     name:"Tesouro IPCA+",        val: rfVal},
+    {id:"rf",     name:"Renda Fixa",           val: rfVal},
   ];
   const criptoVal = getCriptoTotal();
   if(criptoVal>0) classes.push({id:"cripto", name:"Cripto", val: criptoVal});
@@ -2470,10 +2484,10 @@ function renderMetasAloc(){
     totalMeta += meta;
     const devia = total*meta/100;
     const gap = c.val - devia;
-    // Positivo = excesso (cor laranja/atenção), Negativo = oportunidade de comprar (cor azul)
+    // Positivo = excesso acima da meta (dourado), Negativo = abaixo da meta (vermelho, precisa aportar mais)
     const absGap = Math.abs(gap);
-    const gapColor = absGap < 100 ? 'var(--muted)' : gap > 0 ? 'var(--gold)' : 'var(--pos)';
-    const gapPrefix = gap >= 0 ? '+' : '';
+    const gapColor = absGap < 100 ? 'var(--muted)' : gap < 0 ? 'var(--neg)' : 'var(--gold)';
+    const gapPrefix = gap >= 0 ? '+' : '-';
     return `<tr>
       <td class="l" style="font-weight:500">${c.name}</td>
       <td class="r" style="font-family:var(--mono)">${brl(c.val,0)}</td>
@@ -2822,8 +2836,7 @@ const COLUNAS_REGISTRO = {
     {idx:8, label:"DY%"},
     {idx:9, label:"% Teto Individual"},
     {idx:10, label:"% Teto Setor"},
-    {idx:11, label:"Status"},
-    {idx:12, label:"Excluir", obrigatoria:true},
+    {idx:11, label:"Excluir", obrigatoria:true},
   ],
   et: [
     {idx:1, label:"ETF", obrigatoria:true},
@@ -3276,7 +3289,7 @@ function renderFiis(totFiis,sc,sd){
   if(sc) rows.sort((x,y)=>{let a=x[sc],b=y[sc];if(typeof a==="string"){a=a.toLowerCase();b=b.toLowerCase();}return sd==="asc"?(a>b?1:-1):(a<b?1:-1)});
   const tb=g("fiTbl"); tb.innerHTML="";
   if(!rows.length){
-    tb.innerHTML=`<tr><td colspan="12" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
+    tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
       Nenhuma posição em FIIs ainda. Clique em "+ Adicionar FII" para começar.
     </td></tr>`;
   }
@@ -3297,7 +3310,6 @@ function renderFiis(totFiis,sc,sd){
       <td class="r" style="color:var(--muted)">${getDY(f.tk,f.dy).toFixed(2)}%${window._dyBR&&window._dyBR[f.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
       <td>${tetoCell(f.tk, f.pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("FIIs", f.seg, pctSetor, tetoSetorAtual, rows.length===1)}</td>
-      <td><select class="sel" onchange="saveObj('${f.tk}',this.value)">${opts}</select></td>
       <td class="r" style="white-space:nowrap;padding-left:4px;padding-right:8px"><button class="refbtn" onclick="openAddAtivo('fiis','${f.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 6px;font-size:11px;margin-right:3px" title="Comprar mais ${f.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('fiis','${f.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Remover este ativo">✕</button></td>`;
     tb.appendChild(tr);
   });
@@ -3305,7 +3317,7 @@ function renderFiis(totFiis,sc,sd){
   addTotals("fiTbl",[
     {label:"TOTAL"},{val:brlTotal(totI,2),r:true},{val:brlTotal(totB,2),r:true},
     {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brlTotal(Math.abs(totL),2)}</span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   const tot=rows.reduce((s,f)=>s+f.totb3,0);
   const mapSeg={};rows.forEach(f=>{mapSeg[f.seg]=(mapSeg[f.seg]||0)+f.totb3});
