@@ -277,8 +277,9 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   animation:mcelebrate 1.6s ease-in-out infinite}
 @keyframes mcelebrate{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.35)}50%{box-shadow:0 0 8px 2px rgba(34,197,94,.45)}}
 .meta-pct-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.meta-gap-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
 .meta-pct{font-family:var(--mono);font-size:12px;font-weight:500;white-space:nowrap}
-.meta-val-sub{font-size:9.5px;color:var(--faint);font-family:var(--mono);white-space:nowrap}
+.meta-val-sub{font-size:11.5px;color:var(--muted);font-family:var(--mono);white-space:nowrap;text-align:center;width:100%}
 .meta-cog{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);
   cursor:pointer;padding:3px 8px;border-radius:var(--rm);border:1px solid var(--border);
   background:transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
@@ -1746,6 +1747,11 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v20.4",d:"Jun/2026",items:[
+    "Valor da meta ('de R$X') abaixo de 'Meta atingida' agora aparece maior e centralizado, mais legível no dark mode",
+    "GAP (Metas de Alocação) ganhou sistema de 3 níveis com bolinha colorida: muito abaixo (vermelho), abaixo/acima leve (amarelo), na meta (neutro), muito acima (dourado)",
+    "CORRIGIDO: ao editar a % Meta direto no campo, a cor do GAP recalculava errada (mesmo bug de inversão que já tínhamos corrigido no carregamento inicial, só que essa segunda cópia do código tinha ficado pra trás)",
+  ]},
   {v:"v20.3",d:"Jun/2026",items:[
     "CORRIGIDO: pulso de 'Meta atingida!' borrava a escrita — trocado de zoom (que embaça texto) por brilho pulsante",
     "Adicionado 'pts' ao lado do valor do Ibovespa",
@@ -2582,6 +2588,19 @@ function getMetasAloc(){
   catch(e){ return {...METAS_DEFAULT}; }
 }
 
+// Classifica o GAP em faixas relativas ao valor esperado — mesma lógica usada
+// tanto no render inicial quanto no recálculo ao vivo (evita duas versões divergindo)
+function gapTier(gap, devia, val){
+  const base = devia>0 ? devia : val;
+  if(base<=0) return {color:'var(--muted)', dot:'var(--border3)', label:''};
+  const rel = gap/base*100;
+  if(rel <= -30) return {color:'var(--neg)', dot:'var(--neg)', label:'Muito abaixo'};
+  if(rel < -10)  return {color:'#F59E0B',    dot:'#F59E0B',    label:'Abaixo'};
+  if(rel <= 10)  return {color:'var(--muted)',dot:'var(--border3)',label:'Na meta'};
+  if(rel <= 30)  return {color:'#F59E0B',    dot:'#F59E0B',    label:'Acima'};
+  return              {color:'var(--gold)',  dot:'var(--gold)',  label:'Muito acima'};
+}
+
 function renderMetasAloc(){
   const tbody = document.getElementById("metasAlocTbody");
   if(!tbody) return;
@@ -2620,9 +2639,7 @@ function renderMetasAloc(){
     totalMeta += meta;
     const devia = total*meta/100;
     const gap = c.val - devia;
-    // Positivo = excesso acima da meta (dourado), Negativo = abaixo da meta (vermelho, precisa aportar mais)
-    const absGap = Math.abs(gap);
-    const gapColor = absGap < 100 ? 'var(--muted)' : gap < 0 ? 'var(--neg)' : 'var(--gold)';
+    const tier = gapTier(gap, devia, c.val);
     const gapPrefix = gap >= 0 ? '+' : '-';
     return `<tr>
       <td class="l" style="font-weight:500">${c.name}</td>
@@ -2637,7 +2654,8 @@ function renderMetasAloc(){
           oninput="recalcMetaRow(this)"/>%
       </td>
       <td class="r meta-devia" style="font-family:var(--mono)">${brl(devia,0)}</td>
-      <td class="r meta-gap" style="font-family:var(--mono);color:${gapColor}">${gapPrefix}${brl(gap,0)}</td>
+      <td class="r meta-gap" style="font-family:var(--mono);color:${tier.color}" title="${tier.label}">
+        <span class="meta-gap-dot" style="background:${tier.dot}"></span>${gapPrefix}${brl(gap,0)}</td>
     </tr>`;
   }).join("") + `<tr style="border-top:1px solid var(--border);font-weight:600">
     <td class="l" style="color:var(--muted);font-size:11px">TOTAL</td>
@@ -2655,11 +2673,14 @@ function recalcMetaRow(inp){
   const meta = parseFloat(inp.value)||0;
   const devia = total*meta/100;
   const gap = val - devia;
-  const gapColor = Math.abs(gap)<100?'var(--muted)':gap>0?'var(--gold)':'var(--pos)';
+  const tier = gapTier(gap, devia, val);
   row.querySelector(".meta-devia").textContent = brl(devia,0);
   const gapEl = row.querySelector(".meta-gap");
-  gapEl.textContent = (gap>=0?"+":"")+brl(gap,0);
-  gapEl.style.color = gapColor;
+  const dot = gapEl.querySelector(".meta-gap-dot");
+  gapEl.childNodes[gapEl.childNodes.length-1].textContent = (gap>=0?"+":"-")+brl(gap,0);
+  if(dot) dot.style.background = tier.dot;
+  gapEl.style.color = tier.color;
+  gapEl.title = tier.label;
   // atualiza total %
   let totalMeta = 0;
   document.querySelectorAll(".meta-inp").forEach(i=>{ totalMeta += parseFloat(i.value)||0; });
