@@ -280,10 +280,16 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   cursor:pointer;transition:border-color .15s,transform .15s;
   min-width:155px;scroll-snap-align:start;}
 .dcard:hover,.dcard.on{border-color:var(--gold);background:var(--gold-bg);transform:translateY(-1px)}
+.dcard-hero{background:var(--gold-bg);border:1.5px solid var(--gold-dim);min-width:170px}
+.dcard-hero:hover{border-color:var(--gold)}
+.dcard-hero .dn-name{color:var(--gold)}
 .dn-name{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
 .dn-val{font-family:var(--mono);font-size:15px;font-weight:500;margin-top:2px}
 .dn-sub{font-size:10px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
 .dn-sub.pos{color:var(--pos)}.dn-sub.neg{color:var(--neg)}.dn-sub.gold{color:var(--gold)}
+.cot-live{color:var(--blue);font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);flex-shrink:0;animation:liveDotPulse 1.8s ease-in-out infinite}
+@keyframes liveDotPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.45)}50%{opacity:.65;box-shadow:0 0 0 4px rgba(34,197,94,0)}}
 .dcard-info .dn-sub+.dn-sub{margin-top:1px}
 
 /* ─── CONTENT ────────────────────────── */
@@ -482,6 +488,9 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .perfil-stat{flex:1;min-width:0;background:var(--bg3);border-radius:var(--rm);padding:9px 6px;text-align:center}
 .perfil-stat-lbl{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .perfil-stat-val{display:block;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.perfil-upd-row{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:var(--bg3);border-radius:var(--rm);padding:8px 10px;margin-top:6px}
+.perfil-upd-row span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
 .mi{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--border);
   border-radius:var(--rm);margin-bottom:6px;background:var(--bg3)}
 .sep{height:1px;background:var(--border);margin:10px 0}
@@ -1337,8 +1346,11 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </div>
     <div class="perfil-stat-row">
       <div class="perfil-stat"><span class="perfil-stat-lbl">Patrimônio</span><span class="perfil-stat-val" id="perfilPatr">—</span></div>
-      <div class="perfil-stat"><span class="perfil-stat-lbl">Desde</span><span class="perfil-stat-val" id="perfilDesde">—</span></div>
-      <div class="perfil-stat"><span class="perfil-stat-lbl">Últ. atualização</span><span class="perfil-stat-val" id="perfilUpd" style="font-size:11px">—</span></div>
+      <div class="perfil-stat"><span class="perfil-stat-lbl">Investindo desde</span><span class="perfil-stat-val" id="perfilDesde">—</span></div>
+    </div>
+    <div class="perfil-upd-row">
+      <span class="perfil-stat-lbl" style="margin-bottom:0">Última atualização</span>
+      <span id="perfilUpd" style="font-family:var(--mono);font-size:11px;color:var(--text)">—</span>
     </div>
     <div class="sep" style="margin:14px 0"></div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -1683,6 +1695,17 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v19.2",d:"Jun/2026",items:[
+    "Cotação ganhou identidade visual própria: azul, negrito, com um ponto verde pulsando quando o preço está genuinamente em dia (some quando fica desatualizado)",
+    "DY% ficou mais discreto — não é mais dourado/negrito em todas as colunas, dá mais espaço pra Cotação se destacar",
+    "Cards do topo: o valor de cada card agora usa a mesma cor do aro (antes só o aro era colorido)",
+    "Carteira Total ganhou destaque de card principal (fundo e borda dourados)",
+    "Proventos ganhou cor verde própria — é dinheiro recebido, diferente das classes de ativo",
+  ]},
+  {v:"v19.1",d:"Jun/2026",items:[
+    "CORRIGIDO: aviso '⚠︎ desatualizado' na Cotação de Ações/FIIs quebrava linha e distorcia a tabela — agora é só o ícone (a explicação completa continua no tooltip)",
+    "CORRIGIDO: card de perfil cortava o texto de 'Investindo desde' e 'Última atualização' — Última atualização virou linha própria com espaço de sobra, e a data ficou mais curta (jun/2026 em vez de 'jun. de 2026')",
+  ]},
   {v:"v19.0",d:"Jun/2026",items:[
     "Cabeçalho reorganizado: Variação desceu pra baixo do valor de patrimônio; 'Meta: R$X' redundante foi removido; 'Faltam R$X' agora fica junto da porcentagem na barra de progresso; 'Dados salvos' ganhou espaço próprio",
     "EXPORTAR DADOS: novo botão no card de perfil — baixa toda a carteira (todas as classes) em CSV, pronto pra abrir no Excel",
@@ -2641,7 +2664,7 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
       sub2:sgn(lucroCripto2)+brl(Math.abs(lucroCripto2),2),sub2cls:lucroCripto2>=0?"pos":"neg",
       pct:Math.min(100,pctOf(totCripto)),c:"#F7931A",tab:"cripto"},
     {name:"Proventos",val:brl(totProvFII,2),
-      sub:"acumulado FIIs",sub2cls:"gold",pct:Math.min(100,totProvFII/500*100),c:"var(--gold)",tab:"prov"},
+      sub:"acumulado FIIs",sub2cls:"gold",pct:Math.min(100,totProvFII/500*100),c:"#22C55E",tab:"prov"},
   ];
   items.forEach(it=>{
     const p=Math.min(100,it.pct), R=22, circ=2*Math.PI*R, dash=circ*p/100, gap=circ-dash, sz=R*2+8, cxy=R+4;
@@ -2652,12 +2675,12 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
       <text x="${cxy}" y="${cxy+1}" text-anchor="middle" dominant-baseline="middle"
         font-family="IBM Plex Mono,monospace" font-size="6.5" font-weight="500" fill="${it.c}">${p.toFixed(0)}%</text>
     </svg>`;
-    const card=document.createElement("div"); card.className="dcard";
+    const card=document.createElement("div"); card.className="dcard"+(it.name==="Carteira Total"?" dcard-hero":"");
     card.dataset.tab=it.tab;
     card.onclick=()=>{ goTab(it.tab); };
     card.innerHTML=svg+`<div>
       <div class="dn-name">${it.name}</div>
-      <div class="dn-val">${it.val}</div>
+      <div class="dn-val" style="color:${it.c}">${it.val}</div>
       ${it.sub?`<div class="dn-sub">${it.sub}</div>`:""}
       ${it.sub2?`<div class="dn-sub ${it.sub2cls||""}" style="font-weight:600">${it.sub2}</div>`:""}
     </div>`;
@@ -3210,10 +3233,10 @@ function renderAcoes(totAcoes,sc,sd){
       <td class="r">${brl(a.totb3,2)}</td>
       <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(a.lucro)}${brl(Math.abs(a.lucro),2)}</td>
       <td class="r" style="font-family:var(--mono);color:var(--muted)">${brl(a.pm,2)}</td>
-      <td class="r" style="color:${hasPrice(a.tk)?(isPriceStale(a.tk)?"var(--muted)":(a.lucro>=0?"var(--pos)":"var(--neg)")):"var(--muted)"}" title="${hasPrice(a.tk)&&isPriceStale(a.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">
-        ${hasPrice(a.tk)?brl(a.price,2)+(isPriceStale(a.tk)?' <span style="font-size:9px">⚠︎ desatualizado</span>':""):"aguard."}</td>
+      <td class="r" style="${hasPrice(a.tk)?(isPriceStale(a.tk)?"color:var(--muted)":""):"color:var(--muted)"}" title="${hasPrice(a.tk)&&isPriceStale(a.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">
+        ${!hasPrice(a.tk)?"aguard.":isPriceStale(a.tk)?brl(a.price,2)+' <span style="font-size:10px" title="Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${brl(a.price,2)}</span>`}</td>
       <td class="r">${a.cotas}</td>
-      <td class="r" style="color:var(--gold);font-weight:600">${getDY(a.tk,a.dy).toFixed(2)}%${window._dyBR&&window._dyBR[a.tk]!=null?'':' <span style="font-size:9px;color:var(--muted)">(aguardando)</span>'}</td>
+      <td class="r" style="color:var(--muted)">${getDY(a.tk,a.dy).toFixed(2)}%${window._dyBR&&window._dyBR[a.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
       <td>${tetoCell(a.tk, a.pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("Ações BR", a.st, pctSetor, tetoSetorAtual, rows.length===1)}</td>
       <td><select class="sel" onchange="saveObj('${a.tk}',this.value)">${opts}</select></td>
@@ -3265,9 +3288,9 @@ function renderFiis(totFiis,sc,sd){
       <td class="r">${brl(f.tot,2)}</td><td class="r">${brl(f.totb3,2)}</td>
       <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(f.lucro)}${brl(Math.abs(f.lucro),2)}</td>
       <td class="r" style="font-family:var(--mono);color:var(--muted)">${brl(f.pm,2)}</td>
-      <td class="r" style="color:${isPriceStale(f.tk)?"var(--muted)":(f.lucro>=0?"var(--pos)":"var(--neg)")}" title="${isPriceStale(f.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${brl(f.price,2)}${isPriceStale(f.tk)?' <span style="font-size:9px">⚠︎ desatualizado</span>':""}</td>
+      <td class="r" style="${isPriceStale(f.tk)?"color:var(--muted)":""};white-space:nowrap" title="${isPriceStale(f.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${isPriceStale(f.tk)?brl(f.price,2)+' <span style="font-size:10px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${brl(f.price,2)}</span>`}</td>
       <td class="r">${f.cotas}</td>
-      <td class="r" style="color:var(--gold);font-weight:600">${getDY(f.tk,f.dy).toFixed(2)}%${window._dyBR&&window._dyBR[f.tk]!=null?'':' <span style="font-size:9px;color:var(--muted)">(aguardando)</span>'}</td>
+      <td class="r" style="color:var(--muted)">${getDY(f.tk,f.dy).toFixed(2)}%${window._dyBR&&window._dyBR[f.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
       <td>${tetoCell(f.tk, f.pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("FIIs", f.seg, pctSetor, tetoSetorAtual, rows.length===1)}</td>
       <td><select class="sel" onchange="saveObj('${f.tk}',this.value)">${opts}</select></td>
@@ -3461,7 +3484,7 @@ function renderETFs(sc,sd){
     const pmET = e.cotas>0 ? e.inv/e.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
       <td class="r">${usd(e.inv)}<div class="usd2">${brl(e.inv*usdBRL,2)}</div></td>
-      <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":`color:${eLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`):"color:var(--muted)"}" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${eLive?usd(eLive)+(isPriceStale(e.tk)?' <span style="font-size:9px">⚠︎</span>':""):"—"}</td>
+      <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":""):"color:var(--muted)"}" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!eLive?"—":isPriceStale(e.tk)?usd(eLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${usd(eLive)}</span>`}</td>
       <td class="r">${usd(e.atual)}<div class="usd2">${brl(e.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),2)}</div></td>
@@ -3513,7 +3536,7 @@ function renderStocks(sc,sd){
     const pmSK = s.cotas>0 ? s.inv/s.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
       <td class="r">${usd(s.inv)}<div class="usd2">${brl(s.inv*usdBRL,2)}</div></td>
-      <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":`color:${sLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`):"color:var(--muted)"}" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${sLive?usd(sLive)+(isPriceStale(s.tk)?' <span style="font-size:9px">⚠︎</span>':""):"—"}</td>
+      <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":""):"color:var(--muted)"}" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!sLive?"—":isPriceStale(s.tk)?usd(sLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${usd(sLive)}</span>`}</td>
       <td class="r">${usd(s.atual)}<div class="usd2">${brl(s.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
@@ -4227,9 +4250,13 @@ function openPerfil(){
   const pEl=document.getElementById('perfilPatr'); if(pEl) pEl.textContent = brl(totalInvest,0);
   const dEl=document.getElementById('perfilDesde');
   if(dEl){
-    dEl.textContent = currentUser.created_at
-      ? new Date(currentUser.created_at).toLocaleDateString('pt-BR',{month:'short',year:'numeric'})
-      : '—';
+    if(currentUser.created_at){
+      const meses=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+      const d=new Date(currentUser.created_at);
+      dEl.textContent = `${meses[d.getMonth()]}/${d.getFullYear()}`;
+    } else {
+      dEl.textContent = '—';
+    }
   }
   const uEl=document.getElementById('perfilUpd');
   if(uEl){
