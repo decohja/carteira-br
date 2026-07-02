@@ -813,7 +813,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </div>
   </div>
   <div class="meta-row">
-    <span class="meta-lbl">Meta <strong id="metaLbl">—</strong> <span class="info-ic" title="Sua meta de patrimônio investido (excluindo Reserva de Emergência e itens fora da meta). A barra ao lado mostra seu progresso até chegar lá. Edite em ⚙ Metas.">?</span></span>
+    <span class="meta-lbl"><strong id="metaLbl">—</strong> <span class="info-ic" title="Sua meta de patrimônio investido (excluindo Reserva de Emergência e itens fora da meta). A barra ao lado mostra seu progresso até chegar lá. Edite em ⚙ Metas.">?</span></span>
     <div class="metabar-wrap"><div class="metabar" id="metaBar"></div></div>
     <div class="meta-pct-wrap">
       <span class="meta-pct" id="metaPct">—%</span>
@@ -1549,6 +1549,36 @@ const LOGODEV_TOKEN = 'pk_UgAEYVDeS2KdwrS88BRsuw'; // token embutido — nunca e
 const LOGODEV_TICKER_BASE = 'https://img.logo.dev/ticker/';
 
 const LOGOS = {};
+const LOGO_CACHE_KEY = 'logoCache_v1';
+const LOGO_CACHE_DAYS = 60; // rechecagem periódica — logo de empresa quase nunca muda
+
+function getLogoCacheStore(){
+  try{ return JSON.parse(localStorage.getItem(LOGO_CACHE_KEY)||'{}'); }catch(e){ return {}; }
+}
+function saveLogoCacheStore(store){
+  try{ localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify(store)); }
+  catch(e){
+    // localStorage cheio — descarta o cache de logos (não é dado crítico) e tenta salvar de novo
+    try{ localStorage.removeItem(LOGO_CACHE_KEY); localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify({[Object.keys(store)[0]]:store[Object.keys(store)[0]]})); }catch(e2){}
+  }
+}
+// Depois que um <img> carrega com sucesso (veio do B3 icons ou do Logo.dev), baixa de novo em
+// background e guarda como base64 — assim, da próxima vez, nem precisa chamar o serviço externo.
+// Se o serviço não liberar CORS pra fetch(), falha em silêncio e simplesmente não cacheia essa entrada.
+function cacheLogoOnLoad(el, tk){
+  const store = getLogoCacheStore();
+  if(store[tk] && (Date.now()-store[tk].ts) < LOGO_CACHE_DAYS*86400000) return; // já em cache e fresco
+  fetch(el.src).then(r=>r.ok?r.blob():null).then(blob=>{
+    if(!blob) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const s = getLogoCacheStore();
+      s[tk] = { data: reader.result, ts: Date.now() };
+      saveLogoCacheStore(s);
+    };
+    reader.readAsDataURL(blob);
+  }).catch(()=>{}); // CORS bloqueado ou rede falhou — sem problema, só não cacheia dessa vez
+}
 
 // Cadeia de fallback: ícone B3 (ações/FIIs BR) → Logo.dev por ticker (stocks EUA) → iniciais
 function logoErr(el,tk){
@@ -1563,11 +1593,15 @@ function logoErr(el,tk){
 }
 
 function logoImg(tk){
-  const cached=LOGOS[tk];
-  if(cached) return `<img src="${cached}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="logoErr(this,'${tk}')"/>`;
-  const url=`${B3_ICONS_BASE}${tk}.png`;
+  const store = getLogoCacheStore();
+  const cached = store[tk];
+  if(cached && (Date.now()-cached.ts) < LOGO_CACHE_DAYS*86400000){
+    return `<img src="${cached.data}" class="ativo-logo" data-tk="${tk}" alt="${tk}"/>`;
+  }
+  const liveCached=LOGOS[tk];
+  const url = liveCached || `${B3_ICONS_BASE}${tk}.png`;
   LOGOS[tk]=url;
-  return `<img src="${url}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="logoErr(this,'${tk}')"/>`;
+  return `<img src="${url}" class="ativo-logo" data-tk="${tk}" alt="${tk}" onerror="logoErr(this,'${tk}')" onload="cacheLogoOnLoad(this,'${tk}')"/>`;
 }
 
 // ─── CORS helper para fetches de dados (cotações) ────────────────────
@@ -1705,6 +1739,11 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v19.12",d:"Jun/2026",items:[
+    "CORRIGIDO: valores de Lucro/Investido/Valor Atual quebravam linha em algumas colunas — travado com nowrap em todas as tabelas",
+    "CORRIGIDO: rótulo da Meta mostrava 'Meta Meta 2026' (duplicado) — agora mostra só o nome cadastrado",
+    "Logos dos ativos agora ficam em cache local (60 dias) depois do primeiro carregamento — reduz MUITO as chamadas ao serviço externo (Logo.dev) de quem já visitou antes",
+  ]},
   {v:"v19.11",d:"Jun/2026",items:[
     "COTAÇÃO MAIS RESILIENTE: Ações BR e FIIs agora têm fallback via Yahoo Finance (sufixo .SA) quando a Brapi não confirma o preço — Yahoo não depende de proxy, então serve de plano B pra manter a cotação em dia mesmo se a Brapi falhar",
     "DY% e detecção automática de proventos continuam vindo só da Brapi (é a única fonte com esse dado) — o fallback é só pra cotação/preço",
@@ -2674,7 +2713,7 @@ function render(){
   ltEl.className="hv "+(lucroTotal>=0?"pos":"neg");
   g("metaPct").textContent= meta>0 ? pct.toFixed(1)+"%" : "—";
   const metaAtiva = (D.metas.length && D.metas[D.activeMeta]) ? D.metas[D.activeMeta] : null;
-  g("metaLbl").textContent= metaAtiva ? metaAtiva.lbl : "não configurada";
+  g("metaLbl").textContent= metaAtiva ? metaAtiva.lbl : "Meta não configurada";
   const mvEl=g("metaValSub"); if(mvEl) mvEl.textContent = meta>0 ? "de "+brl(meta,0) : "";
 
   /* meta bar */
@@ -3298,9 +3337,9 @@ function renderAcoes(totAcoes,sc,sd){
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(a.tk)}<div><div class="tk">${a.tk}</div><div class="co">${a.co}</div></div></div></td>
       <td class="r" style="${hasPrice(a.tk)?(isPriceStale(a.tk)?"color:var(--muted)":""):"color:var(--muted)"}" title="${hasPrice(a.tk)&&isPriceStale(a.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">
         ${!hasPrice(a.tk)?"aguard.":isPriceStale(a.tk)?brl(a.price,2)+' <span style="font-size:10px" title="Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${brl(a.price,2)}</span>`}</td>
-      <td class="r">${brl(a.tot,2)}</td>
-      <td class="r">${brl(a.totb3,2)}</td>
-      <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(a.lucro)}${brl(Math.abs(a.lucro),2)}</td>
+      <td class="r" style="white-space:nowrap">${brl(a.tot,2)}</td>
+      <td class="r" style="white-space:nowrap">${brl(a.totb3,2)}</td>
+      <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">${sgn(a.lucro)}${brl(Math.abs(a.lucro),2)}</td>
       <td class="r" style="font-family:var(--mono);color:var(--muted)">${brl(a.pm,2)}</td>
       <td class="r">${a.cotas}</td>
       <td class="r" style="color:var(--muted)">${getDY(a.tk,a.dy).toFixed(2)}%${window._dyBR&&window._dyBR[a.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
@@ -3352,8 +3391,8 @@ function renderFiis(totFiis,sc,sd){
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(f.tk)}<div><div class="tk">${f.tk}</div><div class="co">${f.seg}</div></div></div></td>
       <td class="r" style="${isPriceStale(f.tk)?"color:var(--muted)":""};white-space:nowrap" title="${isPriceStale(f.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${isPriceStale(f.tk)?brl(f.price,2)+' <span style="font-size:10px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${brl(f.price,2)}</span>`}</td>
-      <td class="r">${brl(f.tot,2)}</td><td class="r">${brl(f.totb3,2)}</td>
-      <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">${sgn(f.lucro)}${brl(Math.abs(f.lucro),2)}</td>
+      <td class="r" style="white-space:nowrap">${brl(f.tot,2)}</td><td class="r" style="white-space:nowrap">${brl(f.totb3,2)}</td>
+      <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">${sgn(f.lucro)}${brl(Math.abs(f.lucro),2)}</td>
       <td class="r" style="font-family:var(--mono);color:var(--muted)">${brl(f.pm,2)}</td>
       <td class="r">${f.cotas}</td>
       <td class="r" style="color:var(--muted)">${getDY(f.tk,f.dy).toFixed(2)}%${window._dyBR&&window._dyBR[f.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
@@ -3549,11 +3588,11 @@ function renderETFs(sc,sd){
     const pmET = e.cotas>0 ? e.inv/e.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
       <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":""):"color:var(--muted)"}" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!eLive?"—":isPriceStale(e.tk)?usd(eLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${usd(eLive)}</span>`}</td>
-      <td class="r">${usd(e.inv)}<div class="usd2">${brl(e.inv*usdBRL,2)}</div></td>
-      <td class="r">${usd(e.atual)}<div class="usd2">${brl(e.atual*usdBRL,2)}</div></td>
-      <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
+      <td class="r" style="white-space:nowrap">${usd(e.inv)}<div class="usd2">${brl(e.inv*usdBRL,2)}</div></td>
+      <td class="r" style="white-space:nowrap">${usd(e.atual)}<div class="usd2">${brl(e.atual*usdBRL,2)}</div></td>
+      <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),2)}</div></td>
-      <td class="r" style="font-family:var(--mono);color:var(--muted)">${usd(pmET)}</td>
+      <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${usd(pmET)}</td>
       <td class="r">${e.dy.toFixed(2)}%</td>
       <td>${tetoCell(e.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("ETFs", e.fun, pctSetor, tetoSetorAtual, rows.length===1)}</td>
@@ -3601,11 +3640,11 @@ function renderStocks(sc,sd){
     const pmSK = s.cotas>0 ? s.inv/s.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
       <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":""):"color:var(--muted)"}" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!sLive?"—":isPriceStale(s.tk)?usd(sLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${usd(sLive)}</span>`}</td>
-      <td class="r">${usd(s.inv)}<div class="usd2">${brl(s.inv*usdBRL,2)}</div></td>
-      <td class="r">${usd(s.atual)}<div class="usd2">${brl(s.atual*usdBRL,2)}</div></td>
-      <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
+      <td class="r" style="white-space:nowrap">${usd(s.inv)}<div class="usd2">${brl(s.inv*usdBRL,2)}</div></td>
+      <td class="r" style="white-space:nowrap">${usd(s.atual)}<div class="usd2">${brl(s.atual*usdBRL,2)}</div></td>
+      <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
-      <td class="r" style="font-family:var(--mono);color:var(--muted)">${usd(pmSK)}</td>
+      <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${usd(pmSK)}</td>
       <td class="r">${s.dy.toFixed(2)}%</td>
       <td>${tetoCell(s.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("Stocks", s.setor, pctSetor, tetoSetorAtual, rows.length===1)}</td>
