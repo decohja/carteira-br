@@ -269,6 +269,12 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 66%);
   background-size:200% 100%;animation:mshine 3.2s ease-in-out infinite}
 @keyframes mshine{0%{background-position:160% 0}100%{background-position:-60% 0}}
+.mfill.complete{background:linear-gradient(90deg,#16A34A,var(--pos) 55%,#4ADE80);
+  animation:mglow 1.8s ease-in-out infinite}
+@keyframes mglow{0%,100%{box-shadow:0 0 8px rgba(34,197,94,.4)}50%{box-shadow:0 0 16px rgba(34,197,94,.75)}}
+.falta-pill.complete{color:var(--pos);background:var(--pos-bg);border-color:var(--pos-dim);
+  animation:mcelebrate 1.6s ease-in-out infinite}
+@keyframes mcelebrate{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 .meta-pct-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 .meta-pct{font-family:var(--mono);font-size:12px;font-weight:500;white-space:nowrap}
 .meta-val-sub{font-size:9.5px;color:var(--faint);font-family:var(--mono);white-space:nowrap}
@@ -299,7 +305,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .dn-val{font-family:var(--mono);font-size:15px;font-weight:500;margin-top:2px}
 .dn-sub{font-size:10px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
 .dn-sub.pos{color:var(--pos)}.dn-sub.neg{color:var(--neg)}.dn-sub.gold{color:var(--gold)}
-.cot-live{color:var(--blue);font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.cot-live{color:var(--blue);font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);flex-shrink:0;animation:liveDotPulse 1.8s ease-in-out infinite}
 @keyframes liveDotPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.45)}50%{opacity:.65;box-shadow:0 0 0 4px rgba(34,197,94,0)}}
 .dcard-info .dn-sub+.dn-sub{margin-top:1px}
@@ -904,10 +910,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
           <thead><tr>
             <th class="sort" data-col="tk" data-t="ac">Ativo</th>
             <th class="r sort" data-col="price" data-t="ac">Cotação</th>
+            <th class="r sort" data-col="pm" data-t="ac">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra — recalculado automaticamente sempre que você adiciona mais cotas do mesmo ativo.">?</span></th>
             <th class="r sort" data-col="tot" data-t="ac">Investido <span class="info-ic" title="Quanto você efetivamente pagou: preço médio de compra × quantidade de cotas/ações.">?</span></th>
             <th class="r sort" data-col="totb3" data-t="ac">Valor Atual <span class="info-ic" title="Quanto vale hoje na bolsa: preço atual de mercado × quantidade de cotas/ações.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="ac">Lucro</th>
-            <th class="r sort" data-col="pm" data-t="ac">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra — recalculado automaticamente sempre que você adiciona mais cotas do mesmo ativo.">?</span></th>
             <th class="r sort" data-col="cotas" data-t="ac">Cotas</th>
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos/JCP pagos nos últimos 12 meses, em relação ao preço atual da ação. Atualizado em tempo real via Brapi quando disponível.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este ativo dentro da carteira de Ações BR. Clique no valor na linha para editar.">?</span></th>
@@ -942,10 +948,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
           <thead><tr>
             <th class="sort" data-col="tk" data-t="fi">Fundo</th>
             <th class="r sort" data-col="price" data-t="fi">Cotação</th>
+            <th class="r sort" data-col="pm" data-t="fi">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra — recalculado automaticamente sempre que você adiciona mais cotas do mesmo FII.">?</span></th>
             <th class="r sort" data-col="tot" data-t="fi">Investido <span class="info-ic" title="Quanto você efetivamente pagou: preço médio de compra × quantidade de cotas.">?</span></th>
             <th class="r sort" data-col="totb3" data-t="fi">Valor Atual <span class="info-ic" title="Quanto vale hoje na bolsa: preço atual de mercado × quantidade de cotas.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="fi">Lucro</th>
-            <th class="r sort" data-col="pm" data-t="fi">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra — recalculado automaticamente sempre que você adiciona mais cotas do mesmo FII.">?</span></th>
             <th class="r sort" data-col="cotas" data-t="fi">Cotas</th>
             <th class="r sort" data-col="dy" data-t="fi">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em proventos pagos nos últimos 12 meses, em relação ao preço atual da cota. Quanto maior, mais o fundo está distribuindo proporcionalmente ao seu valor.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este FII dentro da carteira de FIIs. Clique no valor na linha para editar.">?</span></th>
@@ -998,10 +1004,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
           <thead><tr>
             <th class="sort" data-col="tk" data-t="et">ETF</th>
             <th class="r">Cotação</th>
+            <th class="r" data-col="pm">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra (Inv. ÷ Cotas) — recalculado automaticamente sempre que você adiciona mais cotas do mesmo ETF.">?</span></th>
             <th class="r sort" data-col="inv" data-t="et">Investido <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="atual" data-t="et">Valor Atual <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="et">Lucro</th>
-            <th class="r" data-col="pm">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra (Inv. ÷ Cotas) — recalculado automaticamente sempre que você adiciona mais cotas do mesmo ETF.">?</span></th>
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pelo ETF nos últimos 12 meses, em relação ao preço atual da cota.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este ETF dentro da carteira de ETFs. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração da categoria inteira deste ETF (ex: S&P 500, Industrial) em relação ao teto que você definiu para a categoria. Clique no valor para editar.">?</span></th>
@@ -1030,10 +1036,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
           <thead><tr>
             <th class="sort" data-col="tk" data-t="sk">Stock</th>
             <th class="r">Cotação</th>
+            <th class="r" data-col="pm">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra (Inv. ÷ Cotas) — recalculado automaticamente sempre que você adiciona mais ações da mesma Stock. Aparece '—' pra posições antigas sem quantidade de cotas registrada.">?</span></th>
             <th class="r sort" data-col="inv" data-t="sk">Investido <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="atual" data-t="sk">Valor Atual <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="sk">Lucro</th>
-            <th class="r" data-col="pm">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra (Inv. ÷ Cotas) — recalculado automaticamente sempre que você adiciona mais ações da mesma Stock.">?</span></th>
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pela empresa nos últimos 12 meses, em relação ao preço atual da ação.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para esta Stock dentro da carteira de Stocks. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração do setor inteiro desta Stock (ex: Tecnologia, Financeiro) em relação ao teto que você definiu para o setor. Clique no valor para editar.">?</span></th>
@@ -1739,6 +1745,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v20.0",d:"Jun/2026",items:[
+    "Preço Médio movido pra logo depois de Cotação em todas as tabelas (Ações, FIIs, ETFs, Stocks)",
+    "CORRIGIDO: Preço Médio de Stocks antigas mostrava R$0/US$0 (faltava quantidade de cotas nesses registros) — agora mostra '—' em vez de um zero enganoso",
+    "CORRIGIDO DE VEZ: cotação ao vivo (com a bolinha pulsando) ainda quebrava linha em algumas tabelas — nowrap aplicado direto na classe, não só na célula",
+    "META ATINGIDA: quando o patrimônio alcança 100% da meta, o texto vira '🎉 Meta atingida!' (verde, pulsante) e a barra muda pra um brilho verde comemorativo",
+  ]},
   {v:"v19.12",d:"Jun/2026",items:[
     "CORRIGIDO: valores de Lucro/Investido/Valor Atual quebravam linha em algumas colunas — travado com nowrap em todas as tabelas",
     "CORRIGIDO: rótulo da Meta mostrava 'Meta Meta 2026' (duplicado) — agora mostra só o nome cadastrado",
@@ -2699,7 +2711,10 @@ function render(){
 
   /* hero */
   g("hPatrVal").textContent=brl(totalInvest,2);
-  g("hFalta").textContent= meta>0 ? "Faltam "+brl(falta,2) : "Configure em Metas ⚙";
+  const metaAtingida = meta>0 && pct>=100;
+  const faltaEl=g("hFalta");
+  faltaEl.textContent = !meta ? "Configure em Metas ⚙" : metaAtingida ? "🎉 Meta atingida!" : "Faltam "+brl(falta,2);
+  faltaEl.className = "falta-pill"+(metaAtingida?" complete":"");
   g("hAcoes").textContent=brl(totAcoes,2);
   setHS("hAcoesSub",lucroAcoes,true);
   g("hFiis").textContent=brl(totFiis,2);
@@ -2719,7 +2734,7 @@ function render(){
   /* meta bar */
   const bar=g("metaBar"); bar.innerHTML="";
   const fillPct = meta>0 ? Math.min(100, pct) : 0;
-  const fill=document.createElement("div"); fill.className="mfill"; fill.style.width=fillPct.toFixed(1)+"%";
+  const fill=document.createElement("div"); fill.className="mfill"+(metaAtingida?" complete":""); fill.style.width=fillPct.toFixed(1)+"%";
   bar.appendChild(fill);
 
   renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis);
@@ -2903,10 +2918,10 @@ const COLUNAS_REGISTRO = {
   ac: [
     {idx:1, label:"Ativo", obrigatoria:true},
     {idx:2, label:"Cotação"},
-    {idx:3, label:"Investido"},
-    {idx:4, label:"Valor Atual"},
-    {idx:5, label:"Lucro"},
-    {idx:6, label:"Preço Médio"},
+    {idx:3, label:"Preço Médio"},
+    {idx:4, label:"Investido"},
+    {idx:5, label:"Valor Atual"},
+    {idx:6, label:"Lucro"},
     {idx:7, label:"Cotas"},
     {idx:8, label:"DY%"},
     {idx:9, label:"% Teto Individual"},
@@ -2916,10 +2931,10 @@ const COLUNAS_REGISTRO = {
   fi: [
     {idx:1, label:"Fundo", obrigatoria:true},
     {idx:2, label:"Cotação"},
-    {idx:3, label:"Investido"},
-    {idx:4, label:"Valor Atual"},
-    {idx:5, label:"Lucro"},
-    {idx:6, label:"Preço Médio"},
+    {idx:3, label:"Preço Médio"},
+    {idx:4, label:"Investido"},
+    {idx:5, label:"Valor Atual"},
+    {idx:6, label:"Lucro"},
     {idx:7, label:"Cotas"},
     {idx:8, label:"DY%"},
     {idx:9, label:"% Teto Individual"},
@@ -2929,10 +2944,10 @@ const COLUNAS_REGISTRO = {
   et: [
     {idx:1, label:"ETF", obrigatoria:true},
     {idx:2, label:"Cotação"},
-    {idx:3, label:"Investido"},
-    {idx:4, label:"Valor Atual"},
-    {idx:5, label:"Lucro"},
-    {idx:6, label:"Preço Médio"},
+    {idx:3, label:"Preço Médio"},
+    {idx:4, label:"Investido"},
+    {idx:5, label:"Valor Atual"},
+    {idx:6, label:"Lucro"},
     {idx:7, label:"DY%"},
     {idx:8, label:"% Teto Individual"},
     {idx:9, label:"% Teto Setor"},
@@ -2941,10 +2956,10 @@ const COLUNAS_REGISTRO = {
   sk: [
     {idx:1, label:"Stock", obrigatoria:true},
     {idx:2, label:"Cotação"},
-    {idx:3, label:"Investido"},
-    {idx:4, label:"Valor Atual"},
-    {idx:5, label:"Lucro"},
-    {idx:6, label:"Preço Médio"},
+    {idx:3, label:"Preço Médio"},
+    {idx:4, label:"Investido"},
+    {idx:5, label:"Valor Atual"},
+    {idx:6, label:"Lucro"},
     {idx:7, label:"DY%"},
     {idx:8, label:"% Teto Individual"},
     {idx:9, label:"% Teto Setor"},
@@ -3335,12 +3350,12 @@ function renderAcoes(totAcoes,sc,sd){
     const opts=objs.map(o=>`<option${o===a.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(a.tk)}<div><div class="tk">${a.tk}</div><div class="co">${a.co}</div></div></div></td>
-      <td class="r" style="${hasPrice(a.tk)?(isPriceStale(a.tk)?"color:var(--muted)":""):"color:var(--muted)"}" title="${hasPrice(a.tk)&&isPriceStale(a.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">
+      <td class="r" style="${hasPrice(a.tk)?(isPriceStale(a.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${hasPrice(a.tk)&&isPriceStale(a.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">
         ${!hasPrice(a.tk)?"aguard.":isPriceStale(a.tk)?brl(a.price,2)+' <span style="font-size:10px" title="Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${brl(a.price,2)}</span>`}</td>
+      <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${brl(a.pm,2)}</td>
       <td class="r" style="white-space:nowrap">${brl(a.tot,2)}</td>
       <td class="r" style="white-space:nowrap">${brl(a.totb3,2)}</td>
       <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">${sgn(a.lucro)}${brl(Math.abs(a.lucro),2)}</td>
-      <td class="r" style="font-family:var(--mono);color:var(--muted)">${brl(a.pm,2)}</td>
       <td class="r">${a.cotas}</td>
       <td class="r" style="color:var(--muted)">${getDY(a.tk,a.dy).toFixed(2)}%${window._dyBR&&window._dyBR[a.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
       <td>${tetoCell(a.tk, a.pctCart, tetoAtual, rows.length===1)}</td>
@@ -3350,9 +3365,9 @@ function renderAcoes(totAcoes,sc,sd){
   });
   const totI=rows.reduce((s,a)=>s+a.tot,0), totB=rows.reduce((s,a)=>s+a.totb3,0), totL=rows.reduce((s,a)=>s+a.lucro,0);
   addTotals("acTbl",[
-    {label:"TOTAL"},{val:"",r:true},{val:brlTotal(totI,2),r:true},{val:brlTotal(totB,2),r:true},
+    {label:"TOTAL"},{val:"",r:true},{val:"",r:true},{val:brlTotal(totI,2),r:true},{val:brlTotal(totB,2),r:true},
     {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brlTotal(Math.abs(totL),2)}</span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   /* charts */
   const mapSt={};rows.forEach(a=>{mapSt[a.st]=(mapSt[a.st]||0)+a.totb3});
@@ -3391,9 +3406,9 @@ function renderFiis(totFiis,sc,sd){
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(f.tk)}<div><div class="tk">${f.tk}</div><div class="co">${f.seg}</div></div></div></td>
       <td class="r" style="${isPriceStale(f.tk)?"color:var(--muted)":""};white-space:nowrap" title="${isPriceStale(f.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${isPriceStale(f.tk)?brl(f.price,2)+' <span style="font-size:10px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${brl(f.price,2)}</span>`}</td>
+      <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${brl(f.pm,2)}</td>
       <td class="r" style="white-space:nowrap">${brl(f.tot,2)}</td><td class="r" style="white-space:nowrap">${brl(f.totb3,2)}</td>
       <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">${sgn(f.lucro)}${brl(Math.abs(f.lucro),2)}</td>
-      <td class="r" style="font-family:var(--mono);color:var(--muted)">${brl(f.pm,2)}</td>
       <td class="r">${f.cotas}</td>
       <td class="r" style="color:var(--muted)">${getDY(f.tk,f.dy).toFixed(2)}%${window._dyBR&&window._dyBR[f.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
       <td>${tetoCell(f.tk, f.pctCart, tetoAtual, rows.length===1)}</td>
@@ -3403,9 +3418,9 @@ function renderFiis(totFiis,sc,sd){
   });
   const totI=rows.reduce((s,f)=>s+f.tot,0), totB=rows.reduce((s,f)=>s+f.totb3,0), totL=rows.reduce((s,f)=>s+f.lucro,0);
   addTotals("fiTbl",[
-    {label:"TOTAL"},{val:"",r:true},{val:brlTotal(totI,2),r:true},{val:brlTotal(totB,2),r:true},
+    {label:"TOTAL"},{val:"",r:true},{val:"",r:true},{val:brlTotal(totI,2),r:true},{val:brlTotal(totB,2),r:true},
     {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brlTotal(Math.abs(totL),2)}</span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   const tot=rows.reduce((s,f)=>s+f.totb3,0);
   const mapSeg={};rows.forEach(f=>{mapSeg[f.seg]=(mapSeg[f.seg]||0)+f.totb3});
@@ -3587,12 +3602,12 @@ function renderETFs(sc,sd){
     const tetoSetorAtual = getTetoSetor("ETFs", e.fun, tetoET?tetoET.teto:30);
     const pmET = e.cotas>0 ? e.inv/e.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
-      <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":""):"color:var(--muted)"}" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!eLive?"—":isPriceStale(e.tk)?usd(eLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${usd(eLive)}</span>`}</td>
+      <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!eLive?"—":isPriceStale(e.tk)?usd(eLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${usd(eLive)}</span>`}</td>
+      <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${e.cotas>0?usd(pmET):"—"}</td>
       <td class="r" style="white-space:nowrap">${usd(e.inv)}<div class="usd2">${brl(e.inv*usdBRL,2)}</div></td>
       <td class="r" style="white-space:nowrap">${usd(e.atual)}<div class="usd2">${brl(e.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),2)}</div></td>
-      <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${usd(pmET)}</td>
       <td class="r">${e.dy.toFixed(2)}%</td>
       <td>${tetoCell(e.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("ETFs", e.fun, pctSetor, tetoSetorAtual, rows.length===1)}</td>
@@ -3603,10 +3618,11 @@ function renderETFs(sc,sd){
   addTotals("etTbl",[
     {label:"TOTAL"},
     {val:"",r:true},
+    {val:"",r:true},
     {val:`${usdTotal(tI)}<div class="usd2">${brlTotal(tI*usdBRL,2)}</div>`,r:true},
     {val:`${usdTotal(tA)}<div class="usd2">${brlTotal(tA*usdBRL,2)}</div>`,r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usdTotal(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brlTotal(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   mkHBars(rows.map(e=>({label:e.tk,v:e.atual,pct:tot>0?e.atual/tot*100:0})),"et-hbars","#38BDF8");
   mkDY(rows.map(e=>({label:e.tk,v:e.dy})),"et-dy"); // ETFs sem mapa de cor por categoria — usa dourado padrão
@@ -3639,12 +3655,12 @@ function renderStocks(sc,sd){
     const tetoSetorAtual = getTetoSetor("Stocks", s.setor, tetoSK?tetoSK.teto:30);
     const pmSK = s.cotas>0 ? s.inv/s.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
-      <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":""):"color:var(--muted)"}" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!sLive?"—":isPriceStale(s.tk)?usd(sLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${usd(sLive)}</span>`}</td>
+      <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!sLive?"—":isPriceStale(s.tk)?usd(sLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${usd(sLive)}</span>`}</td>
+      <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${s.cotas>0?usd(pmSK):"—"}</td>
       <td class="r" style="white-space:nowrap">${usd(s.inv)}<div class="usd2">${brl(s.inv*usdBRL,2)}</div></td>
       <td class="r" style="white-space:nowrap">${usd(s.atual)}<div class="usd2">${brl(s.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
-      <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${usd(pmSK)}</td>
       <td class="r">${s.dy.toFixed(2)}%</td>
       <td>${tetoCell(s.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("Stocks", s.setor, pctSetor, tetoSetorAtual, rows.length===1)}</td>
@@ -3655,10 +3671,11 @@ function renderStocks(sc,sd){
   addTotals("skTbl",[
     {label:"TOTAL"},
     {val:"",r:true},
+    {val:"",r:true},
     {val:`${usdTotal(tI)}<div class="usd2">${brlTotal(tI*usdBRL,2)}</div>`,r:true},
     {val:`${usdTotal(tA)}<div class="usd2">${brlTotal(tA*usdBRL,2)}</div>`,r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usdTotal(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brlTotal(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   mkHBars(rows.map(s=>({label:s.tk,v:s.atual,pct:tot>0?s.atual/tot*100:0})),"sk-hbars","#818CF8");
   const mapSt={};rows.forEach(s=>{mapSt[s.setor]=(mapSt[s.setor]||0)+s.atual});
