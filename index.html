@@ -256,13 +256,14 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 
 /* hstats inline removido */
 
-.meta-row{display:flex;align-items:center;gap:9px;margin-top:11px;padding-top:11px;border-top:1px solid var(--border);flex-wrap:wrap}
+.meta-row{display:flex;align-items:center;gap:9px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);flex-wrap:wrap}
 .meta-lbl{font-size:11px;color:var(--muted);white-space:nowrap}
-.metabar{flex:1;min-width:180px;height:14px;border-radius:8px;background:var(--bg3);
+.metabar-wrap{width:110px;flex-shrink:0}
+.metabar{width:100%;height:8px;border-radius:5px;background:var(--bg3);
   border:1px solid var(--border);overflow:hidden;position:relative}
-.mfill{height:100%;border-radius:8px;position:relative;overflow:hidden;
+.mfill{height:100%;border-radius:5px;position:relative;overflow:hidden;
   background:linear-gradient(90deg,#8B5E0A,var(--gold) 55%,var(--gold-l));
-  box-shadow:0 0 10px rgba(200,146,42,.4);
+  box-shadow:0 0 8px rgba(200,146,42,.35);
   transition:width .9s cubic-bezier(.2,.8,.2,1)}
 .mfill::after{content:"";position:absolute;inset:0;
   background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 66%);
@@ -270,6 +271,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 @keyframes mshine{0%{background-position:160% 0}100%{background-position:-60% 0}}
 .meta-pct-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 .meta-pct{font-family:var(--mono);font-size:12px;font-weight:500;white-space:nowrap}
+.meta-val-sub{font-size:9.5px;color:var(--faint);font-family:var(--mono);white-space:nowrap}
 .meta-cog{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);
   cursor:pointer;padding:3px 8px;border-radius:var(--rm);border:1px solid var(--border);
   background:transparent;transition:all .15s;white-space:nowrap;flex-shrink:0}
@@ -811,11 +813,12 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </div>
   </div>
   <div class="meta-row">
-    <span class="meta-lbl">Meta <strong id="metaLbl">R$ 97.000</strong> <span class="info-ic" title="Valor total que você definiu como objetivo para o patrimônio investido (excluindo Reserva de Emergência e itens fora da meta). A barra ao lado mostra seu progresso até chegar lá. Edite em ⚙ Metas.">?</span></span>
-    <div style="flex:1;min-width:180px"><div class="metabar" id="metaBar"></div></div>
+    <span class="meta-lbl">Meta <strong id="metaLbl">—</strong> <span class="info-ic" title="Sua meta de patrimônio investido (excluindo Reserva de Emergência e itens fora da meta). A barra ao lado mostra seu progresso até chegar lá. Edite em ⚙ Metas.">?</span></span>
+    <div class="metabar-wrap"><div class="metabar" id="metaBar"></div></div>
     <div class="meta-pct-wrap">
       <span class="meta-pct" id="metaPct">—%</span>
       <span class="falta-pill" id="hFalta">—</span>
+      <span class="meta-val-sub" id="metaValSub">—</span>
     </div>
     <button class="meta-cog" onclick="openMod('metas')">⚙️ Metas</button>
   </div>
@@ -1702,6 +1705,15 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v19.11",d:"Jun/2026",items:[
+    "COTAÇÃO MAIS RESILIENTE: Ações BR e FIIs agora têm fallback via Yahoo Finance (sufixo .SA) quando a Brapi não confirma o preço — Yahoo não depende de proxy, então serve de plano B pra manter a cotação em dia mesmo se a Brapi falhar",
+    "DY% e detecção automática de proventos continuam vindo só da Brapi (é a única fonte com esse dado) — o fallback é só pra cotação/preço",
+  ]},
+  {v:"v19.10",d:"Jun/2026",items:[
+    "Área da Meta reduzida e mais colada no Patrimônio — barra saiu de 'flex:1' (esticava a tela toda) pra um tamanho fixo compacto (110px)",
+    "Mostra o NOME da meta cadastrada (ex: 'Meta 2026') em destaque, em vez do valor — o valor virou texto discreto, perto de 'Faltam'",
+    "Melhora também a visualização mobile, já que a barra não estica mais até a borda da tela",
+  ]},
   {v:"v19.9",d:"Jun/2026",items:[
     "Coluna Cotação agora vem antes de Investido em todas as tabelas (Ações, FIIs, ETFs, Stocks)",
     "Nomenclatura padronizada: 'Total Inv.'/'Total B3' (Ações e FIIs) viraram 'Investido'/'Valor Atual', igual já era em ETFs e Stocks — mesmo nome, mesma ordem, em todas as classes",
@@ -2342,6 +2354,31 @@ async function refreshPrices(manual=false){
     }catch(e){ console.warn('IBOV isolado falhou:',e.message); updMktErr('ibov'); }
   }
 
+  /* 1c. Fallback de cotação: Yahoo Finance (sufixo .SA) pra qualquer ticker BR que a Brapi não confirmou
+        agora há pouco. Yahoo não exige token nem proxy (endpoint libera acesso direto do navegador),
+        então serve como plano B só pra manter o PREÇO em dia — DY%/Proventos continuam vindo só da Brapi. */
+  const tksSemPrecoFresco = tksBR.filter(tk=>{
+    if(tk==='^BVSP') return false;
+    const ts = window._priceUpdatedAt[tk];
+    return !ts || (Date.now()-ts) > 5000; // não foi confirmado NESTE ciclo
+  });
+  if(tksSemPrecoFresco.length){
+    let yhOK=0;
+    await Promise.allSettled(tksSemPrecoFresco.map(async tk=>{
+      try{
+        const url=`https://query1.finance.yahoo.com/v8/finance/chart/${tk}.SA?interval=1m&range=1d`;
+        const j=await corsGetJSON(url);
+        const m=j?.chart?.result?.[0]?.meta;
+        if(m?.regularMarketPrice){
+          prices[tk]=m.regularMarketPrice;
+          window._priceUpdatedAt[tk]=Date.now();
+          brOK++; yhOK++;
+        }
+      }catch(e){ console.warn(`Fallback Yahoo falhou pra ${tk}.SA:`,e.message); }
+    }));
+    if(yhOK) console.log(`Fallback Yahoo: ${yhOK} de ${tksSemPrecoFresco.length} tickers BR resgatados`);
+  }
+
   /* 2. USD/BRL + todas as criptos da carteira via AwesomeAPI — CORS nativo, sem token, cache de 1min */
   try{
     const moedasCripto = [...new Set(D.cripto.map(c=>c.moeda))]; // BTC, ETH, ENA, etc — o que o usuário tiver
@@ -2636,7 +2673,9 @@ function render(){
   const ltEl=g("hLucroTotal"); ltEl.textContent=sgn(lucroTotal)+brl(Math.abs(lucroTotal),2);
   ltEl.className="hv "+(lucroTotal>=0?"pos":"neg");
   g("metaPct").textContent= meta>0 ? pct.toFixed(1)+"%" : "—";
-  g("metaLbl").textContent= meta>0 ? brl(meta,0) : "Sem meta";
+  const metaAtiva = (D.metas.length && D.metas[D.activeMeta]) ? D.metas[D.activeMeta] : null;
+  g("metaLbl").textContent= metaAtiva ? metaAtiva.lbl : "não configurada";
+  const mvEl=g("metaValSub"); if(mvEl) mvEl.textContent = meta>0 ? "de "+brl(meta,0) : "";
 
   /* meta bar */
   const bar=g("metaBar"); bar.innerHTML="";
