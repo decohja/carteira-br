@@ -105,7 +105,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 /* ─── B3 HEADER BADGE ────────────────── */
 .b3-badge{
   display:flex;align-items:center;justify-content:center;
-  height:32px;padding:0 11px;border-radius:8px;flex-shrink:0;
+  height:36px;padding:0 12px;border-radius:9px;flex-shrink:0;
   border:1px solid var(--gold-dim);background:var(--gold-bg);color:var(--gold);
   cursor:pointer;transition:background .15s,transform .15s;
 }
@@ -200,14 +200,14 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .mk-arrow{width:9px;height:9px;flex-shrink:0}
 
 .hdr-r{display:flex;align-items:center;gap:6px;padding-left:8px;flex-shrink:0}
-.ibtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);
+.ibtn{width:36px;height:36px;border-radius:9px;border:1px solid var(--border2);
   background:var(--bg3);color:var(--muted);display:flex;align-items:center;
-  justify-content:center;cursor:pointer;font-size:15px;transition:all .15s;flex-shrink:0;}
+  justify-content:center;cursor:pointer;font-size:16px;transition:all .15s;flex-shrink:0;}
 .ibtn:hover{border-color:var(--border3);color:var(--text)}
-.avt{width:32px;height:32px;border-radius:50%;border:2px solid var(--gold);
+.avt{width:36px;height:36px;border-radius:50%;border:2px solid var(--gold);
   background:linear-gradient(135deg,#6B4E15,var(--gold));
   display:flex;align-items:center;justify-content:center;cursor:pointer;
-  font-size:12px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
+  font-size:13px;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
 .avt:hover{box-shadow:0 0 0 3px var(--gold-bg)}
 .avt img{width:100%;height:100%;object-fit:cover}
 
@@ -217,10 +217,10 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .hero-left{flex-shrink:0}
 .eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:2px}
 .patr{font-family:var(--mono);font-size:36px;font-weight:500;letter-spacing:-.04em;line-height:1}
-.patr-sub{font-size:12px;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.patr-var-row{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
 .falta-pill{color:var(--gold);font-weight:600;font-family:var(--mono);
-  background:var(--gold-bg);padding:2px 8px;border-radius:20px;
-  border:1px solid var(--gold-dim);font-size:11px;white-space:nowrap}
+  background:var(--gold-bg);padding:1px 8px;border-radius:20px;
+  border:1px solid var(--gold-dim);font-size:10px;white-space:nowrap}
 .var-pill{font-size:13px;font-weight:600;padding:4px 11px;border-radius:20px;
   border:1px solid var(--border2);background:var(--bg3);color:var(--muted);
   white-space:nowrap;display:inline-flex;align-items:center;gap:6px;cursor:help;letter-spacing:.01em}
@@ -257,6 +257,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .mghost{height:100%;
   background:repeating-linear-gradient(45deg,var(--bg3),var(--bg3) 5px,var(--bg) 5px,var(--bg) 10px);
   flex-grow:0;transition:flex-grow .85s cubic-bezier(.2,.8,.2,1)}
+.meta-pct-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 .meta-pct{font-family:var(--mono);font-size:12px;font-weight:500;white-space:nowrap}
 .meta-cog{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);
   cursor:pointer;padding:3px 8px;border-radius:var(--rm);border:1px solid var(--border);
@@ -471,6 +472,16 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:24px;
   color:var(--muted);transition:all .15s;overflow:hidden;margin:0 auto 12px}
 .avt-up:hover{border-color:var(--gold);color:var(--gold)}
+.perfil-card{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
+  padding:26px 24px;width:min(360px,92vw);max-height:86vh;overflow-y:auto;position:relative;
+  box-shadow:0 24px 60px rgba(0,0,0,.55);transform:translateY(10px);transition:transform .2s;
+  border-top:2px solid var(--gold);}
+.mbg.open .perfil-card{transform:translateY(0)}
+.perfil-card .avt-up{width:88px;height:88px;font-size:30px}
+.perfil-stat-row{display:flex;gap:6px}
+.perfil-stat{flex:1;min-width:0;background:var(--bg3);border-radius:var(--rm);padding:9px 6px;text-align:center}
+.perfil-stat-lbl{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.perfil-stat-val{display:block;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mi{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid var(--border);
   border-radius:var(--rm);margin-bottom:6px;background:var(--bg3)}
 .sep{height:1px;background:var(--border);margin:10px 0}
@@ -554,7 +565,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   .mk-c{font-size:9px;padding:1px 5px}
 
   /* botões de tema/config/avatar menores, sempre visíveis na 1ª linha */
-  .ibtn,.avt{width:26px!important;height:26px!important;font-size:12px!important}
+  .ibtn,.avt{width:30px!important;height:30px!important;font-size:13px!important}
 
   /* Toast de atualização: nunca cobre o header — desce mais e fica mais discreto */
   .refresh-toast{top:auto;bottom:16px;font-size:12px;padding:6px 16px}
@@ -609,12 +620,12 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 
   /* Patrimônio principal: reduz tamanho da fonte gigante, sem quebrar layout */
-  .patr{font-size:26px!important;flex-wrap:wrap;gap:8px!important}
+  .patr{font-size:26px!important}
   .var-pill{font-size:12px;padding:3px 9px}
 
   /* falta-pill e snap-chip: tamanho reduzido pra não estourar largura */
   .falta-pill,.snap-chip{font-size:10px;padding:2px 7px}
-  .patr-sub{flex-wrap:wrap;gap:6px}
+  .patr-var-row{flex-wrap:wrap;gap:6px}
 
   /* meta-row: garante que a barra de progresso não estoure */
   .meta-row{flex-wrap:wrap;gap:6px}
@@ -718,7 +729,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       <div class="side-sep"></div>
       <button onclick="closeMenu();openMod('metas')">🎯 Metas</button>
       <button onclick="closeMenu();openMod('app')">⚙️ Configurações</button>
-      <button onclick="closeMenu();openMod('login')">👤 Perfil</button>
+      <button onclick="closeMenu();openPerfil()">👤 Perfil</button>
       <button onclick="closeMenu();openMod('changelog')">📋 Versões</button>
       <button onclick="b3EmBreve()">🏛️ Integração com a B3<span class="pill core" style="margin-left:auto">EM BREVE</span></button>
       <div class="side-sep"></div>
@@ -753,9 +764,9 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <text x="30.5" y="10.5" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="10" fill="currentColor">3</text>
       </svg>
     </button>
-    <button class="ibtn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+    <button class="ibtn" onclick="toggleTheme()" id="themeBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
     <button class="ibtn" onclick="openMod('metas')">⚙️</button>
-    <button class="avt" onclick="openMod('login')" id="avtBtn">D</button>
+    <button class="avt" onclick="openPerfil()" id="avtBtn">D</button>
   </div>
 </header>
 
@@ -764,15 +775,11 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <div class="hero-row">
     <div class="hero-left">
       <div class="eyebrow">Patrimônio de investimentos</div>
-      <div class="patr" id="hPatr" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span id="hPatrVal">R$ —</span>
+      <div id="hPatrVal" class="patr">R$ —</div>
+      <div class="patr-var-row">
         <span id="hVariacaoPill" class="var-pill" title="Informa de fato quanto foi o seu ganho real, levando em conta o valor investido e o saldo atual. Não considera o pagamento de dividendos.">
           Variação <svg class="vp-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor" stroke="none"/></svg> <strong id="hVariacao">—</strong>
         </span>
-      </div>
-      <div class="patr-sub">
-        <span id="hSub">Meta: —</span>
-        <span class="falta-pill" id="hFalta">—</span>
         <span class="snap-chip" id="snapChip" title="'Ao vivo' significa que os preços foram atualizados agora há pouco direto da fonte de cotações. 'Dados salvos' significa que está mostrando o último preço salvo, porque não foi possível buscar uma cotação mais recente no momento.">aguardando…</span>
       </div>
     </div>
@@ -787,7 +794,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <div class="meta-row">
     <span class="meta-lbl">Meta <strong id="metaLbl">R$ 97.000</strong> <span class="info-ic" title="Valor total que você definiu como objetivo para o patrimônio investido (excluindo Reserva de Emergência e itens fora da meta). A barra ao lado mostra seu progresso até chegar lá. Edite em ⚙ Metas.">?</span></span>
     <div style="flex:1;min-width:180px"><div class="metabar" id="metaBar"></div></div>
-    <span class="meta-pct" id="metaPct">—%</span>
+    <div class="meta-pct-wrap">
+      <span class="meta-pct" id="metaPct">—%</span>
+      <span class="falta-pill" id="hFalta">—</span>
+    </div>
     <button class="meta-cog" onclick="openMod('metas')">⚙️ Metas</button>
   </div>
 </div>
@@ -1290,26 +1300,11 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <div class="modal" onclick="event.stopPropagation()">
     <div class="m-title"><span>Configurações</span><button class="m-close" onclick="closeMod()">×</button></div>
     <div class="mtabs">
-      <button class="mtab on" onclick="swMTab('login',this)">👤 Conta</button>
-      <button class="mtab" onclick="swMTab('metas',this)">🎯 Metas</button>
-      <button class="mtab" onclick="swMTab('app',this)">⚙️ App</button>
+      <button class="mtab on" onclick="swMTab('metas',this)">🎯 Metas</button>
       <button class="mtab" onclick="swMTab('changelog',this)">📋 Versões</button>
     </div>
 
-    <div id="mt-login">
-      <div class="avt-up" id="avtUp" onclick="document.getElementById('avtFile').click()">📷</div>
-      <input type="file" id="avtFile" accept="image/*" style="display:none" onchange="upAvt(this)"/>
-      <p style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:14px">Toque na foto para usar uma imagem personalizada</p>
-      <label class="flbl">Nome</label>
-      <input class="finp" id="uName" value="" readonly style="opacity:.75;margin-bottom:10px;cursor:default"/>
-      <label class="flbl">E-mail</label>
-      <input class="finp" id="uEmail" type="email" readonly style="opacity:.75;margin-bottom:10px;cursor:default"/>
-      <div class="sep"></div>
-      <p style="font-size:11px;color:var(--pos);margin-bottom:10px;line-height:1.6">✓ Conectado com sua conta Google — esses dados ficam vinculados só a ela.</p>
-      <button class="btn-sec" style="width:100%;color:var(--neg);border-color:var(--neg-dim)" onclick="logout()">Sair da conta</button>
-    </div>
-
-    <div id="mt-metas" style="display:none">
+    <div id="mt-metas">
       <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6">Reserva de Emergência e Caixa Obra não entram no cálculo da meta de investimentos.</p>
       <div id="metasList"></div>
       <div class="frow2" style="margin-top:10px">
@@ -1319,24 +1314,42 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       <button class="btn-pri" style="width:100%;margin-top:8px" onclick="addMeta()">+ Adicionar meta</button>
     </div>
 
-    <div id="mt-app" style="display:none">
-      <div style="padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);margin-bottom:14px">
-        <p style="font-size:12px;color:var(--pos);font-weight:600;margin-bottom:6px">✓ Cotações via Yahoo Finance</p>
-        <p style="font-size:11px;color:var(--muted);line-height:1.6">Sem necessidade de token. Preços atualizados automaticamente a cada 60s para todas as classes de ativos.</p>
-      </div>
-      <p style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Colunas das tabelas</p>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <button class="refbtn" style="justify-content:flex-start" onclick="closeMod();openColunasModal('ac')">Ações BR</button>
-        <button class="refbtn" style="justify-content:flex-start" onclick="closeMod();openColunasModal('fi')">FIIs</button>
-        <button class="refbtn" style="justify-content:flex-start" onclick="closeMod();openColunasModal('et')">ETFs</button>
-        <button class="refbtn" style="justify-content:flex-start" onclick="closeMod();openColunasModal('sk')">Stocks</button>
-        <button class="refbtn" style="justify-content:flex-start" onclick="closeMod();openColunasModal('cr')">Cripto</button>
-      </div>
-    </div>
-
     <div id="mt-changelog" style="display:none">
       <div id="changelogList"></div>
     </div>
+  </div>
+</div>
+
+<!-- Popover de perfil — independente das Configurações, aberto pela fotinho do header -->
+<div class="mbg" id="modPerfil" onclick="if(event.target===this)closePerfil()">
+  <div class="perfil-card" onclick="event.stopPropagation()">
+    <button class="m-close" onclick="closePerfil()" style="position:absolute;top:14px;right:14px">×</button>
+    <div class="avt-up" id="avtUp" onclick="document.getElementById('avtFile').click()">📷</div>
+    <input type="file" id="avtFile" accept="image/*" style="display:none" onchange="upAvt(this)"/>
+    <p style="font-size:10px;color:var(--muted);text-align:center;margin:8px 0 12px">Toque na foto para usar uma imagem personalizada</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+      <div id="perfilNome" style="text-align:center;font-size:16px;font-weight:600"></div>
+      <span class="pill core" style="font-size:9px">FREE</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:14px">
+      <div id="perfilEmail" style="text-align:center;font-size:12px;color:var(--muted)"></div>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--pos)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" title="Conta verificada via Google"><circle cx="12" cy="12" r="9.5"/><path d="M8 12.5l2.5 2.5 5.5-6"/></svg>
+    </div>
+    <div class="perfil-stat-row">
+      <div class="perfil-stat"><span class="perfil-stat-lbl">Patrimônio</span><span class="perfil-stat-val" id="perfilPatr">—</span></div>
+      <div class="perfil-stat"><span class="perfil-stat-lbl">Desde</span><span class="perfil-stat-val" id="perfilDesde">—</span></div>
+      <div class="perfil-stat"><span class="perfil-stat-lbl">Últ. atualização</span><span class="perfil-stat-val" id="perfilUpd" style="font-size:11px">—</span></div>
+    </div>
+    <div class="sep" style="margin:14px 0"></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn-sec" style="flex:1;font-size:12px" onclick="toggleTheme()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
+        Tema
+      </button>
+      <button class="btn-sec" style="flex:1;font-size:12px" onclick="compartilharApp()">🔗 Compartilhar</button>
+    </div>
+    <button class="btn-pri" style="width:100%;margin-bottom:10px" onclick="exportarDadosCSV()">📤 Exportar meus dados (CSV)</button>
+    <button class="btn-sec" style="width:100%;color:var(--neg);border-color:var(--neg-dim)" onclick="logout()">Sair da conta</button>
   </div>
 </div>
 
@@ -1454,7 +1467,7 @@ function resetEmailLogin(){
   const input = document.getElementById('loginEmailInput'); if(input) input.value = '';
 }
 async function logout(){
-  closeMod(); closeMenu();
+  closeMod(); closePerfil(); closeMenu();
   await sbAuth.auth.signOut();
   location.reload();
 }
@@ -1483,8 +1496,8 @@ function updateProfileUI(){
     const avtUp = document.getElementById('avtUp');
     if(avtUp && foto){ avtUp.style.backgroundImage = `url(${foto})`; avtUp.style.backgroundSize = 'cover'; avtUp.textContent = ''; }
   }
-  const nEl = document.getElementById('uName'); if(nEl) nEl.value = nome;
-  const eEl = document.getElementById('uEmail'); if(eEl) eEl.value = currentUser.email || '';
+  const nEl = document.getElementById('perfilNome'); if(nEl) nEl.textContent = nome;
+  const eEl = document.getElementById('perfilEmail'); if(eEl) eEl.textContent = currentUser.email || '';
 }
 
 // Reage a qualquer mudança de sessão: login, logout, refresh de token, retorno do redirect do Google
@@ -1670,6 +1683,18 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v19.0",d:"Jun/2026",items:[
+    "Cabeçalho reorganizado: Variação desceu pra baixo do valor de patrimônio; 'Meta: R$X' redundante foi removido; 'Faltam R$X' agora fica junto da porcentagem na barra de progresso; 'Dados salvos' ganhou espaço próprio",
+    "EXPORTAR DADOS: novo botão no card de perfil — baixa toda a carteira (todas as classes) em CSV, pronto pra abrir no Excel",
+    "Card de perfil ganhou: selo de plano (Free), verificação de conta, Última atualização de dados, atalho de tema e botão de compartilhar o app",
+  ]},
+  {v:"v18.9",d:"Jun/2026",items:[
+    "Valores em dólar agora mostram 'US$' em vez de só '$' — mais claro que não é um valor genérico",
+    "Perfil virou independente: clicar na fotinho do header abre um card próprio (não mais dentro de Configurações), com foto maior, Patrimônio e 'Investindo desde'",
+    "Configurações agora só tem Metas e Versões — Conta saiu (virou o card de perfil) e App saiu (Colunas já tem botão próprio em cada tabela, era redundante)",
+    "Ícone de tema (sol/lua) trocado de emoji por SVG nítido — o emoji ficava com aparência ruim em vários sistemas",
+    "Botões do header (tema, engrenagem, foto, badge B3) ficaram um pouco maiores",
+  ]},
   {v:"v18.8",d:"Jun/2026",items:[
     "CORRIGIDO: linha TOTAL de ETFs e Stocks estava desalinhada — 'Cotação' mostrava a soma de Atual (USD) por engano, e Atual (BRL) ficava vazio",
     "ETFs e Stocks: colunas de USD e BRL foram unificadas — agora é 1 coluna 'Investido' e 1 'Valor Atual', com o dólar em destaque e o real logo abaixo (mesmo padrão que já existia em Lucro). Menos colunas, menos confusão",
@@ -1990,10 +2015,10 @@ const D={
 
 /* ═══════════════════ HELPERS ═════════════════════ */
 const brl=(n,d=0)=>"R$ "+Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
-const usd=(n,d=2)=>"$ "+Math.abs(+n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const usd=(n,d=2)=>"US$ "+Math.abs(+n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
 /* Versão para a linha de TOTAL: símbolo pequeno/sutil + número em destaque, sem quebrar linha */
 const brlTotal=(n,d=0)=>`<span class="tot-cur">R$</span> ${Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})}`;
-const usdTotal=(n,d=2)=>`<span class="tot-cur">$</span> ${Math.abs(+n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}`;
+const usdTotal=(n,d=2)=>`<span class="tot-cur">US$</span> ${Math.abs(+n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}`;
 const sgn=n=>n>=0?"+":"−";
 let usdBRL=5.80, sortSt={}, pricesArelive=false;
 
@@ -2542,7 +2567,6 @@ function render(){
 
   /* hero */
   g("hPatrVal").textContent=brl(totalInvest,2);
-  g("hSub").textContent= meta>0 ? "Meta: "+brl(meta) : "Meta: não configurada";
   g("hFalta").textContent= meta>0 ? "Faltam "+brl(falta,2) : "Configure em Metas ⚙";
   g("hAcoes").textContent=brl(totAcoes,2);
   setHS("hAcoesSub",lucroAcoes,true);
@@ -4173,24 +4197,97 @@ document.addEventListener("keydown",e=>{
 });
 
 /* Tema */
+function setThemeIcon(theme){
+  const btn = document.getElementById('themeBtn');
+  if(!btn) return;
+  btn.innerHTML = theme === 'dark'
+    ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
+    : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>`;
+}
 function toggleTheme(){
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
   localStorage.setItem('tema', next);
-  document.getElementById("themeBtn").textContent = next === 'dark' ? '🌙' : '☀️';
+  setThemeIcon(next);
   applyTVTheme();
 }
 
 /* Modal */
 function openMod(tab){
-  loadSettings(); // carrega token e dados no formulário ANTES de abrir
   document.getElementById("mod").classList.add("open");
   swMTab(tab,document.querySelector(`.mtab[onclick*="'${tab}'"]`));
   renderMetasList();
 }
 function closeMod(){document.getElementById("mod").classList.remove("open")}
+function openPerfil(){
+  if(!currentUser) return;
+  loadSettings();
+  updateProfileUI();
+  const totalInvest = D.invest.reduce((s,c)=>s+c.v,0);
+  const pEl=document.getElementById('perfilPatr'); if(pEl) pEl.textContent = brl(totalInvest,0);
+  const dEl=document.getElementById('perfilDesde');
+  if(dEl){
+    dEl.textContent = currentUser.created_at
+      ? new Date(currentUser.created_at).toLocaleDateString('pt-BR',{month:'short',year:'numeric'})
+      : '—';
+  }
+  const uEl=document.getElementById('perfilUpd');
+  if(uEl){
+    const ultimo=document.getElementById('lastUpd');
+    uEl.textContent = (ultimo && ultimo.textContent && ultimo.textContent!=='—') ? ultimo.textContent : 'aguardando…';
+  }
+  document.getElementById("modPerfil").classList.add("open");
+}
+function closePerfil(){ document.getElementById("modPerfil").classList.remove("open"); }
+
+function compartilharApp(){
+  const url = window.location.origin + window.location.pathname;
+  const texto = "Tô usando o ativo·br pra organizar meus investimentos — dá uma olhada:";
+  if(navigator.share){
+    navigator.share({title:"ativo·br", text:texto, url}).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(url).then(()=>{
+      alert("Link copiado! Cola onde quiser mandar pra alguém.");
+    }).catch(()=>{
+      prompt("Copie o link abaixo:", url);
+    });
+  }
+}
+
+function exportarDadosCSV(){
+  const linhas = [["Classe","Ativo","Descricao","Cotas","Valor Investido","Valor Atual","Lucro","Moeda"]];
+  D.acoes.forEach(a=>{
+    const tot=a.pm*a.cotas, totb3=(prices[a.tk]||a.pm)*a.cotas;
+    linhas.push(["Acoes BR",a.tk,a.st,a.cotas,tot.toFixed(2),totb3.toFixed(2),(totb3-tot).toFixed(2),"BRL"]);
+  });
+  D.fiis.forEach(f=>{
+    const tot=f.pm*f.cotas, totb3=(prices[f.tk]||f.pm)*f.cotas;
+    linhas.push(["FIIs",f.tk,f.seg,f.cotas,tot.toFixed(2),totb3.toFixed(2),(totb3-tot).toFixed(2),"BRL"]);
+  });
+  D.etfs.forEach(e=>{
+    linhas.push(["ETFs",e.tk,e.fun,e.cotas,e.inv.toFixed(2),e.atual.toFixed(2),e.lucro.toFixed(2),"USD"]);
+  });
+  D.stocks.forEach(s=>{
+    linhas.push(["Stocks",s.tk,s.co,s.cotas||"—",s.inv.toFixed(2),s.atual.toFixed(2),s.lucro.toFixed(2),"USD"]);
+  });
+  D.rf.forEach(r=>{
+    linhas.push(["Renda Fixa",r.titulo,r.taxa||"",r.cotas,r.inv.toFixed(2),r.bruto.toFixed(2),(r.bruto-r.inv).toFixed(2),"BRL"]);
+  });
+  D.cripto.forEach(c=>{
+    const tot=c.pm*c.qtd, atual=(window._cryptoBRL&&window._cryptoBRL[c.moeda]?window._cryptoBRL[c.moeda]:c.pm)*c.qtd;
+    linhas.push(["Cripto",c.moeda,c.nome||"",c.qtd,tot.toFixed(2),atual.toFixed(2),(atual-tot).toFixed(2),"BRL"]);
+  });
+  const csv = "\uFEFF"+linhas.map(l=>l.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const hoje = new Date().toISOString().split("T")[0];
+  a.href = url; a.download = `ativo-br-carteira-${hoje}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 function swMTab(id,btn){
-  ["login","metas","app","changelog"].forEach(t=>document.getElementById("mt-"+t).style.display=t===id?"block":"none");
+  ["metas","changelog"].forEach(t=>document.getElementById("mt-"+t).style.display=t===id?"block":"none");
   document.querySelectorAll(".mtab").forEach(b=>b.classList.remove("on"));
   if(btn) btn.classList.add("on");
   if(id==="changelog"){
@@ -4302,8 +4399,7 @@ async function setMeta(i){
     const h = new Date().getHours();
     document.documentElement.dataset.theme = (h >= 18 || h < 6) ? 'dark' : 'light';
   }
-  const btn = document.getElementById('themeBtn');
-  if(btn) btn.textContent = document.documentElement.dataset.theme === 'dark' ? '🌙' : '☀️';
+  setThemeIcon(document.documentElement.dataset.theme);
   // aplica tema no widget TradingView
   applyTVTheme();
 })();
