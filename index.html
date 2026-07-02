@@ -1747,6 +1747,11 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v20.5",d:"Jun/2026",items:[
+    "CORRIGIDO BUG GRAVE: Lucro de ETFs/Stocks ficava travado em US$0,00 pra qualquer ativo adicionado pela interface — nunca recalculava a partir da cotação ao vivo (só os dados antigos, calculados manualmente uma vez, pareciam certos)",
+    "'Renda Fixa IPCA' renomeado pra só 'Renda Fixa' em todo o app — IPCA é só um dos tipos de título dentro dela",
+    "GAP redesenhado: agora usa pontos percentuais (mais estável) com cores bem diferenciadas — vermelho (muito abaixo), laranja (abaixo/acima leve), verde (na meta, é o 'OK'), dourado (muito acima)",
+  ]},
   {v:"v20.4",d:"Jun/2026",items:[
     "Valor da meta ('de R$X') abaixo de 'Meta atingida' agora aparece maior e centralizado, mais legível no dark mode",
     "GAP (Metas de Alocação) ganhou sistema de 3 níveis com bolinha colorida: muito abaixo (vermelho), abaixo/acima leve (amarelo), na meta (neutro), muito acima (dourado)",
@@ -2065,7 +2070,7 @@ const D={
   metas:[],
   activeMeta:0,
   invest:[
-    {n:"Renda Fixa IPCA",v:0,m:15520,c:"#3B82F6",fonte:"calc"},
+    {n:"Renda Fixa",v:0,m:15520,c:"#3B82F6",fonte:"calc"},
     {n:"Ações Brasil",   v:0,  m:16490,c:"#F59E0B",fonte:"calc"},
     {n:"FIIs",           v:0,  m:13580,c:"#A78BFA",fonte:"calc"},
     {n:"ETFs EUA",       v:0,  m:15520,c:"#38BDF8",fonte:"calc"},
@@ -2588,17 +2593,16 @@ function getMetasAloc(){
   catch(e){ return {...METAS_DEFAULT}; }
 }
 
-// Classifica o GAP em faixas relativas ao valor esperado — mesma lógica usada
-// tanto no render inicial quanto no recálculo ao vivo (evita duas versões divergindo)
-function gapTier(gap, devia, val){
-  const base = devia>0 ? devia : val;
-  if(base<=0) return {color:'var(--muted)', dot:'var(--border3)', label:''};
-  const rel = gap/base*100;
-  if(rel <= -30) return {color:'var(--neg)', dot:'var(--neg)', label:'Muito abaixo'};
-  if(rel < -10)  return {color:'#F59E0B',    dot:'#F59E0B',    label:'Abaixo'};
-  if(rel <= 10)  return {color:'var(--muted)',dot:'var(--border3)',label:'Na meta'};
-  if(rel <= 30)  return {color:'#F59E0B',    dot:'#F59E0B',    label:'Acima'};
-  return              {color:'var(--gold)',  dot:'var(--gold)',  label:'Muito acima'};
+// Classifica o GAP em pontos percentuais (pctAtual - pctMeta) — mais estável que % relativo,
+// que ficava instável quando a meta de uma classe era pequena. Mesma função usada tanto no
+// render inicial quanto no recálculo ao vivo (evita duas versões divergindo).
+function gapTier(pctAtual, pctMeta){
+  const diff = pctAtual - pctMeta; // pontos percentuais de diferença
+  if(diff <= -5)   return {color:'var(--neg)',  dot:'var(--neg)',  label:'Muito abaixo da meta'};
+  if(diff < -1.5)  return {color:'#F59E0B',     dot:'#F59E0B',     label:'Abaixo da meta'};
+  if(diff <= 1.5)  return {color:'var(--pos)',  dot:'var(--pos)',  label:'Na meta'};
+  if(diff <= 5)    return {color:'#F59E0B',     dot:'#F59E0B',     label:'Acima da meta'};
+  return                  {color:'var(--gold)', dot:'var(--gold)', label:'Muito acima da meta'};
 }
 
 function renderMetasAloc(){
@@ -2639,7 +2643,7 @@ function renderMetasAloc(){
     totalMeta += meta;
     const devia = total*meta/100;
     const gap = c.val - devia;
-    const tier = gapTier(gap, devia, c.val);
+    const tier = gapTier(pct, meta);
     const gapPrefix = gap >= 0 ? '+' : '-';
     return `<tr>
       <td class="l" style="font-weight:500">${c.name}</td>
@@ -2673,7 +2677,8 @@ function recalcMetaRow(inp){
   const meta = parseFloat(inp.value)||0;
   const devia = total*meta/100;
   const gap = val - devia;
-  const tier = gapTier(gap, devia, val);
+  const pctAtual = total>0 ? val/total*100 : 0;
+  const tier = gapTier(pctAtual, meta);
   row.querySelector(".meta-devia").textContent = brl(devia,0);
   const gapEl = row.querySelector(".meta-gap");
   const dot = gapEl.querySelector(".meta-gap-dot");
@@ -2735,8 +2740,8 @@ function render(){
   D.invest.find(c=>c.n==="ETFs EUA").lucro=lucroETF;
   D.invest.find(c=>c.n==="Stocks EUA").v=totSTK;
   D.invest.find(c=>c.n==="Stocks EUA").lucro=lucroSTK;
-  D.invest.find(c=>c.n==="Renda Fixa IPCA").v=totRF;
-  D.invest.find(c=>c.n==="Renda Fixa IPCA").lucro=lucroRF;
+  D.invest.find(c=>c.n==="Renda Fixa").v=totRF;
+  D.invest.find(c=>c.n==="Renda Fixa").lucro=lucroRF;
 
   const meta=(D.metas.length && D.metas[D.activeMeta]) ? D.metas[D.activeMeta].v : 0;
   const totalInvest=D.invest.reduce((s,c)=>s+c.v,0);
@@ -3220,7 +3225,7 @@ function renderAlloc(){
 }
 function renderAllocSec(gid,arr){
   const g2=g(gid); g2.innerHTML="";
-  const tabMap={"Ações Brasil":"acoes","FIIs":"fiis","Renda Fixa IPCA":"rf","ETFs EUA":"etfs","Stocks EUA":"stocks","Cripto":"cripto"};
+  const tabMap={"Ações Brasil":"acoes","FIIs":"fiis","Renda Fixa":"rf","ETFs EUA":"etfs","Stocks EUA":"stocks","Cripto":"cripto"};
   const custoMap = window._custoPorClasse||{};
   arr.forEach(c=>{
     const pct = c.m>0 ? Math.min(100,c.v/c.m*100) : 0;
@@ -3639,6 +3644,9 @@ function deleteRF(idx){
 /* ETFs */
 function renderETFs(sc,sd){
   let rows=[...D.etfs];
+  // Recalcula atual/lucro a partir da cotação ao vivo ANTES de somar — sem isso, ativos
+  // adicionados pela UI ficavam com atual=investido pra sempre (lucro sempre R$0,00)
+  rows.forEach(e=>{ if(e.priceUSD && e.cotas>0){ e.atual=+(e.priceUSD*e.cotas).toFixed(2); e.lucro=+(e.atual-e.inv).toFixed(2); } });
   if(sc) rows.sort((x,y)=>sd==="asc"?(x[sc]>y[sc]?1:-1):(x[sc]<y[sc]?1:-1));
   const tb=g("etTbl"); tb.innerHTML="";
   if(!rows.length){
@@ -3691,6 +3699,7 @@ function renderETFs(sc,sd){
 function renderStocks(sc,sd){
   const objs=["Comprar","Manter","Vender"];
   let rows=[...D.stocks];
+  rows.forEach(s=>{ if(s.priceUSD && s.cotas>0){ s.atual=+(s.priceUSD*s.cotas).toFixed(2); s.lucro=+(s.atual-s.inv).toFixed(2); } });
   if(sc) rows.sort((x,y)=>sd==="asc"?(x[sc]>y[sc]?1:-1):(x[sc]<y[sc]?1:-1));
   const tb=g("skTbl"); tb.innerHTML="";
   if(!rows.length){
