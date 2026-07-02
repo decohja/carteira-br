@@ -297,28 +297,28 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 
 /* ─── TABLES ─────────────────────────── */
 .tw{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow-x:auto;overflow-y:hidden;margin-bottom:12px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
-  color:var(--muted);text-align:left;padding:9px 11px;
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--muted);text-align:left;padding:10px 12px;
   background:var(--bg3);border-bottom:1px solid var(--border);white-space:nowrap;user-select:none}
 th.r{text-align:right}
 th.sort{cursor:pointer}th.sort:hover{color:var(--text)}
 th.sa::after{content:" ↑";color:var(--gold)}th.sd::after{content:" ↓";color:var(--gold)}
-td{padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:middle}
-td.r{text-align:right;font-family:var(--mono);font-size:12px}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+td.r{text-align:right;font-family:var(--mono);font-size:13px}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--bg3)}
 tr.total-row td{
   background:linear-gradient(180deg,var(--bg3),var(--bg4));
   border-top:2px solid var(--gold);
-  font-weight:700;font-size:13px;padding-top:13px;padding-bottom:13px;
+  font-weight:700;font-size:14.5px;padding-top:14px;padding-bottom:14px;
   color:var(--text);white-space:nowrap;
 }
 tr.total-row:hover td{background:linear-gradient(180deg,var(--bg4),var(--bg3))}
 tr.total-row td:first-child{
-  font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);white-space:nowrap;
+  font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);white-space:nowrap;
 }
-tr.total-row td.r{font-family:var(--mono);font-size:13.5px;letter-spacing:-.01em;
+tr.total-row td.r{font-family:var(--mono);font-size:15px;letter-spacing:-.01em;
   border-left:1px solid var(--border2);padding-left:16px}
 tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .tot-cur{font-size:10px;font-weight:500;color:var(--muted);margin-right:1px}
@@ -330,7 +330,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   border:1px solid var(--gold-dim);flex-shrink:0;display:flex;align-items:center;
   justify-content:center;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:-.02em}
 .ativo-cell{display:flex;align-items:center;gap:10px}
-.usd2{font-size:10px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
+.usd2{font-size:10.5px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
 
 /* teto mini bar */
 .tbar{display:flex;align-items:center;gap:5px}
@@ -948,10 +948,13 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <div>
       <div class="st" style="display:flex;align-items:center;gap:8px">Posições <button class="add-btn" onclick="openAddRF()">＋ Adicionar título</button></div>
       <div class="tw"><table><thead><tr><th>Título</th><th class="r">Cotas</th><th class="r">Investido</th><th class="r">Total bruto</th><th class="r">Ganho</th><th></th></tr></thead><tbody id="rfTbl"></tbody></table></div>
-      <div class="st" style="margin-top:12px">Cenários de saída</div>
-      <div id="rfCen"></div>
     </div>
-    <div><div class="st">Indicadores macro</div><div class="bx" id="rfMacro"></div></div>
+    <div>
+      <div class="st">Distribuição por tipo</div>
+      <div class="bx" id="rfDonut" style="margin-bottom:12px"></div>
+      <div class="st">Indicadores macro <span class="info-ic" title="Selic e IPCA 12m vêm ao vivo do Banco Central (série SGS); a expectativa de Selic vem do Boletim Focus. Atualizados automaticamente ao abrir o app.">?</span></div>
+      <div class="bx" id="rfMacro"></div>
+    </div>
   </div>
 </section>
 
@@ -964,9 +967,9 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <table data-tbl="et">
           <thead><tr>
             <th class="sort" data-col="tk" data-t="et">ETF</th>
-            <th class="r sort" data-col="inv" data-t="et">Inv. (USD)</th><th class="r">Inv. (BRL)</th>
+            <th class="r sort" data-col="inv" data-t="et">Investido <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r">Cotação</th>
-            <th class="r sort" data-col="atual" data-t="et">Atual (USD)</th><th class="r">Atual (BRL)</th>
+            <th class="r sort" data-col="atual" data-t="et">Valor Atual <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="et">Lucro</th>
             <th class="r" data-col="pm">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra (Inv. ÷ Cotas) — recalculado automaticamente sempre que você adiciona mais cotas do mesmo ETF.">?</span></th>
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pelo ETF nos últimos 12 meses, em relação ao preço atual da cota.">?</span></th>
@@ -996,9 +999,9 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <table data-tbl="sk">
           <thead><tr>
             <th class="sort" data-col="tk" data-t="sk">Stock</th>
-            <th class="r sort" data-col="inv" data-t="sk">Inv. (USD)</th><th class="r">Inv. (BRL)</th>
+            <th class="r sort" data-col="inv" data-t="sk">Investido <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r">Cotação</th>
-            <th class="r sort" data-col="atual" data-t="sk">Atual (USD)</th><th class="r">Atual (BRL)</th>
+            <th class="r sort" data-col="atual" data-t="sk">Valor Atual <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="sk">Lucro</th>
             <th class="r" data-col="pm">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra (Inv. ÷ Cotas) — recalculado automaticamente sempre que você adiciona mais ações da mesma Stock.">?</span></th>
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pela empresa nos últimos 12 meses, em relação ao preço atual da ação.">?</span></th>
@@ -1667,6 +1670,20 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v18.8",d:"Jun/2026",items:[
+    "CORRIGIDO: linha TOTAL de ETFs e Stocks estava desalinhada — 'Cotação' mostrava a soma de Atual (USD) por engano, e Atual (BRL) ficava vazio",
+    "ETFs e Stocks: colunas de USD e BRL foram unificadas — agora é 1 coluna 'Investido' e 1 'Valor Atual', com o dólar em destaque e o real logo abaixo (mesmo padrão que já existia em Lucro). Menos colunas, menos confusão",
+    "Fonte aumentada em todas as tabelas — corpo, cabeçalho e principalmente a linha de TOTAL",
+  ]},
+  {v:"v18.7",d:"Jun/2026",items:[
+    "Renda Fixa: removida a seção 'Cenários de saída' (estática, não agregava)",
+    "Renda Fixa: removido 'Tendência' dos indicadores macro (era texto fixo, não uma métrica real)",
+    "Renda Fixa: novo gráfico de rosca — Distribuição por tipo de título (Tesouro IPCA+, CDB, etc.)",
+    "Busca de proventos agora avisa direito quando é falha de conexão, em vez de dizer 'nenhum encontrado' quando na verdade nem conseguiu tentar",
+  ]},
+  {v:"v18.6",d:"Jun/2026",items:[
+    "CORRIGIDO BUG GRAVE: se a atualização de preços falhasse de um jeito inesperado, o botão '↻ Atualizar' ficava travado pra sempre (só voltava com F5). Agora todo o processo está protegido — o botão sempre volta ao normal, mesmo em erro total",
+  ]},
   {v:"v18.5",d:"Jun/2026",items:[
     "Adicionado um 4º proxy de contorno de CORS (codetabs) — o corsproxy.io estava devolvendo 403, provavelmente por excesso de uso hoje. Mais uma opção na fila aumenta a chance de passar",
   ]},
@@ -1954,16 +1971,10 @@ const D={
     {s:"Tecnologia",teto:40},{s:"Financeiro",teto:30},{s:"Saúde",teto:15},{s:"Consumo",teto:10},
     {s:"Industrial",teto:100},{s:"Energia",teto:100},{s:"Outros",teto:100},
   ],
-  rf:[{titulo:"Tesouro IPCA+ 2050",cotas:8.24,inv:7050.33,bruto:7183.30,taxa:"7,06% a.a."}],
+  rf:[{titulo:"Tesouro IPCA+ 2050",tipo:"Tesouro IPCA+",cotas:8.24,inv:7050.33,bruto:7183.30,taxa:"7,06% a.a."}],
   rfMacro:[
     {k:"Selic",v:"14,25% a.a."},{k:"IPCA 12m",v:"5,17%"},
     {k:"Expec. Selic 2026",v:"≈ 11%"},
-    {k:"Tendência",v:"Queda → valoriza"},
-  ],
-  rfCen:[
-    {s:"Queda de juros",e:"Título valoriza",a:"Pode vender com lucro"},
-    {s:"Alta de juros",e:"Desvaloriza temporariamente",a:"Segurar até vencimento"},
-    {s:"Juros estáveis",e:"Rende IPCA + taxa",a:"Manter tranquilamente"},
   ],
   provBR:[
     {m:"Nov/25",v:4.15},{m:"Dez/25",v:31.10},{m:"Jan/26",v:11.42},
@@ -2201,6 +2212,7 @@ async function refreshPrices(manual=false){
   if(_refreshing) return;
   _refreshing = true;
   if(manual) showRefreshToast();
+  try{
 
   const tksAcoes=D.acoes.map(a=>a.tk);
   const tksFiis =D.fiis.map(f=>f.tk);
@@ -2309,8 +2321,14 @@ async function refreshPrices(manual=false){
       : 'Sem conexão — usando snapshot';
   }
   render();
-  if(manual) hideRefreshToast();
-  _refreshing = false;
+  } catch(fatalErr) {
+    console.error('refreshPrices erro inesperado:', fatalErr);
+    const el=document.getElementById('lastUpd');
+    if(el) el.textContent = 'Erro ao atualizar: ' + fatalErr.message;
+  } finally {
+    if(manual) hideRefreshToast();
+    _refreshing = false;
+  }
 }
 
 function updMkt(key,val,chPct){
@@ -2756,32 +2774,28 @@ const COLUNAS_REGISTRO = {
   ],
   et: [
     {idx:1, label:"ETF", obrigatoria:true},
-    {idx:2, label:"Inv. (USD)"},
-    {idx:3, label:"Inv. (BRL)"},
-    {idx:4, label:"Cotação"},
-    {idx:5, label:"Atual (USD)"},
-    {idx:6, label:"Atual (BRL)"},
-    {idx:7, label:"Lucro"},
-    {idx:8, label:"Preço Médio"},
-    {idx:9, label:"DY%"},
-    {idx:10, label:"% Teto Individual"},
-    {idx:11, label:"% Teto Setor"},
-    {idx:12, label:"Excluir", obrigatoria:true},
+    {idx:2, label:"Investido"},
+    {idx:3, label:"Cotação"},
+    {idx:4, label:"Valor Atual"},
+    {idx:5, label:"Lucro"},
+    {idx:6, label:"Preço Médio"},
+    {idx:7, label:"DY%"},
+    {idx:8, label:"% Teto Individual"},
+    {idx:9, label:"% Teto Setor"},
+    {idx:10, label:"Excluir", obrigatoria:true},
   ],
   sk: [
     {idx:1, label:"Stock", obrigatoria:true},
-    {idx:2, label:"Inv. (USD)"},
-    {idx:3, label:"Inv. (BRL)"},
-    {idx:4, label:"Cotação"},
-    {idx:5, label:"Atual (USD)"},
-    {idx:6, label:"Atual (BRL)"},
-    {idx:7, label:"Lucro"},
-    {idx:8, label:"Preço Médio"},
-    {idx:9, label:"DY%"},
-    {idx:10, label:"% Teto Individual"},
-    {idx:11, label:"% Teto Setor"},
-    {idx:12, label:"Objetivo"},
-    {idx:13, label:"Excluir", obrigatoria:true},
+    {idx:2, label:"Investido"},
+    {idx:3, label:"Cotação"},
+    {idx:4, label:"Valor Atual"},
+    {idx:5, label:"Lucro"},
+    {idx:6, label:"Preço Médio"},
+    {idx:7, label:"DY%"},
+    {idx:8, label:"% Teto Individual"},
+    {idx:9, label:"% Teto Setor"},
+    {idx:10, label:"Objetivo"},
+    {idx:11, label:"Excluir", obrigatoria:true},
   ],
   cr: [
     {idx:1, label:"Moeda", obrigatoria:true},
@@ -3280,13 +3294,39 @@ function renderRF(){
     d.innerHTML=`<span style="font-size:11px;color:var(--muted)">${m.k}</span><span style="font-family:var(--mono);font-size:13px">${m.v}</span>`;
     mc.appendChild(d);
   });
-  const ce=g("rfCen"); ce.innerHTML="";
-  D.rfCen.forEach(c=>{
-    const el=document.createElement("div");
-    el.style.cssText="background:var(--card);border:1px solid var(--border);border-radius:var(--rm);padding:9px 11px;margin-bottom:7px";
-    el.innerHTML=`<div style="font-size:12px;font-weight:500">${c.s}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${c.e} → <em>${c.a}</em></div>`;
-    ce.appendChild(el);
-  });
+
+  // Distribuição por tipo de título — mesmo padrão visual usado em Setor/Proventos
+  const dc=g("rfDonut");
+  if(dc){
+    const mapTipo={};
+    D.rf.forEach(r=>{ const t=r.tipo||r.titulo.split(" ")[0]; mapTipo[t]=(mapTipo[t]||0)+r.bruto; });
+    const total=Object.values(mapTipo).reduce((a,b)=>a+b,0);
+    if(!total){
+      dc.innerHTML=`<div style="font-size:11px;color:var(--muted);text-align:center;padding:18px 0">Sem títulos cadastrados ainda.</div>`;
+    } else {
+      const entradas=Object.entries(mapTipo).sort((a,b)=>b[1]-a[1]);
+      const R=46,cx=58,cy=58,sw=15,circ=2*Math.PI*R;
+      let arcs=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="${sw}"/>`;
+      let off=circ/4;
+      entradas.forEach(([t,v],i)=>{
+        const pct=v/total*100, arc=pct/100*circ, gap=circ-arc;
+        arcs+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${SETOR_PALETTE[i%SETOR_PALETTE.length]}" stroke-width="${sw}"
+          stroke-dasharray="${arc.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"/>`;
+        off-=arc;
+      });
+      const legend=entradas.map(([t,v],i)=>`
+        <div class="sdon-row">
+          <span class="sdon-dot" style="background:${SETOR_PALETTE[i%SETOR_PALETTE.length]}"></span>
+          <span class="sdon-n">${t}</span>
+          <span class="sdon-val" style="color:var(--text)">${(v/total*100).toFixed(1)}%</span>
+          <span class="sdon-sep"></span><span class="sdon-cap"></span><span class="sdon-warn"></span>
+        </div>`).join("");
+      dc.innerHTML = `<div class="sdon-wrap">
+        <svg width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}" style="flex-shrink:0">${arcs}</svg>
+        <div class="sdon-legend">${legend}</div>
+      </div>`;
+    }
+  }
 }
 
 /* Indicadores macro de Renda Fixa — Selic e IPCA 12m via BCB/SGS (oficial),
@@ -3357,7 +3397,7 @@ async function confirmarAddRF(){
   let titulo=tipo;
   if(venc) titulo+=" "+venc;
   if(banco && !tipo.startsWith("Tesouro")) titulo+=" — "+banco;
-  D.rf.push({titulo,cotas:1,inv,bruto,taxa});
+  D.rf.push({titulo,tipo,cotas:1,inv,bruto,taxa});
   closeAddRF();
   render();
   if(currentUser){
@@ -3396,9 +3436,9 @@ function renderETFs(sc,sd){
     const tetoSetorAtual = getTetoSetor("ETFs", e.fun, tetoET?tetoET.teto:30);
     const pmET = e.cotas>0 ? e.inv/e.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
-      <td class="r">${usd(e.inv)}</td><td class="r" style="color:var(--muted)">${brl(e.inv*usdBRL,2)}</td>
+      <td class="r">${usd(e.inv)}<div class="usd2">${brl(e.inv*usdBRL,2)}</div></td>
       <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":`color:${eLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`):"color:var(--muted)"}" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${eLive?usd(eLive)+(isPriceStale(e.tk)?' <span style="font-size:9px">⚠︎</span>':""):"—"}</td>
-      <td class="r">${usd(e.atual)}</td><td class="r" style="color:var(--muted)">${brl(e.atual*usdBRL,2)}</td>
+      <td class="r">${usd(e.atual)}<div class="usd2">${brl(e.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),2)}</div></td>
       <td class="r" style="font-family:var(--mono);color:var(--muted)">${usd(pmET)}</td>
@@ -3411,9 +3451,9 @@ function renderETFs(sc,sd){
   const tI=rows.reduce((s,e)=>s+e.inv,0), tA=rows.reduce((s,e)=>s+e.atual,0), tL=rows.reduce((s,e)=>s+e.lucro,0);
   addTotals("etTbl",[
     {label:"TOTAL"},
-    {val:usdTotal(tI),r:true},{val:brlTotal(tI*usdBRL,2),r:true},
-    {val:usdTotal(tA),r:true},{val:brlTotal(tA*usdBRL,2),r:true},
+    {val:`${usdTotal(tI)}<div class="usd2">${brlTotal(tI*usdBRL,2)}</div>`,r:true},
     {val:"",r:true},
+    {val:`${usdTotal(tA)}<div class="usd2">${brlTotal(tA*usdBRL,2)}</div>`,r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usdTotal(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brlTotal(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
     {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
@@ -3448,9 +3488,9 @@ function renderStocks(sc,sd){
     const tetoSetorAtual = getTetoSetor("Stocks", s.setor, tetoSK?tetoSK.teto:30);
     const pmSK = s.cotas>0 ? s.inv/s.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
-      <td class="r">${usd(s.inv)}</td><td class="r" style="color:var(--muted)">${brl(s.inv*usdBRL,2)}</td>
+      <td class="r">${usd(s.inv)}<div class="usd2">${brl(s.inv*usdBRL,2)}</div></td>
       <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":`color:${sLiveChg?"var(--pos)":"var(--neg)"};font-weight:600`):"color:var(--muted)"}" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${sLive?usd(sLive)+(isPriceStale(s.tk)?' <span style="font-size:9px">⚠︎</span>':""):"—"}</td>
-      <td class="r">${usd(s.atual)}</td><td class="r" style="color:var(--muted)">${brl(s.atual*usdBRL,2)}</td>
+      <td class="r">${usd(s.atual)}<div class="usd2">${brl(s.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
       <td class="r" style="font-family:var(--mono);color:var(--muted)">${usd(pmSK)}</td>
@@ -3464,9 +3504,9 @@ function renderStocks(sc,sd){
   const tI=rows.reduce((s,s2)=>s+s2.inv,0), tA=rows.reduce((s,s2)=>s+s2.atual,0), tL=rows.reduce((s,s2)=>s+s2.lucro,0);
   addTotals("skTbl",[
     {label:"TOTAL"},
-    {val:usdTotal(tI),r:true},{val:brlTotal(tI*usdBRL,2),r:true},
-    {val:usdTotal(tA),r:true},{val:brlTotal(tA*usdBRL,2),r:true},
+    {val:`${usdTotal(tI)}<div class="usd2">${brlTotal(tI*usdBRL,2)}</div>`,r:true},
     {val:"",r:true},
+    {val:`${usdTotal(tA)}<div class="usd2">${brlTotal(tA*usdBRL,2)}</div>`,r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usdTotal(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brlTotal(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
     {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
@@ -3555,11 +3595,15 @@ function renderProv(){
 async function buscarProventosManual(){
   const btn=g("btnBuscarProv");
   if(btn){ btn.disabled=true; btn.textContent="Buscando…"; }
-  await buscarProventosAutomaticos();
+  const {sucesso,falhas} = await buscarProventosAutomaticos();
   renderProv();
   if(btn){
     btn.disabled=false; btn.textContent="🔄 Buscar proventos agora";
-    if(!window._provSugeridos.length) alert("Nenhum provento novo encontrado pra seus ativos no momento.");
+    if(sucesso===0 && falhas>0){
+      alert(`Não foi possível buscar agora — problema de conexão com a fonte de dados (${falhas} de ${falhas} tentativas falharam). Tenta de novo em alguns minutos.`);
+    } else if(!window._provSugeridos.length){
+      alert("Nenhum provento novo encontrado pra seus ativos no momento.");
+    }
   }
 }
 
@@ -3570,14 +3614,17 @@ window._provSugeridos = window._provSugeridos || []; // {tk,tipo,pg,vc,cotas,tot
 // específico falhar ou vier com payload grande, não derruba a atualização de preço.
 async function buscarProventosAutomaticos(){
   const tks=[...D.acoes.map(a=>a.tk), ...D.fiis.map(f=>f.tk)];
+  let sucesso=0, falhas=0;
   await Promise.allSettled(tks.map(async tk=>{
     try{
       const url=`https://brapi.dev/api/quote/${tk}?dividends=true&token=${BRAPI_TOKEN}`;
       const j=await corsGetJSON(url);
+      sucesso++;
       const q=j.results&&j.results[0];
       if(q?.dividendsData?.cashDividends?.length) coletarProventosSugeridos(tk, q.dividendsData.cashDividends);
-    }catch(e){ console.warn(`Proventos: falhou pra ${tk}:`,e.message); }
+    }catch(e){ falhas++; console.warn(`Proventos: falhou pra ${tk}:`,e.message); }
   }));
+  return {sucesso,falhas};
 }
 
 function coletarProventosSugeridos(tk, cashDividends){
