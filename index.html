@@ -223,11 +223,6 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .hero{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 18px 13px}
 .hero-row{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap}
 .hero-left{flex-shrink:0}
-.hero-pills{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;margin-top:2px;flex:1}
-.hpill{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
-  padding:10px 16px;min-width:130px}
-.hpill-lbl{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
-.hpill-val{display:block;font-family:var(--mono);font-size:17px;font-weight:600}
 .eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:2px}
 .patr{font-family:var(--mono);font-size:36px;font-weight:500;letter-spacing:-.04em;line-height:1}
 .patr-var-row{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
@@ -422,6 +417,9 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 /* ─── ALLOC ──────────────────────────── */
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:12px}
+.reserva-card{background:var(--bg2);border:1px dashed var(--border3);border-radius:var(--r);
+  padding:14px 16px;margin-top:16px}
+.reserva-card .agrid{margin-bottom:0}
 .acard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;
   transition:border-color .15s,transform .15s;cursor:pointer}
 .acard:hover{border-color:var(--border3);transform:translateY(-1px)}
@@ -819,20 +817,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <span class="snap-chip" id="snapChip" title="'Ao vivo' significa que os preços foram atualizados agora há pouco direto da fonte de cotações. 'Dados salvos' significa que está mostrando o último preço salvo, porque não foi possível buscar uma cotação mais recente no momento.">aguardando…</span>
       </div>
     </div>
-    <div class="hero-pills" id="heroPills">
-      <div class="hpill">
-        <span class="hpill-lbl">Lucro total</span>
-        <span class="hpill-val" id="hpLucro">—</span>
-      </div>
-      <div class="hpill">
-        <span class="hpill-lbl">Proventos (12M)</span>
-        <span class="hpill-val" id="hpProv">—</span>
-      </div>
-      <div class="hpill">
-        <span class="hpill-lbl">Rentabilidade</span>
-        <span class="hpill-val" id="hpRent">—</span>
-      </div>
-    </div>
   </div>
   <div class="meta-row">
     <span class="meta-lbl"><strong id="metaLbl">—</strong> <span class="info-ic" title="Sua meta de patrimônio investido (excluindo Reserva de Emergência e itens fora da meta). A barra ao lado mostra seu progresso até chegar lá. Edite em ⚙ Metas.">?</span></span>
@@ -906,12 +890,14 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </table>
   </div>
 
-  <div class="st" style="margin-top:16px;display:flex;align-items:center;justify-content:space-between">
-    <span>Reserva e caixa <span class="info-ic" title="Não entram na meta de investimentos nem no patrimônio investido — são reservas separadas.">?</span></span>
-    <button class="refbtn" onclick="openAddExtraItem()" style="font-size:11px">+ Adicionar item</button>
+  <div class="reserva-card">
+    <div class="st" style="margin-top:0;display:flex;align-items:center;justify-content:space-between">
+      <span>🔒 Reserva e caixa <span class="info-ic" title="Não entram na meta de investimentos nem no patrimônio investido — são reservas separadas.">?</span></span>
+      <button class="refbtn" onclick="openAddExtraItem()" style="font-size:11px">+ Adicionar item</button>
+    </div>
+    <div class="agrid agrid-extra" id="allocExtra"></div>
+    <div id="extraTotalBar" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:right"></div>
   </div>
-  <div class="agrid agrid-extra" id="allocExtra"></div>
-  <div id="extraTotalBar" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:right"></div>
 </section>
 
 <!-- AÇÕES BR -->
@@ -1759,6 +1745,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v20.9",d:"Jun/2026",items:[
+    "Removidas as pílulas do cabeçalho — Rentabilidade era idêntica à Variação, e Proventos (12M) duplicava o card 'Proventos' que já existia. Fica só o essencial",
+    "Lucro Total agora é um card na fileira, no mesmo formato visual dos outros (Ações, FIIs, etc.) — não mais um elemento solto",
+    "Metas de Alocação também virou card na fileira — mostra quantas classes estão dentro da meta, clica e rola até a tabela completa (que continua na home, não escondida)",
+    "Reserva e Caixa ganhou visual de card próprio, com borda tracejada — sinaliza visualmente que não entra no patrimônio investido",
+  ]},
   {v:"v20.8",d:"Jun/2026",items:[
     "CORRIGIDO BUG GRAVE (regressão da v20.7): sobrou código tentando escrever em 3 elementos que eu tinha removido da tela — isso quebrava a função de render() inteira no meio, travando tudo que vinha depois (Metas de Alocação ficava vazia, pílulas do cabeçalho ficavam em '—', nada atualizava)",
   ]},
@@ -2808,12 +2800,6 @@ function render(){
   const faltaEl=g("hFalta");
   faltaEl.textContent = !meta ? "Configure em Metas ⚙" : metaAtingida ? "🎉 Meta atingida!" : "Faltam "+brl(falta,2);
   faltaEl.className = "falta-pill"+(metaAtingida?" complete":"");
-  const totProvFII12M=D.fiis.reduce((s,f)=>s+f.prov,0);
-  const hpL=g("hpLucro"); hpL.textContent=sgn(lucroTotalPortfolio)+brl(Math.abs(lucroTotalPortfolio),2);
-  hpL.style.color = lucroTotalPortfolio>=0?"var(--pos)":"var(--neg)";
-  g("hpProv").textContent=brl(totProvFII12M,2);
-  const hpR=g("hpRent"); hpR.textContent=(variacaoPct>=0?'+':'')+variacaoPct.toFixed(2)+"%";
-  hpR.style.color = variacaoPct>=0?"var(--pos)":"var(--neg)";
   g("metaPct").textContent= !meta ? "—" : pct>=100 ? "100%+" : pct.toFixed(1)+"%";
   const metaAtiva = (D.metas.length && D.metas[D.activeMeta]) ? D.metas[D.activeMeta] : null;
   g("metaLbl").textContent= metaAtiva ? metaAtiva.lbl : "Meta não configurada";
@@ -2825,7 +2811,7 @@ function render(){
   const fill=document.createElement("div"); fill.className="mfill"+(metaAtingida?" complete":""); fill.style.width=fillPct.toFixed(1)+"%";
   bar.appendChild(fill);
 
-  renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis);
+  renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis,lucroTotalPortfolio);
   renderCripto();
   renderAlloc();
   renderMetasAloc();
@@ -2842,7 +2828,7 @@ function g(id){return document.getElementById(id)}
 function setHS(id,v,dec2){const el=g(id);if(el){el.textContent=sgn(v)+brl(Math.abs(v),dec2?2:0);el.className="hs "+(v>=0?"pos":"neg")}}
 
 /* donuts strip */
-function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis){
+function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis,lucroTotalPortfolio){
   const strip=g("dstrip"); strip.innerHTML="";
   const lucroETF2=D.etfs.reduce((s,e)=>s+e.lucro,0)*usdBRL;
   const lucroSTK2=D.stocks.reduce((s,s2)=>s+s2.lucro,0)*usdBRL;
@@ -2854,6 +2840,15 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
   const lucroRF=D.rf.reduce((s,r)=>s+((r.bruto||0)-(r.inv||0)),0);
   const lucroTotal2=lucroAcoes+lucroFiis+lucroETF2+lucroSTK2+lucroCripto2;
   const pctOf=v=> meta>0 ? v/meta*100 : 0; // evita divisão por zero quando não há meta configurada
+  // Resumo de Metas de Alocação — quantas classes estão dentro da margem aceitável
+  const {metas:metasResumo, classes:classesResumo, total:totalResumo} = computeMetasAlocData();
+  const totalMetaConfigResumo = Object.values(metasResumo).reduce((a,b)=>a+b,0);
+  let classesNaMeta=0;
+  classesResumo.forEach(c=>{
+    const pctC = totalResumo>0 ? c.val/totalResumo*100 : 0;
+    const tier = gapTier(pctC, metasResumo[c.id]||0);
+    if(tier.label==="Na meta") classesNaMeta++;
+  });
   const items=[
     {name:"Ações BR",val:brl(totAcoes,2),
       sub2:sgn(lucroAcoes)+brl(Math.abs(lucroAcoes),2),sub2cls:lucroAcoes>=0?"pos":"neg",
@@ -2874,6 +2869,13 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
       pct:Math.min(100,pctOf(totCripto)),c:"#F7931A",tab:"cripto"},
     {name:"Proventos",val:brl(totProvFII,2),
       sub:"acumulado FIIs",sub2cls:"gold",pct:Math.min(100,totProvFII/500*100),c:"#22C55E",tab:"prov"},
+    {name:"Lucro Total",val:sgn(lucroTotalPortfolio)+brl(Math.abs(lucroTotalPortfolio),2),
+      sub:"todas as classes",pct:lucroTotalPortfolio>=0?100:0,
+      c:lucroTotalPortfolio>=0?"#22C55E":"#EF4444",tab:"visao"},
+    {name:"Metas de Alocação",val:totalMetaConfigResumo===0?"—":`${classesNaMeta}/${classesResumo.length}`,
+      sub:totalMetaConfigResumo===0?"não configurada":"classes na meta",sub2cls:"gold",
+      pct:classesResumo.length>0?(classesNaMeta/classesResumo.length*100):0,c:"var(--gold)",tab:"visao",
+      onclick:()=>{goTab('visao');setTimeout(()=>document.getElementById('metasAlocTbody')?.closest('section')?.scrollIntoView({behavior:'smooth',block:'start'}),80);}},
   ];
   items.forEach(it=>{
     const p=Math.min(100,it.pct), R=22, circ=2*Math.PI*R, dash=circ*p/100, gap=circ-dash, sz=R*2+8, cxy=R+4;
@@ -2886,7 +2888,7 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
     </svg>`;
     const card=document.createElement("div"); card.className="dcard"+(it.name==="Carteira Total"?" dcard-hero":"");
     card.dataset.tab=it.tab;
-    card.onclick=()=>{ goTab(it.tab); };
+    card.onclick = it.onclick || (()=>{ goTab(it.tab); });
     card.innerHTML=svg+`<div>
       <div class="dn-name" style="color:${it.c}">${it.name}</div>
       <div class="dn-val">${it.val}</div>
