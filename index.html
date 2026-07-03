@@ -314,6 +314,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .dn-sub{font-size:10px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
 .dn-sub.pos{color:var(--pos)}.dn-sub.neg{color:var(--neg)}.dn-sub.gold{color:var(--gold)}
 .cot-live{color:var(--blue);font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.cot-live.up{color:var(--pos)}
+.cot-live.dn{color:var(--neg)}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);flex-shrink:0;animation:liveDotPulse 1.8s ease-in-out infinite}
 @keyframes liveDotPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.45)}50%{opacity:.65;box-shadow:0 0 0 4px rgba(34,197,94,0)}}
 .dcard-info .dn-sub+.dn-sub{margin-top:1px}
@@ -1818,6 +1820,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v23.0",d:"Jun/2026",items:[
+    "NOVO DIFERENCIAL: Cotação agora fica verde quando sobe e vermelha quando desce, comparando com o último preço confirmado — igual corretora de verdade. A bolinha pulsando continua marcando 'é dado vivo', a cor é sobre a direção do movimento (fica azul enquanto não houver histórico de comparação ainda)",
+  ]},
   {v:"v22.9",d:"Jun/2026",items:[
     "Ibovespa/Dólar redesenhados de vez: layout de 2 linhas (rótulo em cima, valor + variação embaixo), estilo ticker de mercado — o destaque colorido fica só na porcentagem de variação (badge pequeno, verde/vermelho), não mais o item inteiro dentro de uma caixa",
   ]},
@@ -2357,6 +2362,16 @@ function savePriceCache(tk, price){
     localStorage.setItem(PRICE_CACHE_KEY, JSON.stringify(store));
   }catch(e){}
 }
+// Compara o preço novo com o que já tínhamos em memória ANTES de sobrescrever — assim dá pra saber
+// se subiu ou desceu desde a última confirmação, não desde o início da sessão.
+window._priceDirection = window._priceDirection || {};
+function trackPriceDirection(tk, newPrice){
+  const oldPrice = prices[tk];
+  if(oldPrice!=null && newPrice!==oldPrice){
+    window._priceDirection[tk] = newPrice > oldPrice ? "up" : "dn";
+  }
+  // preço igual ou sem preço anterior: mantém a direção que já tinha (não reseta pra neutro à toa)
+}
 // Carrega o último preço confirmado de cada ticker (sessão anterior) — só preenche `prices`,
 // NÃO marca como atualizado agora, então continua aparecendo como "desatualizado" até
 // uma busca ao vivo de verdade confirmar de novo.
@@ -2608,6 +2623,7 @@ async function refreshPrices(manual=false){
           updMkt('ibov',q.regularMarketPrice.toLocaleString('pt-BR',{maximumFractionDigits:0}),q.regularMarketChangePercent||0);
           ibovOK=true;
         } else {
+          trackPriceDirection(q.symbol, q.regularMarketPrice);
           prices[q.symbol]=q.regularMarketPrice; brOK++;
           window._priceUpdatedAt[q.symbol]=Date.now();
           savePriceCache(q.symbol, q.regularMarketPrice);
@@ -2650,6 +2666,7 @@ async function refreshPrices(manual=false){
         const j=await corsGetJSON(url);
         const m=j?.chart?.result?.[0]?.meta;
         if(m?.regularMarketPrice){
+          trackPriceDirection(tk, m.regularMarketPrice);
           prices[tk]=m.regularMarketPrice;
           window._priceUpdatedAt[tk]=Date.now();
           savePriceCache(tk, m.regularMarketPrice);
@@ -2690,6 +2707,7 @@ async function refreshPrices(manual=false){
       const m=j?.chart?.result?.[0]?.meta;
       if(m?.regularMarketPrice){
         const p=m.regularMarketPrice,prev=m.chartPreviousClose||0;
+        trackPriceDirection(tk, p);
         prices[tk]=p;
         window._priceUpdatedAt[tk]=Date.now();
         savePriceCache(tk, p);
@@ -3758,7 +3776,7 @@ function renderAcoes(totAcoes,sc,sd){
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(a.tk)}<div><div class="tk">${a.tk}</div><div class="co">${a.co}</div></div></div></td>
       <td class="r" style="${hasPrice(a.tk)?(isPriceStale(a.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${hasPrice(a.tk)&&isPriceStale(a.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">
-        ${!hasPrice(a.tk)?"aguard.":isPriceStale(a.tk)?brl(a.price,2)+' <span style="font-size:10px" title="Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${brl(a.price,2)}</span>`}</td>
+        ${!hasPrice(a.tk)?"aguard.":isPriceStale(a.tk)?brl(a.price,2)+' <span style="font-size:10px" title="Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas">⚠︎</span>':`<span class="cot-live ${window._priceDirection[a.tk]||''}"><span class="live-dot"></span>${brl(a.price,2)}</span>`}</td>
       <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${brl(a.pm,2)}</td>
       <td class="r" style="white-space:nowrap">${brl(a.tot,2)}</td>
       <td class="r" style="white-space:nowrap">${brl(a.totb3,2)}</td>
@@ -3812,7 +3830,7 @@ function renderFiis(totFiis,sc,sd){
     const tetoSetorAtual = getTetoSetor("FIIs", f.seg, tetoFII?tetoFII.teto:20);
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(f.tk)}<div><div class="tk">${f.tk}</div><div class="co">${f.seg}</div></div></div></td>
-      <td class="r" style="${isPriceStale(f.tk)?"color:var(--muted)":""};white-space:nowrap" title="${isPriceStale(f.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${isPriceStale(f.tk)?brl(f.price,2)+' <span style="font-size:10px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${brl(f.price,2)}</span>`}</td>
+      <td class="r" style="${isPriceStale(f.tk)?"color:var(--muted)":""};white-space:nowrap" title="${isPriceStale(f.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${isPriceStale(f.tk)?brl(f.price,2)+' <span style="font-size:10px">⚠︎</span>':`<span class="cot-live ${window._priceDirection[f.tk]||''}"><span class="live-dot"></span>${brl(f.price,2)}</span>`}</td>
       <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${brl(f.pm,2)}</td>
       <td class="r" style="white-space:nowrap">${brl(f.tot,2)}</td><td class="r" style="white-space:nowrap">${brl(f.totb3,2)}</td>
       <td class="r" style="color:${f.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">${sgn(f.lucro)}${brl(Math.abs(f.lucro),2)}</td>
@@ -4012,7 +4030,7 @@ function renderETFs(sc,sd){
     const tetoSetorAtual = getTetoSetor("ETFs", e.fun, tetoET?tetoET.teto:30);
     const pmET = e.cotas>0 ? e.inv/e.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
-      <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!eLive?"—":isPriceStale(e.tk)?usd(eLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${usd(eLive)}</span>`}</td>
+      <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!eLive?"—":isPriceStale(e.tk)?usd(eLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live ${window._priceDirection[e.tk]||''}"><span class="live-dot"></span>${usd(eLive)}</span>`}</td>
       <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${e.cotas>0?usd(pmET):"—"}</td>
       <td class="r" style="white-space:nowrap">${usd(e.inv)}<div class="usd2">${brl(e.inv*usdBRL,2)}</div></td>
       <td class="r" style="white-space:nowrap">${usd(e.atual)}<div class="usd2">${brl(e.atual*usdBRL,2)}</div></td>
@@ -4067,7 +4085,7 @@ function renderStocks(sc,sd){
     const tetoSetorAtual = getTetoSetor("Stocks", s.setor, tetoSK?tetoSK.teto:30);
     const pmSK = s.cotas>0 ? s.inv/s.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
-      <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!sLive?"—":isPriceStale(s.tk)?usd(sLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live"><span class="live-dot"></span>${usd(sLive)}</span>`}</td>
+      <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!sLive?"—":isPriceStale(s.tk)?usd(sLive)+' <span style="font-size:9px">⚠︎</span>':`<span class="cot-live ${window._priceDirection[s.tk]||''}"><span class="live-dot"></span>${usd(sLive)}</span>`}</td>
       <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${s.cotas>0?usd(pmSK):"—"}</td>
       <td class="r" style="white-space:nowrap">${usd(s.inv)}<div class="usd2">${brl(s.inv*usdBRL,2)}</div></td>
       <td class="r" style="white-space:nowrap">${usd(s.atual)}<div class="usd2">${brl(s.atual*usdBRL,2)}</div></td>
