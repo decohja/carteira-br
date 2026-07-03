@@ -294,7 +294,9 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   animation:mcelebrate 1.6s ease-in-out infinite}
 @keyframes mcelebrate{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.35)}50%{box-shadow:0 0 8px 2px rgba(34,197,94,.45)}}
 .meta-pct-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
-.meta-gap-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.meta-gap-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle}
+.gap-legenda{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.gap-legenda span{display:flex;align-items:center}
 .meta-pct{font-family:var(--mono);font-size:12px;font-weight:500;white-space:nowrap}
 .meta-val-sub{font-size:11.5px;color:var(--muted);font-family:var(--mono);white-space:nowrap;text-align:center;width:100%}
 .meta-cog{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);
@@ -966,12 +968,17 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
           <th class="r" style="font-size:11px">Atual (R$)</th>
           <th class="r" style="font-size:11px">% Atual</th>
           <th class="r" style="font-size:11px">% Meta</th>
-          <th class="r" style="font-size:11px">Deveria Ter</th>
-          <th class="r" style="font-size:11px">Gap</th>
+          <th class="r" style="font-size:11px">Deveria Ter (R$)</th>
+          <th class="r" style="font-size:11px">Diferença</th>
         </tr>
       </thead>
       <tbody id="metasAlocTbody"></tbody>
     </table>
+  </div>
+  <div class="gap-legenda">
+    <span><span class="meta-gap-dot" style="background:var(--neg);margin:0 5px 0 0"></span>Abaixo da meta</span>
+    <span><span class="meta-gap-dot" style="background:var(--muted);margin:0 5px 0 0"></span>OK — dentro da tolerância</span>
+    <span><span class="meta-gap-dot" style="background:var(--gold);margin:0 5px 0 0"></span>Acima da meta</span>
   </div>
 </section>
 
@@ -1835,6 +1842,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v23.7",d:"Jun/2026",items:[
+    "'Gap' renomeado pra 'Diferença' — nome mais claro em português",
+    "'Deveria Ter' ganhou '(R$)' no final, deixando explícito que é valor em reais",
+    "Bolinha colorida da coluna Diferença movida pro final do valor (alinha melhor com o resto da tabela)",
+    "Nova legenda embaixo da tabela de Metas de Alocação explicando as 3 cores (abaixo/OK/acima)",
+  ]},
   {v:"v23.6",d:"Jun/2026",items:[
     "GAP simplificado pra 3 níveis com tolerância de ±3 pontos percentuais: vermelho (abaixo), OK cinza (dentro da tolerância), dourado (acima) — o valor em R$ continua sempre visível, só a cor muda",
   ]},
@@ -3041,7 +3054,7 @@ function renderMetasAloc(){
       </td>
       <td class="r meta-devia" style="font-family:var(--mono)">${brl(devia,0)}</td>
       <td class="r meta-gap" style="font-family:var(--mono);color:${tier.color}" title="${tier.label}">
-        <span class="meta-gap-dot" style="background:${tier.dot}"></span>${gapPrefix}${brl(gap,0)}</td>
+        ${gapPrefix}${brl(gap,0)}<span class="meta-gap-dot" style="background:${tier.dot}"></span></td>
     </tr>`;
   }).join("") + `<tr style="border-top:1px solid var(--border);font-weight:600">
     <td class="l" style="color:var(--muted);font-size:11px">TOTAL</td>
@@ -3064,7 +3077,7 @@ function recalcMetaRow(inp){
   row.querySelector(".meta-devia").textContent = brl(devia,0);
   const gapEl = row.querySelector(".meta-gap");
   const dot = gapEl.querySelector(".meta-gap-dot");
-  gapEl.childNodes[gapEl.childNodes.length-1].textContent = (gap>=0?"+":"-")+brl(gap,0);
+  gapEl.childNodes[0].textContent = (gap>=0?"+":"-")+brl(gap,0);
   if(dot) dot.style.background = tier.dot;
   gapEl.style.color = tier.color;
   gapEl.title = tier.label;
