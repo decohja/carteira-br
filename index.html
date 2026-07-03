@@ -227,6 +227,17 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .hero{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 18px 13px}
 .hero-row{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap}
 .hero-left{flex-shrink:0}
+.hstat-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;padding-top:2px}
+.hstat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 16px;min-width:112px;transition:border-color .15s}
+.hstat[title]{cursor:help}
+.hstat:hover{border-color:var(--border3)}
+.hstat-top{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.hstat-ic{color:var(--muted);flex-shrink:0}
+.hstat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.hstat-val{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--text)}
+.hstat-val.up{color:var(--pos)}
+.hstat-val.dn{color:var(--neg)}
 .eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:2px}
 .patr{font-family:var(--mono);font-size:36px;font-weight:500;letter-spacing:-.04em;line-height:1}
 .patr-var-row{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
@@ -847,16 +858,30 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       <div class="eyebrow">Patrimônio de investimentos</div>
       <div id="hPatrVal" class="patr">R$ —</div>
       <div class="patr-var-row">
-        <span id="hVariacaoPill" class="var-pill" title="Informa de fato quanto foi o seu ganho real, levando em conta o valor investido e o saldo atual. Não considera o pagamento de dividendos.">
-          Variação <svg class="vp-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor" stroke="none"/></svg> <strong id="hVariacao">—</strong>
-        </span>
-        <span id="hLucroTotalPill" class="var-pill" title="Lucro acumulado somando todas as classes (Ações, FIIs, Renda Fixa, ETFs, Stocks e Cripto).">
-          Lucro total <strong id="hLucroTotal">—</strong>
-        </span>
-        <span id="hProvPill" class="var-pill" title="Proventos (dividendos/JCP) acumulados dos seus FIIs." style="cursor:pointer" onclick="goTab('prov')">
-          Proventos <strong id="hProv">—</strong>
-        </span>
         <span class="snap-chip" id="snapChip" title="'Ao vivo' significa que os preços foram atualizados agora há pouco direto da fonte de cotações. 'Dados salvos' significa que está mostrando o último preço salvo, porque não foi possível buscar uma cotação mais recente no momento.">aguardando…</span>
+      </div>
+    </div>
+    <div class="hstat-row">
+      <div class="hstat" title="Informa de fato quanto foi o seu ganho real, levando em conta o valor investido e o saldo atual. Não considera o pagamento de dividendos.">
+        <div class="hstat-top">
+          <svg class="hstat-ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor" stroke="none"/></svg>
+          <span class="hstat-lbl">Variação</span>
+        </div>
+        <div class="hstat-val" id="hVariacao">—</div>
+      </div>
+      <div class="hstat" title="Lucro acumulado somando todas as classes (Ações, FIIs, Renda Fixa, ETFs, Stocks e Cripto).">
+        <div class="hstat-top">
+          <svg class="hstat-ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
+          <span class="hstat-lbl">Lucro total</span>
+        </div>
+        <div class="hstat-val" id="hLucroTotal">—</div>
+      </div>
+      <div class="hstat" style="cursor:pointer" onclick="goTab('prov')" title="Proventos (dividendos/JCP) acumulados dos seus FIIs — clique pra ver o detalhe.">
+        <div class="hstat-top">
+          <svg class="hstat-ic" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="10" width="18" height="8" rx="1.5"/><path d="M3 10V7a1.5 1.5 0 0 1 1.5-1.5h15A1.5 1.5 0 0 1 21 7v3"/><line x1="12" y1="10" x2="12" y2="18"/></svg>
+          <span class="hstat-lbl">Proventos</span>
+        </div>
+        <div class="hstat-val" id="hProv">—</div>
       </div>
     </div>
   </div>
@@ -1807,6 +1832,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v22.3",d:"Jun/2026",items:[
+    "Pílulas soltas (Variação, Lucro Total, Proventos) viraram CARDS de verdade — ícone, rótulo e valor grande, com borda e fundo, no espírito do que você mandou do Investidor10",
+    "CORRIGIDO: Cripto não aparecia em Metas de Alocação quando o saldo era R$0 — as outras 5 classes sempre aparecem mesmo zeradas, então isso te impedia de definir uma meta % pra Cripto antes de comprar. Agora é consistente com as demais",
+  ]},
   {v:"v22.2",d:"Jun/2026",items:[
     "Botão de Atualizar cotações saiu da home e virou ícone fixo no header (ao lado do sol/lua) — sempre acessível em qualquer aba, não só na home",
     "Barra da home ficou só com o texto de status ('Preços atualizados — HH:MM'), sem o botão duplicado",
@@ -2764,9 +2793,8 @@ function computeMetasAlocData(){
     {id:"stocks", name:"Stocks EUA",           val: stVal},
     {id:"etfs",   name:"ETFs Internacionais",  val: etfVal},
     {id:"rf",     name:"Renda Fixa",           val: rfVal},
+    {id:"cripto", name:"Cripto",               val: getCriptoTotal()},
   ];
-  const criptoVal = getCriptoTotal();
-  if(criptoVal>0) classes.push({id:"cripto", name:"Cripto", val: criptoVal});
   const total = classes.reduce((s,c)=>s+c.val,0);
   return {metas, classes, total};
 }
@@ -3043,11 +3071,10 @@ function render(){
   const lucroCriptoCalc = getCriptoTotal()-custoCripto;
   const lucroTotalPortfolio = lucroAcoes+lucroFiis+lucroETF+lucroSTK+lucroCriptoCalc+lucroRF;
   const variacaoPct = custoTotal>0 ? (lucroTotalPortfolio/custoTotal*100) : 0;
-  const pillEl = document.getElementById("hVariacaoPill");
   const hVar = document.getElementById("hVariacao");
-  if(hVar && pillEl){
+  if(hVar){
     const vSign = variacaoPct>=0?'+':'';
-    pillEl.className = 'var-pill ' + (variacaoPct>0?'up':variacaoPct<0?'dn':'');
+    hVar.className = 'hstat-val ' + (variacaoPct>0?'up':variacaoPct<0?'dn':'');
     hVar.textContent = `${vSign}${variacaoPct.toFixed(2)}%`;
   }
   // Guarda custo por classe para uso nos cards de Alocação (variação individual)
@@ -3066,8 +3093,7 @@ function render(){
   const hltEl=g("hLucroTotal");
   if(hltEl){
     hltEl.textContent=sgn(lucroTotalPortfolio)+brl(Math.abs(lucroTotalPortfolio),2);
-    const hltPill=g("hLucroTotalPill");
-    if(hltPill) hltPill.className='var-pill '+(lucroTotalPortfolio>0?'up':lucroTotalPortfolio<0?'dn':'');
+    hltEl.className='hstat-val '+(lucroTotalPortfolio>0?'up':lucroTotalPortfolio<0?'dn':'');
   }
   const hProvEl=g("hProv");
   if(hProvEl) hProvEl.textContent=brl(D.fiis.reduce((s,f)=>s+f.prov,0),2);
