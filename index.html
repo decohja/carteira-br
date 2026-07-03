@@ -323,7 +323,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .dn-val{font-family:var(--mono);font-size:15px;font-weight:500;margin-top:2px}
 .dn-sub{font-size:10px;color:var(--muted);margin-top:1px;font-family:var(--mono)}
 .dn-sub.pos{color:var(--pos)}.dn-sub.neg{color:var(--neg)}.dn-sub.gold{color:var(--gold)}
-.cot-live{color:var(--blue);font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.cot-live{color:var(--text);font-weight:700;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .cot-live.up{color:var(--pos)}
 .cot-live.dn{color:var(--neg)}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--pos);flex-shrink:0;animation:liveDotPulse 1.8s ease-in-out infinite}
@@ -1834,6 +1834,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v23.4",d:"Jun/2026",items:[
+    "Cotação: removido o azul neutro — agora só existe verde (subiu) ou vermelho (desceu) comparado com o último preço confirmado, ou cor de texto normal só no caso raríssimo de ser a primeiríssima vez que aquele ticker é buscado (nunca antes, em nenhuma sessão). Bolinha pulsando continua marcando dado vivo",
+  ]},
   {v:"v23.3",d:"Jun/2026",items:[
     "Reserva e Caixa ganhou um texto explicando por que ela fica de fora do Patrimônio de Investimentos e das Metas de Alocação — em vez de só um tooltip, agora é um bloco de texto visível",
     "Header ganhou um estilo próprio no modo escuro (gradiente + borda dourada sutil) — antes só o modo claro tinha esse acabamento, o escuro ficava mais 'sólido'",
