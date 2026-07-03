@@ -910,12 +910,16 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   </div>
 
   <div class="reserva-card">
-    <div class="st" style="margin-top:0;display:flex;align-items:center;justify-content:space-between">
-      <span>Reserva e caixa <span class="info-ic" title="Não entram na meta de investimentos nem no patrimônio investido — são reservas separadas.">?</span></span>
-      <button class="refbtn" onclick="openAddExtraItem()" style="font-size:11px">+ Adicionar item</button>
+    <div class="st" style="margin-top:0;cursor:pointer" onclick="toggleReservaCaixa()">
+      <span>Reserva e caixa <span class="info-ic" title="Não entram na meta de investimentos nem no patrimônio investido — são reservas separadas.">?</span> <span id="reservaChevron" style="font-size:10px;color:var(--muted);font-weight:400">▸ ver</span></span>
     </div>
-    <div class="agrid agrid-extra" id="allocExtra"></div>
-    <div id="extraTotalBar" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:right"></div>
+    <div id="reservaCaixaBody" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin:8px 0">
+        <button class="refbtn" onclick="openAddExtraItem()" style="font-size:11px">+ Adicionar item</button>
+      </div>
+      <div class="agrid agrid-extra" id="allocExtra"></div>
+      <div id="extraTotalBar" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:right"></div>
+    </div>
   </div>
 </section>
 
@@ -1764,6 +1768,11 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v21.3",d:"Jun/2026",items:[
+    "Reserva e Caixa agora também é recolhida por padrão (igual Metas de Alocação) — não fica mais sempre visível ocupando espaço",
+    "Metas de Alocação e Reserva e Caixa viraram um acordeão de verdade: abrir uma fecha a outra automaticamente — resolve o problema de clicar num card e aparecer tudo junto (ou parecer que os dois cards fazem a mesma coisa)",
+    "Botão '+ Adicionar item' preservado, dentro da seção de Reserva e Caixa quando ela está aberta",
+  ]},
   {v:"v21.2",d:"Jun/2026",items:[
     "ACHADO: o card de Reserva e Caixa na fileira nunca tinha sido criado — só mexi na seção de baixo por engano. Agora existe de verdade, mostra o total, clica e rola até a seção",
     "Card de Metas de Alocação: tirei o 'X/Y classes na meta' como valor principal (confuso) — agora mostra o valor total rastreado (bate com o TOTAL da tabela), e o 'X/Y na meta' virou só um detalhe menor embaixo",
@@ -2973,7 +2982,7 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
       onclick:()=>{goTab('visao');toggleMetasAloc(true);}},
     {name:"Reserva e Caixa",val:brl(totalReservaCaixa,2),
       sub:"fora do patrimônio investido",pct:totalReservaCaixa>0?100:0,c:"#22C55E",tab:"visao",
-      onclick:()=>{goTab('visao');setTimeout(()=>document.querySelector('.reserva-card')?.scrollIntoView({behavior:'smooth',block:'start'}),80);}},
+      onclick:()=>{goTab('visao');toggleReservaCaixa(true);}},
   ];
   items.forEach(it=>{
     const p=Math.min(100,it.pct), R=22, circ=2*Math.PI*R, dash=circ*p/100, gap=circ-dash, sz=R*2+8, cxy=R+4;
@@ -4477,7 +4486,32 @@ function toggleMetasAloc(forceOpen){
   const open = forceOpen===true ? true : body.style.display==='none';
   body.style.display = open ? 'block' : 'none';
   if(chevron) chevron.textContent = open ? '▾ ocultar tabela' : '▸ ver tabela';
-  if(open) setTimeout(()=>body.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+  if(open){
+    _closeReservaCaixa(); // accordion — só uma seção aberta por vez, evita as duas aparecerem juntas
+    setTimeout(()=>body.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+  }
+}
+function _closeReservaCaixa(){
+  const b=document.getElementById('reservaCaixaBody'), c=document.getElementById('reservaChevron');
+  if(b) b.style.display='none';
+  if(c) c.textContent='▸ ver';
+}
+function _closeMetasAloc(){
+  const b=document.getElementById('metasAlocBody'), c=document.getElementById('metasAlocChevron');
+  if(b) b.style.display='none';
+  if(c) c.textContent='▸ ver tabela';
+}
+function toggleReservaCaixa(forceOpen){
+  const body = document.getElementById('reservaCaixaBody');
+  const chevron = document.getElementById('reservaChevron');
+  if(!body) return;
+  const open = forceOpen===true ? true : body.style.display==='none';
+  body.style.display = open ? 'block' : 'none';
+  if(chevron) chevron.textContent = open ? '▾ ocultar' : '▸ ver';
+  if(open){
+    _closeMetasAloc(); // accordion — mesma lógica, exclusiva com Metas de Alocação
+    setTimeout(()=>body.closest('.reserva-card')?.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+  }
 }
 function closeMenu(){
   const btn=document.getElementById("hamBtn");
