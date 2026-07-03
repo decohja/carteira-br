@@ -231,18 +231,18 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .patr{font-family:var(--mono);font-size:36px;font-weight:500;letter-spacing:-.04em;line-height:1}
 .patr-var-row{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
 .falta-pill{color:var(--gold);font-weight:600;font-family:var(--mono);
-  background:var(--gold-bg);padding:1px 8px;border-radius:20px;
-  border:1px solid var(--gold-dim);font-size:10px;white-space:nowrap}
-.var-pill{font-size:13px;font-weight:600;padding:4px 11px;border-radius:20px;
-  border:1px solid var(--border2);background:var(--bg3);color:var(--muted);
+  background:var(--gold-bg);padding:4px 9px;border-radius:8px;
+  border:none;font-size:10px;white-space:nowrap}
+.var-pill{font-size:13px;font-weight:600;padding:6px 13px;border-radius:9px;
+  border:none;background:var(--bg3);color:var(--muted);
   white-space:nowrap;display:inline-flex;align-items:center;gap:6px;cursor:help;letter-spacing:.01em}
 .var-pill .vp-ic{flex-shrink:0;opacity:.85}
 .var-pill strong{font-family:var(--mono);font-weight:700;font-size:13px}
-.var-pill.up{border-color:var(--pos-dim);background:var(--pos-bg);color:var(--pos)}
-.var-pill.dn{border-color:var(--neg-dim);background:var(--neg-bg);color:var(--neg)}
-.snap-chip{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--border2);
+.var-pill.up{background:var(--pos-bg);color:var(--pos)}
+.var-pill.dn{background:var(--neg-bg);color:var(--neg)}
+.snap-chip{font-size:10.5px;padding:5px 10px;border-radius:9px;border:none;
   color:var(--muted);background:var(--bg3);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
-.snap-chip.live{border-color:var(--pos-dim);color:var(--pos);background:var(--pos-bg)}
+.snap-chip.live{color:var(--pos);background:var(--pos-bg)}
 .snap-chip.live::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;
   background:var(--pos);animation:liveDotPulse 1.8s ease-in-out infinite}
 /* ── Refresh toast (não bloqueante) ── */
@@ -550,7 +550,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .sep{height:1px;background:var(--border);margin:10px 0}
 
 /* ─── REFRESH ────────────────────────── */
-.refbar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-bottom:13px;flex-wrap:wrap}
+.refbar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-bottom:13px;flex-wrap:wrap;
+  position:sticky;top:50px;z-index:150;background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  padding:9px 4px;border-bottom:1px solid var(--border);margin-left:-4px;margin-right:-4px}
 .refbtn{display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:var(--rm);
   border:1px solid var(--border);background:var(--bg3);color:var(--muted);font-size:11px;cursor:pointer}
 .refbtn:hover{border-color:var(--gold);color:var(--gold)}
@@ -1805,6 +1808,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v22.1",d:"Jun/2026",items:[
+    "Barra 'Preços atualizados / ↻ Atualizar' agora fica fixa, colada embaixo do header, ao rolar a página",
+    "Pílulas (Variação, Lucro total, Proventos, Ao vivo, Faltam) modernizadas — sem borda, cantos mais discretos em vez do formato cápsula completa",
+  ]},
   {v:"v22.0",d:"Jun/2026",items:[
     "Home compactada pra metade esquerda da tela — rosca, Maiores Posições e Evolução do Patrimônio mais próximos, sem espaço sobrando",
     "Rosca 'Ativos na Carteira' maior, mais grossa, com destaque de título — e agora mostra o NOME de cada classe escrito dentro da própria fatia (quando ela é grande o suficiente pra caber)",
