@@ -652,7 +652,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
   /* Refbar: empilha, sem cortar texto */
   .refbar{font-size:10px;gap:5px;flex-wrap:wrap}
-  #btnAtualizar{padding:5px 10px;font-size:11px}
 
   /* Tabelas: scroll horizontal de verdade — a tabela mantém largura natural,
      o wrapper rola por cima dela. Sem isso, o conteúdo cortava ao invés de rolar. */
@@ -834,6 +833,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <text x="30.5" y="10.5" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="10" fill="currentColor">3</text>
       </svg>
     </button>
+    <button class="ibtn" onclick="refreshPrices(true)" id="btnAtualizar" title="Atualizar cotações"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
     <button class="ibtn" onclick="toggleTheme()" id="themeBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
     <button class="ibtn" onclick="openMod('metas')">⚙️</button>
     <button class="avt" onclick="openPerfil()" id="avtBtn">D</button>
@@ -903,7 +903,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel on" id="p-visao">
   <div class="refbar">
     <span id="lastUpd">—</span>
-    <button class="refbtn" id="btnAtualizar" onclick="refreshPrices(true)" style="font-weight:600;border-color:var(--gold);color:var(--gold)">↻ Atualizar</button>
   </div>
 
   <!-- Toast de atualização (não bloqueante) -->
@@ -1808,6 +1807,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v22.2",d:"Jun/2026",items:[
+    "Botão de Atualizar cotações saiu da home e virou ícone fixo no header (ao lado do sol/lua) — sempre acessível em qualquer aba, não só na home",
+    "Barra da home ficou só com o texto de status ('Preços atualizados — HH:MM'), sem o botão duplicado",
+  ]},
   {v:"v22.1",d:"Jun/2026",items:[
     "Barra 'Preços atualizados / ↻ Atualizar' agora fica fixa, colada embaixo do header, ao rolar a página",
     "Pílulas (Variação, Lucro total, Proventos, Ao vivo, Faltam) modernizadas — sem borda, cantos mais discretos em vez do formato cápsula completa",
