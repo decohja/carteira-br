@@ -417,7 +417,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 /* ─── ALLOC ──────────────────────────── */
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:12px}
-.reserva-card{background:var(--bg2);border:1px dashed var(--border3);border-radius:var(--r);
+.reserva-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
   padding:14px 16px;margin-top:16px}
 .reserva-card .agrid{margin-bottom:0}
 .acard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;
@@ -448,6 +448,15 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .sdon-val{font-family:var(--mono);font-size:12px;font-weight:600;white-space:nowrap;
   cursor:pointer;text-align:right;justify-self:end;min-width:3.6ch}
 .sdon-sep{font-family:var(--mono);font-size:12px;color:var(--faint);justify-self:center}
+
+/* ─── ATIVOS NA CARTEIRA (home) ──────── */
+.ativoscart-wrap{display:flex;align-items:center;gap:28px;flex-wrap:wrap;padding:6px 4px}
+.ativoscart-legend{display:flex;flex-direction:column;gap:9px;flex:1;min-width:160px}
+.ativoscart-row{display:flex;align-items:center;gap:9px;cursor:pointer;padding:3px 4px;border-radius:6px;transition:background .15s}
+.ativoscart-row:hover{background:var(--bg3)}
+.ativoscart-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.ativoscart-n{color:var(--text);font-weight:500;font-size:13px;flex:1}
+.ativoscart-pct{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--muted)}
 .sdon-cap{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);
   white-space:nowrap;cursor:pointer;text-align:left;justify-self:start;min-width:3.2ch}
 .sdon-cap u{text-decoration-style:dotted}
@@ -814,6 +823,9 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <span id="hVariacaoPill" class="var-pill" title="Informa de fato quanto foi o seu ganho real, levando em conta o valor investido e o saldo atual. Não considera o pagamento de dividendos.">
           Variação <svg class="vp-ic" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.5" r="0.6" fill="currentColor" stroke="none"/></svg> <strong id="hVariacao">—</strong>
         </span>
+        <span id="hLucroTotalPill" class="var-pill" title="Lucro acumulado somando todas as classes (Ações, FIIs, Renda Fixa, ETFs, Stocks e Cripto).">
+          Lucro total <strong id="hLucroTotal">—</strong>
+        </span>
         <span class="snap-chip" id="snapChip" title="'Ao vivo' significa que os preços foram atualizados agora há pouco direto da fonte de cotações. 'Dados salvos' significa que está mostrando o último preço salvo, porque não foi possível buscar uma cotação mais recente no momento.">aguardando…</span>
       </div>
     </div>
@@ -867,32 +879,39 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <!-- Toast de atualização (não bloqueante) -->
   <div class="refresh-toast" id="refreshToast"><span class="toast-spin">↻</span> Atualizando preços…</div>
 
-  <div class="st" style="display:flex;align-items:center;justify-content:space-between">
-    <span>Metas de alocação</span>
-    <button class="refbtn" onclick="saveMetas()" style="color:var(--pos)">💾 Salvar metas</button>
+  <div class="st">Ativos na carteira</div>
+  <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px"></div>
+
+  <div class="st" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleMetasAloc()">
+    <span>Metas de alocação <span id="metasAlocChevron" style="font-size:10px;color:var(--muted)">▸ ver tabela</span></span>
   </div>
-  <div id="metasAlocHint" style="display:none;font-size:11px;color:var(--muted);margin-bottom:8px">
-    💡 Defina quanto % da carteira você quer em cada classe na coluna <strong>% Meta</strong> e clique em <strong>Salvar metas</strong>.
-  </div>
-  <div style="overflow-x:auto;margin-top:6px">
-    <table class="atab" style="width:100%">
-      <thead>
-        <tr>
-          <th class="l" style="font-size:11px">Classe</th>
-          <th class="r" style="font-size:11px">Atual (R$)</th>
-          <th class="r" style="font-size:11px">% Atual</th>
-          <th class="r" style="font-size:11px">% Meta</th>
-          <th class="r" style="font-size:11px">Deveria Ter</th>
-          <th class="r" style="font-size:11px">Gap</th>
-        </tr>
-      </thead>
-      <tbody id="metasAlocTbody"></tbody>
-    </table>
+  <div id="metasAlocBody" style="display:none">
+    <div style="display:flex;justify-content:flex-end;margin:6px 0 8px">
+      <button class="refbtn" onclick="saveMetas()" style="color:var(--pos)">💾 Salvar metas</button>
+    </div>
+    <div id="metasAlocHint" style="display:none;font-size:11px;color:var(--muted);margin-bottom:8px">
+      💡 Defina quanto % da carteira você quer em cada classe na coluna <strong>% Meta</strong> e clique em <strong>Salvar metas</strong>.
+    </div>
+    <div style="overflow-x:auto;margin-top:6px">
+      <table class="atab" style="width:100%">
+        <thead>
+          <tr>
+            <th class="l" style="font-size:11px">Classe</th>
+            <th class="r" style="font-size:11px">Atual (R$)</th>
+            <th class="r" style="font-size:11px">% Atual</th>
+            <th class="r" style="font-size:11px">% Meta</th>
+            <th class="r" style="font-size:11px">Deveria Ter</th>
+            <th class="r" style="font-size:11px">Gap</th>
+          </tr>
+        </thead>
+        <tbody id="metasAlocTbody"></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="reserva-card">
     <div class="st" style="margin-top:0;display:flex;align-items:center;justify-content:space-between">
-      <span>🔒 Reserva e caixa <span class="info-ic" title="Não entram na meta de investimentos nem no patrimônio investido — são reservas separadas.">?</span></span>
+      <span>Reserva e caixa <span class="info-ic" title="Não entram na meta de investimentos nem no patrimônio investido — são reservas separadas.">?</span></span>
       <button class="refbtn" onclick="openAddExtraItem()" style="font-size:11px">+ Adicionar item</button>
     </div>
     <div class="agrid agrid-extra" id="allocExtra"></div>
@@ -1745,6 +1764,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v21.0",d:"Jun/2026",items:[
+    "Lucro Total voltou pro cabeçalho como pílula (não é mais card na fileira)",
+    "Metas de Alocação: tabela agora vem recolhida por padrão — clica no título ou no card pra expandir. Não ocupa mais espaço na primeira visualização",
+    "NOVA seção 'Ativos na Carteira': rosca de distribuição por classe, logo no topo da home, com as mesmas cores dos cards (Ações laranja, FIIs roxo, Renda Fixa azul, etc.) — clica numa fatia ou no nome e vai direto pra aba daquela classe",
+    "Reserva e Caixa: revertido pra card sólido igual aos outros (tirei a borda pontilhada e o cadeado que eu tinha adicionado sem terem sido pedidos)",
+  ]},
   {v:"v20.9",d:"Jun/2026",items:[
     "Removidas as pílulas do cabeçalho — Rentabilidade era idêntica à Variação, e Proventos (12M) duplicava o card 'Proventos' que já existia. Fica só o essencial",
     "Lucro Total agora é um card na fileira, no mesmo formato visual dos outros (Ações, FIIs, etc.) — não mais um elemento solto",
@@ -2649,6 +2674,46 @@ function computeMetasAlocData(){
   return {metas, classes, total};
 }
 
+// Mesmas cores usadas nos cards da fileira — mantém a rosca visualmente conectada ao resto
+const CLASSE_COLORS = {fiis:"#A78BFA",acoes:"#F59E0B",stocks:"#818CF8",etfs:"#38BDF8",rf:"#3B82F6",cripto:"#F7931A"};
+const CLASSE_TABS = {fiis:"fiis",acoes:"acoes",stocks:"stocks",etfs:"etfs",rf:"rf",cripto:"cripto"};
+
+function renderAtivosCarteira(){
+  const el = document.getElementById("ativosCarteiraBox");
+  if(!el) return;
+  const {classes, total} = computeMetasAlocData();
+  const ativos = classes.filter(c=>c.val>0);
+  if(!ativos.length || total<=0){
+    el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">Adicione ativos pra ver a distribuição da sua carteira aqui.</div>`;
+    return;
+  }
+  const R=64,cx=78,cy=78,sw=20,circ=2*Math.PI*R;
+  let arcs=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="${sw}"/>`;
+  let off=circ/4;
+  const ordenado=[...ativos].sort((a,b)=>b.val-a.val);
+  ordenado.forEach(c=>{
+    const pct=c.val/total*100, arc=pct/100*circ, gap=circ-arc;
+    const color=CLASSE_COLORS[c.id]||"var(--gold)";
+    arcs+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${color}" stroke-width="${sw}"
+      stroke-dasharray="${arc.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"
+      style="cursor:pointer" onclick="goTab('${CLASSE_TABS[c.id]||'visao'}')"><title>${c.name}: ${pct.toFixed(1)}%</title></circle>`;
+    off-=arc;
+  });
+  const legend=ordenado.map(c=>{
+    const pct=c.val/total*100;
+    const color=CLASSE_COLORS[c.id]||"var(--gold)";
+    return `<div class="ativoscart-row" onclick="goTab('${CLASSE_TABS[c.id]||'visao'}')">
+      <span class="ativoscart-dot" style="background:${color}"></span>
+      <span class="ativoscart-n">${c.name}</span>
+      <span class="ativoscart-pct">${pct.toFixed(2)}%</span>
+    </div>`;
+  }).join("");
+  el.innerHTML = `<div class="ativoscart-wrap">
+    <svg width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}" style="flex-shrink:0">${arcs}</svg>
+    <div class="ativoscart-legend">${legend}</div>
+  </div>`;
+}
+
 function renderMetasAloc(){
   const tbody = document.getElementById("metasAlocTbody");
   if(!tbody) return;
@@ -2800,6 +2865,12 @@ function render(){
   const faltaEl=g("hFalta");
   faltaEl.textContent = !meta ? "Configure em Metas ⚙" : metaAtingida ? "🎉 Meta atingida!" : "Faltam "+brl(falta,2);
   faltaEl.className = "falta-pill"+(metaAtingida?" complete":"");
+  const hltEl=g("hLucroTotal");
+  if(hltEl){
+    hltEl.textContent=sgn(lucroTotalPortfolio)+brl(Math.abs(lucroTotalPortfolio),2);
+    const hltPill=g("hLucroTotalPill");
+    if(hltPill) hltPill.className='var-pill '+(lucroTotalPortfolio>0?'up':lucroTotalPortfolio<0?'dn':'');
+  }
   g("metaPct").textContent= !meta ? "—" : pct>=100 ? "100%+" : pct.toFixed(1)+"%";
   const metaAtiva = (D.metas.length && D.metas[D.activeMeta]) ? D.metas[D.activeMeta] : null;
   g("metaLbl").textContent= metaAtiva ? metaAtiva.lbl : "Meta não configurada";
@@ -2814,6 +2885,7 @@ function render(){
   renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis,lucroTotalPortfolio);
   renderCripto();
   renderAlloc();
+  renderAtivosCarteira();
   renderMetasAloc();
   renderAcoes(totAcoes);
   renderFiis(totFiis);
@@ -2869,13 +2941,10 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
       pct:Math.min(100,pctOf(totCripto)),c:"#F7931A",tab:"cripto"},
     {name:"Proventos",val:brl(totProvFII,2),
       sub:"acumulado FIIs",sub2cls:"gold",pct:Math.min(100,totProvFII/500*100),c:"#22C55E",tab:"prov"},
-    {name:"Lucro Total",val:sgn(lucroTotalPortfolio)+brl(Math.abs(lucroTotalPortfolio),2),
-      sub:"todas as classes",pct:lucroTotalPortfolio>=0?100:0,
-      c:lucroTotalPortfolio>=0?"#22C55E":"#EF4444",tab:"visao"},
     {name:"Metas de Alocação",val:totalMetaConfigResumo===0?"—":`${classesNaMeta}/${classesResumo.length}`,
       sub:totalMetaConfigResumo===0?"não configurada":"classes na meta",sub2cls:"gold",
       pct:classesResumo.length>0?(classesNaMeta/classesResumo.length*100):0,c:"var(--gold)",tab:"visao",
-      onclick:()=>{goTab('visao');setTimeout(()=>document.getElementById('metasAlocTbody')?.closest('section')?.scrollIntoView({behavior:'smooth',block:'start'}),80);}},
+      onclick:()=>{goTab('visao');toggleMetasAloc(true);}},
   ];
   items.forEach(it=>{
     const p=Math.min(100,it.pct), R=22, circ=2*Math.PI*R, dash=circ*p/100, gap=circ-dash, sz=R*2+8, cxy=R+4;
@@ -4383,6 +4452,15 @@ function goTab(id,btn){
   setTimeout(setupTableScrollHints, 50);
 }
 function goHome(){ goTab('visao'); }
+function toggleMetasAloc(forceOpen){
+  const body = document.getElementById('metasAlocBody');
+  const chevron = document.getElementById('metasAlocChevron');
+  if(!body) return;
+  const open = forceOpen===true ? true : body.style.display==='none';
+  body.style.display = open ? 'block' : 'none';
+  if(chevron) chevron.textContent = open ? '▾ ocultar tabela' : '▸ ver tabela';
+  if(open) setTimeout(()=>body.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+}
 function closeMenu(){
   const btn=document.getElementById("hamBtn");
   const menu=document.getElementById("sideMenu");
