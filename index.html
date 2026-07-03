@@ -1835,6 +1835,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v23.6",d:"Jun/2026",items:[
+    "GAP simplificado pra 3 níveis com tolerância de ±3 pontos percentuais: vermelho (abaixo), OK cinza (dentro da tolerância), dourado (acima) — o valor em R$ continua sempre visível, só a cor muda",
+  ]},
   {v:"v23.5",d:"Jun/2026",items:[
     "Header do modo escuro refeito com contraste de verdade — gradiente marrom-dourado bem visível (antes era um preto quase idêntico ao resto da tela, por isso parecia que nada tinha mudado)",
     "Ícones do header (Início, tema) ganharam brilho dourado nítido ao passar o mouse",
@@ -2833,16 +2836,14 @@ function getMetasAloc(){
   catch(e){ return {...METAS_DEFAULT}; }
 }
 
-// Classifica o GAP em pontos percentuais (pctAtual - pctMeta) — mais estável que % relativo,
-// que ficava instável quando a meta de uma classe era pequena. Mesma função usada tanto no
-// render inicial quanto no recálculo ao vivo (evita duas versões divergindo).
+// Classifica o GAP em pontos percentuais (pctAtual - pctMeta) — 3 níveis simples com tolerância de
+// ±3 pontos. Dentro da tolerância = OK (neutro). Fora = vermelho (abaixo) ou dourado (acima) — dourado
+// e não verde porque estar muito ACIMA da meta também é um desequilíbrio, não necessariamente "bom".
 function gapTier(pctAtual, pctMeta){
   const diff = pctAtual - pctMeta; // pontos percentuais de diferença
-  if(diff <= -5)   return {color:'var(--neg)',  dot:'var(--neg)',  label:'Muito abaixo da meta'};
-  if(diff < -1.5)  return {color:'#F59E0B',     dot:'#F59E0B',     label:'Abaixo da meta'};
-  if(diff <= 1.5)  return {color:'var(--pos)',  dot:'var(--pos)',  label:'Na meta'};
-  if(diff <= 5)    return {color:'#F59E0B',     dot:'#F59E0B',     label:'Acima da meta'};
-  return                  {color:'var(--gold)', dot:'var(--gold)', label:'Muito acima da meta'};
+  if(diff <= -3) return {color:'var(--neg)',  dot:'var(--neg)',  label:'Abaixo da meta'};
+  if(diff >= 3)  return {color:'var(--gold)', dot:'var(--gold)', label:'Acima da meta'};
+  return               {color:'var(--muted)', dot:'var(--muted)',label:'OK — dentro da tolerância (±3 pontos)'};
 }
 
 function computeMetasAlocData(){
