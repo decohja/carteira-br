@@ -110,15 +110,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:var(--border2)}
 
 /* ─── B3 HEADER BADGE ────────────────── */
-.b3-badge{
-  display:flex;align-items:center;justify-content:center;
-  height:36px;padding:0 10px;border-radius:9px;flex-shrink:0;
-  border:1px solid var(--border2);background:var(--bg3);color:var(--muted);
-  cursor:pointer;transition:all .15s;
-}
-.b3-badge:hover{border-color:var(--gold-dim);color:var(--gold);background:var(--gold-bg)}
-.b3-badge:active{transform:translateY(1px)}
-.hdr-sep{width:1px;height:22px;background:var(--border);flex-shrink:0;margin:0 4px}
+.hdr-r{display:flex;align-items:center;gap:6px;padding-left:8px;flex-shrink:0}
 
 /* ─── HEADER ─────────────────────────── */
 .hdr{
@@ -191,28 +183,21 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 /* market boxes — estilo MoneyTimes */
 .mkt-strip{display:flex;align-items:stretch;gap:10px;padding:0 14px;border-left:1px solid var(--border);flex-shrink:0}
 .mkt-item{
-  display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:9px;
-  background:linear-gradient(180deg,var(--bg3),var(--bg4));
-  border:1px solid transparent;transition:all .18s ease;cursor:default;
+  display:flex;align-items:center;gap:7px;padding:0 12px;cursor:default;
 }
-.mkt-item:hover{
-  border-color:var(--gold);
-  background:linear-gradient(180deg,var(--bg4),var(--bg3));
-  transform:translateY(-1px);
-}
-.mkt-item .mk-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.mkt-item + .mkt-item{border-left:1px solid var(--border)}
+.mkt-item .mk-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .mkt-item.ibov .mk-dot{background:#3B82F6}
 .mkt-item.usd .mk-dot{background:#16A34A}
 .mk-n{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .mk-v{font-family:var(--mono);font-size:13.5px;font-weight:700;color:var(--text)}
 .mk-unit{font-size:9.5px;color:var(--muted);margin-left:2px}
-.mk-c{display:flex;align-items:center;gap:2px;font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 6px;border-radius:5px}
-.mk-c.up{background:rgba(22,163,74,.18);color:var(--pos)}
-.mk-c.dn{background:rgba(239,68,68,.18);color:var(--neg)}
-.mk-c.neu{background:var(--bg4);color:var(--muted)}
+.mk-c{display:flex;align-items:center;gap:2px;font-size:10.5px;font-family:var(--mono);font-weight:700}
+.mk-c.up{color:var(--pos)}
+.mk-c.dn{color:var(--neg)}
+.mk-c.neu{color:var(--muted)}
 .mk-arrow{width:9px;height:9px;flex-shrink:0}
 
-.hdr-r{display:flex;align-items:center;gap:6px;padding-left:8px;flex-shrink:0}
 .ibtn{width:36px;height:36px;border-radius:9px;border:1px solid var(--border2);
   background:var(--bg3);color:var(--muted);display:flex;align-items:center;
   justify-content:center;cursor:pointer;font-size:16px;transition:all .15s;flex-shrink:0;}
@@ -836,16 +821,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </div>
   </div>
   <div class="hdr-r">
-    <span class="hdr-sep"></span>
-    <button class="b3-badge" onclick="b3EmBreve()" title="Integração direta com a B3 — em breve">
-      <svg width="30" height="18" viewBox="0 0 42 26" fill="none">
-        <path d="M5 3 L5 23" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-        <path d="M5 3 L9.5 3" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-        <path d="M5 23 L9.5 23" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-        <text x="13" y="19.5" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="17" fill="currentColor">B</text>
-        <text x="30.5" y="10.5" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="10" fill="currentColor">3</text>
-      </svg>
-    </button>
     <button class="ibtn" onclick="refreshPrices(true)" id="btnAtualizar" title="Atualizar cotações"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
     <button class="ibtn" onclick="toggleTheme()" id="themeBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
     <button class="ibtn" onclick="openMod('metas')">⚙️</button>
@@ -930,6 +905,9 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel on" id="p-visao">
   <div class="refbar">
     <span id="lastUpd">—</span>
+    <span style="flex:1"></span>
+    <button class="refbtn" onclick="location.reload()" title="Recarrega a página inteira do zero">↻ Recarregar página</button>
+    <button class="refbtn" id="btnAtualizarHome" onclick="refreshPrices(true)" style="font-weight:600;border-color:var(--gold);color:var(--gold)" title="Busca cotações novas sem recarregar a página">📊 Atualizar cotações</button>
   </div>
 
   <!-- Toast de atualização (não bloqueante) -->
@@ -1097,7 +1075,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
             <th class="r sort" data-col="inv" data-t="et">Investido <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="atual" data-t="et">Valor Atual <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="et">Lucro</th>
-            <th class="r sort" data-col="cotas" data-t="et">Cotas</th>
+            <th class="r sort" data-col="cotas" data-t="et">Quantidade</th>
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pelo ETF nos últimos 12 meses, em relação ao preço atual da cota.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este ETF dentro da carteira de ETFs. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração da categoria inteira deste ETF (ex: S&P 500, Industrial) em relação ao teto que você definiu para a categoria. Clique no valor para editar.">?</span></th>
@@ -1130,7 +1108,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
             <th class="r sort" data-col="inv" data-t="sk">Investido <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="atual" data-t="sk">Valor Atual <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="sk">Lucro</th>
-            <th class="r sort" data-col="cotas" data-t="sk">Cotas</th>
+            <th class="r sort" data-col="cotas" data-t="sk">Quantidade</th>
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pela empresa nos últimos 12 meses, em relação ao preço atual da ação.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para esta Stock dentro da carteira de Stocks. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração do setor inteiro desta Stock (ex: Tecnologia, Financeiro) em relação ao teto que você definiu para o setor. Clique no valor para editar.">?</span></th>
@@ -1836,6 +1814,16 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v22.7",d:"Jun/2026",items:[
+    "CORRIGIDO: valores em US$ (cards, ETFs, Stocks) usavam separador americano (1,308.62) em vez do brasileiro (1.308,62) — a função de formatação estava configurada errada desde sempre",
+    "Home ganhou 2 botões separados e rotulados: '↻ Recarregar página' (recarrega tudo do zero) e '📊 Atualizar cotações' (busca preço novo sem recarregar) — antes só existia o ícone pequeno no header",
+  ]},
+  {v:"v22.6",d:"Jun/2026",items:[
+    "Coluna 'Cotas' de ETFs/Stocks renomeada pra 'Quantidade' (Cotas continua certo em Ações/FIIs, que são fundos de verdade)",
+    "CORRIGIDO: número de quantidade usava ponto decimal (ex: 1.2995) em vez de vírgula — agora segue o padrão brasileiro (1,2995)",
+    "Botão B3 removido de vez do header — continua acessível pelo menu lateral, só não fica mais fixo ali em cima",
+    "Cotações de Ibovespa/Dólar perderam o fundo cinza tipo pílula — visual limpo, só tipografia, com uma linha fina separando os dois",
+  ]},
   {v:"v22.5",d:"Jun/2026",items:[
     "ACHADO O BUG DE VERDADE da coluna Cotas sumida: inserir a coluna deslocou o índice de qualquer coluna que você já tivesse escondido antes em ETFs/Stocks, e a preferência salva passou a apontar (por coincidência) pra Cotas. Migração automática única limpa essa configuração antiga só nessas 2 tabelas",
     "Card de Proventos removido da fileira horizontal — já virou card fixo no cabeçalho, ficava duplicado",
@@ -2333,10 +2321,10 @@ const D={
 
 /* ═══════════════════ HELPERS ═════════════════════ */
 const brl=(n,d=0)=>"R$ "+Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
-const usd=(n,d=2)=>"US$ "+Math.abs(+n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const usd=(n,d=2)=>"US$ "+Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
 /* Versão para a linha de TOTAL: símbolo pequeno/sutil + número em destaque, sem quebrar linha */
 const brlTotal=(n,d=0)=>`<span class="tot-cur">R$</span> ${Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})}`;
-const usdTotal=(n,d=2)=>`<span class="tot-cur">US$</span> ${Math.abs(+n).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}`;
+const usdTotal=(n,d=2)=>`<span class="tot-cur">US$</span> ${Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})}`;
 const sgn=n=>n>=0?"+":"−";
 let usdBRL=5.80, sortSt={}, pricesArelive=false;
 
@@ -2570,13 +2558,17 @@ function setLdStatus(txt){ const el=document.getElementById("ldStatus"); if(el) 
 let _refreshing = false;
 function showRefreshToast(){
   document.getElementById('refreshToast')?.classList.add('show');
-  const btn = document.getElementById('btnAtualizar');
-  if(btn){ btn.disabled=true; btn.style.opacity='.5'; }
+  ['btnAtualizar','btnAtualizarHome'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(btn){ btn.disabled=true; btn.style.opacity='.5'; }
+  });
 }
 function hideRefreshToast(){
   document.getElementById('refreshToast')?.classList.remove('show');
-  const btn = document.getElementById('btnAtualizar');
-  if(btn){ btn.disabled=false; btn.style.opacity=''; }
+  ['btnAtualizar','btnAtualizarHome'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(btn){ btn.disabled=false; btn.style.opacity=''; }
+  });
 }
 
 async function refreshPrices(manual=false){
@@ -3357,7 +3349,7 @@ const COLUNAS_REGISTRO = {
     {idx:4, label:"Investido"},
     {idx:5, label:"Valor Atual"},
     {idx:6, label:"Lucro"},
-    {idx:7, label:"Cotas"},
+    {idx:7, label:"Quantidade"},
     {idx:8, label:"DY%"},
     {idx:9, label:"% Teto Individual"},
     {idx:10, label:"% Teto Setor"},
@@ -3370,7 +3362,7 @@ const COLUNAS_REGISTRO = {
     {idx:4, label:"Investido"},
     {idx:5, label:"Valor Atual"},
     {idx:6, label:"Lucro"},
-    {idx:7, label:"Cotas"},
+    {idx:7, label:"Quantidade"},
     {idx:8, label:"DY%"},
     {idx:9, label:"% Teto Individual"},
     {idx:10, label:"% Teto Setor"},
@@ -4017,7 +4009,7 @@ function renderETFs(sc,sd){
       <td class="r" style="white-space:nowrap">${usd(e.atual)}<div class="usd2">${brl(e.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),2)}</div></td>
-      <td class="r">${e.cotas>0?e.cotas:"—"}</td>
+      <td class="r">${e.cotas>0?e.cotas.toLocaleString("pt-BR",{maximumFractionDigits:6}):"—"}</td>
       <td class="r">${e.dy.toFixed(2)}%</td>
       <td>${tetoCell(e.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("ETFs", e.fun, pctSetor, tetoSetorAtual, rows.length===1)}</td>
@@ -4072,7 +4064,7 @@ function renderStocks(sc,sd){
       <td class="r" style="white-space:nowrap">${usd(s.atual)}<div class="usd2">${brl(s.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
-      <td class="r">${s.cotas>0?s.cotas:"—"}</td>
+      <td class="r">${s.cotas>0?s.cotas.toLocaleString("pt-BR",{maximumFractionDigits:6}):"—"}</td>
       <td class="r">${s.dy.toFixed(2)}%</td>
       <td>${tetoCell(s.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("Stocks", s.setor, pctSetor, tetoSetorAtual, rows.length===1)}</td>
