@@ -455,10 +455,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 /* ─── ATIVOS NA CARTEIRA (home) ──────── */
 .ativoscart-wrap{display:flex;align-items:center;justify-content:flex-start;gap:44px;flex-wrap:wrap;padding:18px 8px}
-.maiorpos-row{display:flex;align-items:center;gap:10px;padding:7px 4px;cursor:pointer;border-radius:6px;transition:background .15s}
+.maiorpos-row{display:flex;align-items:center;gap:10px;padding:7px 4px;cursor:pointer;border-radius:6px;transition:background .15s;max-width:320px}
 .maiorpos-row:hover{background:var(--bg3)}
 .maiorpos-rank{width:16px;flex-shrink:0;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center}
-.maiorpos-mid{flex:1;min-width:0}
+.maiorpos-mid{flex:0 0 auto;width:120px;min-width:0}
 .maiorpos-tk{font-size:12.5px;font-weight:600;margin-bottom:3px}
 .maiorpos-bar-track{height:4px;border-radius:3px;background:var(--bg4);overflow:hidden}
 .maiorpos-bar-fill{height:100%;border-radius:3px}
@@ -905,16 +905,16 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <div class="home-grid">
     <div>
       <div class="st">Ativos na carteira</div>
-      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px"></div>
+      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;max-width:480px;width:fit-content"></div>
     </div>
     <div class="home-side">
       <div>
         <div class="st">Maiores posições</div>
-        <div class="bx" id="maioresPosicoesBox"></div>
+        <div class="bx" id="maioresPosicoesBox" style="max-width:360px;width:fit-content"></div>
       </div>
       <div>
         <div class="st">Evolução do patrimônio</div>
-        <div class="bx" id="evolucaoPatrBox"></div>
+        <div class="bx" id="evolucaoPatrBox" style="max-width:360px;width:fit-content"></div>
       </div>
     </div>
   </div>
@@ -1801,6 +1801,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v21.9",d:"Jun/2026",items:[
+    "CORRIGIDO DE VEZ o espaço vazio nos quadros da home: eram esticados pra preencher toda a largura da coluna do grid, mesmo sem precisar. Agora têm largura máxima e encolhem pro tamanho do conteúdo — rosca, Maiores Posições e Evolução do Patrimônio",
+    "Barras de 'Maiores Posições' tinham largura elástica (esticavam demais) — agora têm largura fixa",
+  ]},
   {v:"v21.8",d:"Jun/2026",items:[
     "CORRIGIDO BUG GRAVE: ao adicionar um ativo, o preço digitado ficava só na memória da sessão — nunca ia pro cache do navegador. Se a página recarregasse antes de uma busca ao vivo confirmar aquele ticker, o preço sumia de vez e virava 'aguard.' pra sempre (foi o caso do EMBR3)",
     "Agora todo preço definido — vindo de busca ao vivo OU de você cadastrando manualmente — é gravado no cache. Nada mais se perde entre sessões",
