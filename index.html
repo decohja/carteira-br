@@ -417,9 +417,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 /* ─── ALLOC ──────────────────────────── */
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:12px}
-.reserva-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
-  padding:14px 16px;margin-top:16px}
-.reserva-card .agrid{margin-bottom:0}
 .acard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;
   transition:border-color .15s,transform .15s;cursor:pointer}
 .acard:hover{border-color:var(--border3);transform:translateY(-1px)}
@@ -881,46 +878,42 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
   <div class="st">Ativos na carteira</div>
   <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px"></div>
+</section>
 
-  <div class="st" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleMetasAloc()">
-    <span>Metas de alocação <span id="metasAlocChevron" style="font-size:10px;color:var(--muted)">▸ ver tabela</span></span>
+<!-- METAS DE ALOCAÇÃO (painel próprio, igual Ações/FIIs) -->
+<section class="panel" id="p-metasaloc">
+  <div class="st" style="display:flex;align-items:center;justify-content:space-between">
+    <span>Metas de alocação</span>
+    <button class="refbtn" onclick="saveMetas()" style="color:var(--pos)">💾 Salvar metas</button>
   </div>
-  <div id="metasAlocBody" style="display:none">
-    <div style="display:flex;justify-content:flex-end;margin:6px 0 8px">
-      <button class="refbtn" onclick="saveMetas()" style="color:var(--pos)">💾 Salvar metas</button>
-    </div>
-    <div id="metasAlocHint" style="display:none;font-size:11px;color:var(--muted);margin-bottom:8px">
-      💡 Defina quanto % da carteira você quer em cada classe na coluna <strong>% Meta</strong> e clique em <strong>Salvar metas</strong>.
-    </div>
-    <div style="overflow-x:auto;margin-top:6px">
-      <table class="atab" style="width:100%">
-        <thead>
-          <tr>
-            <th class="l" style="font-size:11px">Classe</th>
-            <th class="r" style="font-size:11px">Atual (R$)</th>
-            <th class="r" style="font-size:11px">% Atual</th>
-            <th class="r" style="font-size:11px">% Meta</th>
-            <th class="r" style="font-size:11px">Deveria Ter</th>
-            <th class="r" style="font-size:11px">Gap</th>
-          </tr>
-        </thead>
-        <tbody id="metasAlocTbody"></tbody>
-      </table>
-    </div>
+  <div id="metasAlocHint" style="display:none;font-size:11px;color:var(--muted);margin-bottom:8px">
+    💡 Defina quanto % da carteira você quer em cada classe na coluna <strong>% Meta</strong> e clique em <strong>Salvar metas</strong>.
   </div>
+  <div style="overflow-x:auto;margin-top:6px">
+    <table class="atab" style="width:100%">
+      <thead>
+        <tr>
+          <th class="l" style="font-size:11px">Classe</th>
+          <th class="r" style="font-size:11px">Atual (R$)</th>
+          <th class="r" style="font-size:11px">% Atual</th>
+          <th class="r" style="font-size:11px">% Meta</th>
+          <th class="r" style="font-size:11px">Deveria Ter</th>
+          <th class="r" style="font-size:11px">Gap</th>
+        </tr>
+      </thead>
+      <tbody id="metasAlocTbody"></tbody>
+    </table>
+  </div>
+</section>
 
-  <div class="reserva-card">
-    <div class="st" style="margin-top:0;cursor:pointer" onclick="toggleReservaCaixa()">
-      <span>Reserva e caixa <span class="info-ic" title="Não entram na meta de investimentos nem no patrimônio investido — são reservas separadas.">?</span> <span id="reservaChevron" style="font-size:10px;color:var(--muted);font-weight:400">▸ ver</span></span>
-    </div>
-    <div id="reservaCaixaBody" style="display:none">
-      <div style="display:flex;justify-content:flex-end;margin:8px 0">
-        <button class="refbtn" onclick="openAddExtraItem()" style="font-size:11px">+ Adicionar item</button>
-      </div>
-      <div class="agrid agrid-extra" id="allocExtra"></div>
-      <div id="extraTotalBar" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:right"></div>
-    </div>
+<!-- RESERVA E CAIXA (painel próprio, igual Ações/FIIs) -->
+<section class="panel" id="p-reserva">
+  <div class="st" style="display:flex;align-items:center;justify-content:space-between">
+    <span>Reserva e caixa <span class="info-ic" title="Não entram na meta de investimentos nem no patrimônio investido — são reservas separadas.">?</span></span>
+    <button class="refbtn" onclick="openAddExtraItem()" style="font-size:11px">+ Adicionar item</button>
   </div>
+  <div class="agrid agrid-extra" id="allocExtra"></div>
+  <div id="extraTotalBar" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:right"></div>
 </section>
 
 <!-- AÇÕES BR -->
@@ -1768,6 +1761,11 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v21.4",d:"Jun/2026",items:[
+    "REESTRUTURADO DE VEZ: Metas de Alocação e Reserva e Caixa viraram abas de verdade, exatamente como Ações BR/FIIs/etc — clica no card, mostra SÓ aquele conteúdo, nada de rosca ou outra seção junto",
+    "Home (Visão Geral) agora só tem a rosca 'Ativos na Carteira' — o resto tem aba própria",
+    "Removido o sistema de acordeão/toggle que estava causando a confusão de mostrar tudo junto",
+  ]},
   {v:"v21.3",d:"Jun/2026",items:[
     "Reserva e Caixa agora também é recolhida por padrão (igual Metas de Alocação) — não fica mais sempre visível ocupando espaço",
     "Metas de Alocação e Reserva e Caixa viraram um acordeão de verdade: abrir uma fecha a outra automaticamente — resolve o problema de clicar num card e aparecer tudo junto (ou parecer que os dois cards fazem a mesma coisa)",
@@ -2978,11 +2976,9 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
       sub:"acumulado FIIs",sub2cls:"gold",pct:Math.min(100,totProvFII/500*100),c:"#22C55E",tab:"prov"},
     {name:"Metas de Alocação",val:totalResumo>0?brl(totalResumo,2):"—",
       sub:totalMetaConfigResumo===0?"não configurada":`${classesNaMeta}/${classesResumo.length} classes na meta`,sub2cls:"gold",
-      pct:classesResumo.length>0?(classesNaMeta/classesResumo.length*100):0,c:"var(--gold)",tab:"visao",
-      onclick:()=>{goTab('visao');toggleMetasAloc(true);}},
+      pct:classesResumo.length>0?(classesNaMeta/classesResumo.length*100):0,c:"var(--gold)",tab:"metasaloc"},
     {name:"Reserva e Caixa",val:brl(totalReservaCaixa,2),
-      sub:"fora do patrimônio investido",pct:totalReservaCaixa>0?100:0,c:"#22C55E",tab:"visao",
-      onclick:()=>{goTab('visao');toggleReservaCaixa(true);}},
+      sub:"fora do patrimônio investido",pct:totalReservaCaixa>0?100:0,c:"#22C55E",tab:"reserva"},
   ];
   items.forEach(it=>{
     const p=Math.min(100,it.pct), R=22, circ=2*Math.PI*R, dash=circ*p/100, gap=circ-dash, sz=R*2+8, cxy=R+4;
@@ -4479,40 +4475,6 @@ function goTab(id,btn){
   setTimeout(setupTableScrollHints, 50);
 }
 function goHome(){ goTab('visao'); }
-function toggleMetasAloc(forceOpen){
-  const body = document.getElementById('metasAlocBody');
-  const chevron = document.getElementById('metasAlocChevron');
-  if(!body) return;
-  const open = forceOpen===true ? true : body.style.display==='none';
-  body.style.display = open ? 'block' : 'none';
-  if(chevron) chevron.textContent = open ? '▾ ocultar tabela' : '▸ ver tabela';
-  if(open){
-    _closeReservaCaixa(); // accordion — só uma seção aberta por vez, evita as duas aparecerem juntas
-    setTimeout(()=>body.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
-  }
-}
-function _closeReservaCaixa(){
-  const b=document.getElementById('reservaCaixaBody'), c=document.getElementById('reservaChevron');
-  if(b) b.style.display='none';
-  if(c) c.textContent='▸ ver';
-}
-function _closeMetasAloc(){
-  const b=document.getElementById('metasAlocBody'), c=document.getElementById('metasAlocChevron');
-  if(b) b.style.display='none';
-  if(c) c.textContent='▸ ver tabela';
-}
-function toggleReservaCaixa(forceOpen){
-  const body = document.getElementById('reservaCaixaBody');
-  const chevron = document.getElementById('reservaChevron');
-  if(!body) return;
-  const open = forceOpen===true ? true : body.style.display==='none';
-  body.style.display = open ? 'block' : 'none';
-  if(chevron) chevron.textContent = open ? '▾ ocultar' : '▸ ver';
-  if(open){
-    _closeMetasAloc(); // accordion — mesma lógica, exclusiva com Metas de Alocação
-    setTimeout(()=>body.closest('.reserva-card')?.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
-  }
-}
 function closeMenu(){
   const btn=document.getElementById("hamBtn");
   const menu=document.getElementById("sideMenu");
