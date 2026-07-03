@@ -322,6 +322,9 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .content{max-width:1300px;margin:0 auto;padding:16px 18px 80px}
 .panel{display:none}.panel.on{display:block}
 .two{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
+.home-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;align-items:start}
+.home-side{display:flex;flex-direction:column;gap:14px}
+@media(max-width:820px){.home-grid{grid-template-columns:1fr}}
 .two.eq{grid-template-columns:1fr 1fr}
 .two>div{min-width:0} /* permite a coluna encolher abaixo do conteúdo — senão a tabela empurra o grid inteiro em vez de rolar internamente */
 .st{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;
@@ -452,6 +455,14 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 /* ─── ATIVOS NA CARTEIRA (home) ──────── */
 .ativoscart-wrap{display:flex;align-items:center;justify-content:flex-start;gap:44px;flex-wrap:wrap;padding:18px 8px}
+.maiorpos-row{display:flex;align-items:center;gap:10px;padding:7px 4px;cursor:pointer;border-radius:6px;transition:background .15s}
+.maiorpos-row:hover{background:var(--bg3)}
+.maiorpos-rank{width:16px;flex-shrink:0;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center}
+.maiorpos-mid{flex:1;min-width:0}
+.maiorpos-tk{font-size:12.5px;font-weight:600;margin-bottom:3px}
+.maiorpos-bar-track{height:4px;border-radius:3px;background:var(--bg4);overflow:hidden}
+.maiorpos-bar-fill{height:100%;border-radius:3px}
+.maiorpos-val{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;flex-shrink:0}
 .ativoscart-legend{display:grid;grid-template-columns:auto auto auto;column-gap:9px;row-gap:11px;align-items:center}
 .ativoscart-row{display:contents;cursor:pointer}
 .ativoscart-row:hover .ativoscart-n,.ativoscart-row:hover .ativoscart-pct{color:var(--gold)}
@@ -459,7 +470,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .ativoscart-n{color:var(--text);font-weight:500;font-size:13.5px;white-space:nowrap;transition:color .15s;padding-right:14px}
 .ativoscart-pct{font-family:var(--mono);font-size:13.5px;font-weight:700;color:var(--text);text-align:right;transition:color .15s}
 .donut3d-stage{perspective:900px;flex-shrink:0}
-.donut3d-tilt{transform:rotateX(48deg) rotateZ(-6deg);transform-style:preserve-3d;position:relative;width:208px;height:208px}
+.donut3d-tilt{transform:rotateX(48deg) rotateZ(-6deg);transform-style:preserve-3d;position:relative;width:172px;height:172px}
 .donut3d-wall{position:absolute;top:11px;left:0;filter:blur(0.3px)}
 .donut3d-top{position:absolute;top:0;left:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
 .sdon-cap{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);
@@ -835,6 +846,9 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <span id="hLucroTotalPill" class="var-pill" title="Lucro acumulado somando todas as classes (Ações, FIIs, Renda Fixa, ETFs, Stocks e Cripto).">
           Lucro total <strong id="hLucroTotal">—</strong>
         </span>
+        <span id="hProvPill" class="var-pill" title="Proventos (dividendos/JCP) acumulados dos seus FIIs." style="cursor:pointer" onclick="goTab('prov')">
+          Proventos <strong id="hProv">—</strong>
+        </span>
         <span class="snap-chip" id="snapChip" title="'Ao vivo' significa que os preços foram atualizados agora há pouco direto da fonte de cotações. 'Dados salvos' significa que está mostrando o último preço salvo, porque não foi possível buscar uma cotação mais recente no momento.">aguardando…</span>
       </div>
     </div>
@@ -888,8 +902,22 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <!-- Toast de atualização (não bloqueante) -->
   <div class="refresh-toast" id="refreshToast"><span class="toast-spin">↻</span> Atualizando preços…</div>
 
-  <div class="st">Ativos na carteira</div>
-  <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px"></div>
+  <div class="home-grid">
+    <div>
+      <div class="st">Ativos na carteira</div>
+      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px"></div>
+    </div>
+    <div class="home-side">
+      <div>
+        <div class="st">Maiores posições</div>
+        <div class="bx" id="maioresPosicoesBox"></div>
+      </div>
+      <div>
+        <div class="st">Evolução do patrimônio</div>
+        <div class="bx" id="evolucaoPatrBox"></div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- METAS DE ALOCAÇÃO (painel próprio, igual Ações/FIIs) -->
@@ -1773,6 +1801,14 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v21.7",d:"Jun/2026",items:[
+    "Pílula de Proventos voltou pro cabeçalho, perto do Patrimônio, junto de Variação e Lucro Total",
+    "Home reestruturada: rosca 'Ativos na Carteira' menor e à esquerda, com 2 quadros novos ao lado — 'Maiores Posições' (ranking de tudo que você tem, cruzando todas as classes) e 'Evolução do Patrimônio'",
+    "NOVO: Evolução do Patrimônio começa a registrar uma foto do seu patrimônio total todo dia, a partir de hoje — o gráfico vai crescer sozinho com o tempo (não dá pra reconstruir o passado que nunca guardamos, mas o rastreamento começa agora)",
+  ]},
+  {v:"v21.6",d:"Jun/2026",items:[
+    "DY% e % Teto Individual agora começam ocultas por padrão em Ações e FIIs (deixa a tabela mais arejada) — quem já tinha mexido em ⚙ Colunas antes não é afetado, continua com a própria escolha. Reativa a qualquer momento em ⚙ Colunas",
+  ]},
   {v:"v21.5",d:"Jun/2026",items:[
     "Rosca 'Ativos na Carteira': removido o gradiente (era o que você não gostou), agora é 3D de verdade — inclinada em perspectiva, com uma 'parede' escura simulando profundidade, não mais um efeito de brilho artificial",
     "Legenda da rosca alinhada em grid de verdade — nome e porcentagem ficam retinhos em coluna, e tudo foi pro lado esquerdo",
@@ -2711,6 +2747,78 @@ function computeMetasAlocData(){
 const CLASSE_COLORS = {fiis:"#A78BFA",acoes:"#F59E0B",stocks:"#818CF8",etfs:"#38BDF8",rf:"#3B82F6",cripto:"#F7931A"};
 const CLASSE_TABS = {fiis:"fiis",acoes:"acoes",stocks:"stocks",etfs:"etfs",rf:"rf",cripto:"cripto"};
 
+// Junta posições de todas as classes num só ranking, pra "Maiores Posições"
+function getTodasPosicoes(){
+  const list=[];
+  D.acoes.forEach(a=>{ if(a.cotas>0) list.push({tk:a.tk, val:posVal(a), tab:'acoes', color:CLASSE_COLORS.acoes}); });
+  D.fiis.forEach(f=>{ if(f.cotas>0) list.push({tk:f.tk, val:posVal(f), tab:'fiis', color:CLASSE_COLORS.fiis}); });
+  D.etfs.forEach(e=>{
+    const v=(e.cotas&&e.priceUSD)?e.cotas*e.priceUSD*usdBRL:e.atual*usdBRL;
+    if(v>0) list.push({tk:e.tk, val:v, tab:'etfs', color:CLASSE_COLORS.etfs});
+  });
+  D.stocks.forEach(s=>{
+    const adj=(s.priceUSD&&s.prevClose>0)?s.priceUSD/s.prevClose:1;
+    const v=s.atual*adj*usdBRL;
+    if(v>0) list.push({tk:s.tk, val:v, tab:'stocks', color:CLASSE_COLORS.stocks});
+  });
+  D.rf.forEach(r=>{ const v=r.bruto||r.inv||0; if(v>0) list.push({tk:r.titulo, val:v, tab:'rf', color:CLASSE_COLORS.rf}); });
+  D.cripto.forEach(c=>{ const v=(cryptoPrecoBRL(c.moeda)||c.pm)*c.qtd; if(v>0) list.push({tk:c.moeda, val:v, tab:'cripto', color:CLASSE_COLORS.cripto}); });
+  return list.sort((a,b)=>b.val-a.val);
+}
+
+function renderMaioresPosicoes(){
+  const el = document.getElementById("maioresPosicoesBox");
+  if(!el) return;
+  const list = getTodasPosicoes().slice(0,5);
+  if(!list.length){
+    el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:11px;padding:16px 8px">Nenhuma posição ainda.</div>`;
+    return;
+  }
+  const max = list[0].val;
+  el.innerHTML = list.map((p,i)=>`
+    <div class="maiorpos-row" onclick="goTab('${p.tab}')">
+      <span class="maiorpos-rank">${i+1}</span>
+      <div class="maiorpos-mid">
+        <div class="maiorpos-tk">${p.tk}</div>
+        <div class="maiorpos-bar-track"><div class="maiorpos-bar-fill" style="width:${max>0?(p.val/max*100).toFixed(0):0}%;background:${p.color}"></div></div>
+      </div>
+      <span class="maiorpos-val">${brl(p.val,0)}</span>
+    </div>`).join("");
+}
+
+// Evolução do Patrimônio: sem histórico anterior pra reconstruir — começa a registrar HOJE,
+// uma foto por dia, e o gráfico vai crescendo sozinho a partir de agora.
+const PATR_HISTORY_KEY = "patrHistory_v1";
+function trackPatrimonioSnapshot(totalInvest){
+  if(!totalInvest || totalInvest<=0) return;
+  try{
+    const hoje = new Date().toISOString().split("T")[0];
+    const hist = JSON.parse(localStorage.getItem(PATR_HISTORY_KEY)||"{}");
+    hist[hoje] = totalInvest; // último valor do dia sobrescreve o anterior — sempre 1 ponto por dia
+    localStorage.setItem(PATR_HISTORY_KEY, JSON.stringify(hist));
+  }catch(e){}
+}
+function renderEvolucaoPatrimonio(){
+  const el = document.getElementById("evolucaoPatrBox");
+  if(!el) return;
+  let hist={};
+  try{ hist = JSON.parse(localStorage.getItem(PATR_HISTORY_KEY)||"{}"); }catch(e){}
+  const entries = Object.entries(hist).sort((a,b)=>a[0]<b[0]?-1:1);
+  if(entries.length < 2){
+    el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:11px;padding:20px 8px;line-height:1.7">📈 Começamos a acompanhar hoje.<br>Volte em alguns dias pra ver o gráfico crescer.</div>`;
+    return;
+  }
+  const ultimos = entries.slice(-14);
+  const max = Math.max(...ultimos.map(e=>e[1]),1);
+  const bars = ultimos.map(([data,val])=>{
+    const h = Math.max(4, val/max*66);
+    const [,m,d] = data.split("-");
+    return `<div class="mb"><div class="mb-stack" style="height:${h.toFixed(0)}px"><div class="mb-seg-recebido" style="height:100%"></div></div><div class="mb-l">${d}/${m}</div></div>`;
+  }).join("");
+  el.innerHTML = `<div class="mbar-wrap" style="height:78px">${bars}</div>
+    <div style="text-align:center;font-size:10px;color:var(--muted);margin-top:6px">${entries.length} registro${entries.length>1?"s":""} desde ${entries[0][0].split("-").reverse().join("/")}</div>`;
+}
+
 function renderAtivosCarteira(){
   const el = document.getElementById("ativosCarteiraBox");
   if(!el) return;
@@ -2720,7 +2828,7 @@ function renderAtivosCarteira(){
     el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">Adicione ativos pra ver a distribuição da sua carteira aqui.</div>`;
     return;
   }
-  const R=84,cx=104,cy=104,sw=34,circ=2*Math.PI*R;
+  const R=68,cx=86,cy=86,sw=28,circ=2*Math.PI*R;
   const ordenado=[...ativos].sort((a,b)=>b.val-a.val);
 
   // Monta os arcos uma vez, reaproveitados nas duas camadas (parede escura embaixo + topo colorido)
@@ -2906,6 +3014,7 @@ function render(){
 
   /* hero */
   g("hPatrVal").textContent=brl(totalInvest,2);
+  trackPatrimonioSnapshot(totalInvest);
   const metaAtingida = meta>0 && pct>=100;
   const faltaEl=g("hFalta");
   faltaEl.textContent = !meta ? "Configure em Metas ⚙" : metaAtingida ? "🎉 Meta atingida!" : "Faltam "+brl(falta,2);
@@ -2916,6 +3025,8 @@ function render(){
     const hltPill=g("hLucroTotalPill");
     if(hltPill) hltPill.className='var-pill '+(lucroTotalPortfolio>0?'up':lucroTotalPortfolio<0?'dn':'');
   }
+  const hProvEl=g("hProv");
+  if(hProvEl) hProvEl.textContent=brl(D.fiis.reduce((s,f)=>s+f.prov,0),2);
   g("metaPct").textContent= !meta ? "—" : pct>=100 ? "100%+" : pct.toFixed(1)+"%";
   const metaAtiva = (D.metas.length && D.metas[D.activeMeta]) ? D.metas[D.activeMeta] : null;
   g("metaLbl").textContent= metaAtiva ? metaAtiva.lbl : "Meta não configurada";
@@ -2931,6 +3042,8 @@ function render(){
   renderCripto();
   renderAlloc();
   renderAtivosCarteira();
+  renderMaioresPosicoes();
+  renderEvolucaoPatrimonio();
   renderMetasAloc();
   renderAcoes(totAcoes);
   renderFiis(totFiis);
@@ -3182,8 +3295,15 @@ const COLUNAS_REGISTRO = {
 const TABELA_NOMES = {ac:"Ações BR", fi:"FIIs", et:"ETFs", sk:"Stocks", cr:"Cripto"};
 const TABELA_IDS = {ac:"acTbl", fi:"fiTbl", et:"etTbl", sk:"skTbl", cr:"cryptoTbl"};
 
+// Padrão de fábrica: DY% e % Teto Individual começam ocultas em Ações/FIIs (deixa a tabela mais arejada).
+// Só se aplica na primeira vez — se o usuário já mexeu em Colunas antes, respeita a escolha dele.
+const COLUNAS_PADRAO_OCULTAS = { ac:[8,9], fi:[8,9] };
 function getColunasOcultas(){
-  try{ return JSON.parse(localStorage.getItem(COLS_KEY)||"{}"); }
+  try{
+    const raw = localStorage.getItem(COLS_KEY);
+    if(raw===null) return COLUNAS_PADRAO_OCULTAS; // nunca configurou — usa o padrão de fábrica
+    return JSON.parse(raw||"{}");
+  }
   catch(e){ return {}; }
 }
 function saveColunasOcultas(obj){
