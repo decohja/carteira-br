@@ -1759,6 +1759,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v20.8",d:"Jun/2026",items:[
+    "CORRIGIDO BUG GRAVE (regressão da v20.7): sobrou código tentando escrever em 3 elementos que eu tinha removido da tela — isso quebrava a função de render() inteira no meio, travando tudo que vinha depois (Metas de Alocação ficava vazia, pílulas do cabeçalho ficavam em '—', nada atualizava)",
+  ]},
   {v:"v20.7",d:"Jun/2026",items:[
     "Metas de Alocação voltou pra home com destaque de verdade — tabela completa, não mais escondida atrás de menu",
     "Removidas as pílulas-resumo (eram inúteis, viraram a tabela completa de novo)",
@@ -2805,12 +2808,6 @@ function render(){
   const faltaEl=g("hFalta");
   faltaEl.textContent = !meta ? "Configure em Metas ⚙" : metaAtingida ? "🎉 Meta atingida!" : "Faltam "+brl(falta,2);
   faltaEl.className = "falta-pill"+(metaAtingida?" complete":"");
-  g("hAcoes").textContent=brl(totAcoes,2);
-  setHS("hAcoesSub",lucroAcoes,true);
-  g("hFiis").textContent=brl(totFiis,2);
-  setHS("hFiisSub",lucroFiis,true);
-  g("hEUA").textContent=brl(totETF+totSTK,2);
-  setHS("hEUASub",lucroETF+lucroSTK,true);
   const totProvFII12M=D.fiis.reduce((s,f)=>s+f.prov,0);
   const hpL=g("hpLucro"); hpL.textContent=sgn(lucroTotalPortfolio)+brl(Math.abs(lucroTotalPortfolio),2);
   hpL.style.color = lucroTotalPortfolio>=0?"var(--pos)":"var(--neg)";
