@@ -821,7 +821,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </div>
   </div>
   <div class="hdr-r">
-    <button class="ibtn" onclick="refreshPrices(true)" id="btnAtualizar" title="Atualizar cotações"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>
     <button class="ibtn" onclick="toggleTheme()" id="themeBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
     <button class="ibtn" onclick="openMod('metas')">⚙️</button>
     <button class="avt" onclick="openPerfil()" id="avtBtn">D</button>
@@ -907,7 +906,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <span id="lastUpd">—</span>
     <span style="flex:1"></span>
     <button class="refbtn" onclick="location.reload()" title="Recarrega a página inteira do zero">↻ Recarregar página</button>
-    <button class="refbtn" id="btnAtualizarHome" onclick="refreshPrices(true)" style="font-weight:600;border-color:var(--gold);color:var(--gold)" title="Busca cotações novas sem recarregar a página">📊 Atualizar cotações</button>
+    <button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-weight:600;border-color:var(--gold);color:var(--gold)" title="Busca cotações novas sem recarregar a página">📊 Atualizar cotações</button>
   </div>
 
   <!-- Toast de atualização (não bloqueante) -->
@@ -971,7 +970,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-acoes">
   <div class="two tbl-full">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="ac-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('acoes')">＋ Adicionar ação</button><button class="refbtn" onclick="openColunasModal('ac')" style="font-size:11px">⚙ Colunas</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="ac-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('acoes')">＋ Adicionar ação</button><button class="refbtn" onclick="openColunasModal('ac')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
       <div class="tw">
         <table data-tbl="ac">
           <thead><tr>
@@ -1009,7 +1008,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-fiis">
   <div class="two tbl-full">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="fi-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('fiis')">＋ Adicionar FII</button><button class="refbtn" onclick="openColunasModal('fi')" style="font-size:11px">⚙ Colunas</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="fi-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('fiis')">＋ Adicionar FII</button><button class="refbtn" onclick="openColunasModal('fi')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
       <div class="tw">
         <table data-tbl="fi">
           <thead><tr>
@@ -1049,7 +1048,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-rf">
   <div class="two">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições <button class="add-btn" onclick="openAddRF()">＋ Adicionar título</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições <button class="add-btn" onclick="openAddRF()">＋ Adicionar título</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
       <div class="tw"><table><thead><tr><th>Título</th><th class="r">Cotas</th><th class="r">Investido</th><th class="r">Total bruto</th><th class="r">Ganho</th><th></th></tr></thead><tbody id="rfTbl"></tbody></table></div>
     </div>
     <div>
@@ -1065,7 +1064,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-etfs">
   <div class="two tbl-full">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições ETFs — USD e BRL <button class="add-btn" onclick="openAddAtivo('etfs')">＋ Adicionar ETF</button><button class="refbtn" onclick="openColunasModal('et')" style="font-size:11px">⚙ Colunas</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições ETFs — USD e BRL <button class="add-btn" onclick="openAddAtivo('etfs')">＋ Adicionar ETF</button><button class="refbtn" onclick="openColunasModal('et')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
       <div class="tw">
         <table data-tbl="et">
           <thead><tr>
@@ -1098,7 +1097,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-stocks">
   <div class="two tbl-full">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições Stocks — USD e BRL <button class="add-btn" onclick="openAddAtivo('stocks')">＋ Adicionar Stock</button><button class="refbtn" onclick="openColunasModal('sk')" style="font-size:11px">⚙ Colunas</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições Stocks — USD e BRL <button class="add-btn" onclick="openAddAtivo('stocks')">＋ Adicionar Stock</button><button class="refbtn" onclick="openColunasModal('sk')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
       <div class="tw">
         <table data-tbl="sk">
           <thead><tr>
@@ -1133,7 +1132,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 <!-- CRIPTO -->
 <section class="panel" id="p-cripto">
-  <div class="st" style="display:flex;align-items:center;gap:8px">Posições — Cripto <span id="cripto-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('cripto')">＋ Adicionar moeda</button><button class="refbtn" onclick="openColunasModal('cr')" style="font-size:11px">⚙ Colunas</button></div>
+  <div class="st" style="display:flex;align-items:center;gap:8px">Posições — Cripto <span id="cripto-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('cripto')">＋ Adicionar moeda</button><button class="refbtn" onclick="openColunasModal('cr')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
   <div class="tw">
     <table data-tbl="cr">
       <thead><tr>
@@ -1814,6 +1813,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v22.8",d:"Jun/2026",items:[
+    "Removido o ícone de atualizar do header — era pequeno demais e sem feedback visual claro, fonte de confusão",
+    "'📊 Atualizar cotações' agora aparece em TODAS as abas de ativos (Ações, FIIs, Renda Fixa, ETFs, Stocks, Cripto), não só na home — botão grande, com texto, sempre no mesmo lugar perto de '+ Adicionar'",
+  ]},
   {v:"v22.7",d:"Jun/2026",items:[
     "CORRIGIDO: valores em US$ (cards, ETFs, Stocks) usavam separador americano (1,308.62) em vez do brasileiro (1.308,62) — a função de formatação estava configurada errada desde sempre",
     "Home ganhou 2 botões separados e rotulados: '↻ Recarregar página' (recarrega tudo do zero) e '📊 Atualizar cotações' (busca preço novo sem recarregar) — antes só existia o ícone pequeno no header",
@@ -2558,16 +2561,14 @@ function setLdStatus(txt){ const el=document.getElementById("ldStatus"); if(el) 
 let _refreshing = false;
 function showRefreshToast(){
   document.getElementById('refreshToast')?.classList.add('show');
-  ['btnAtualizar','btnAtualizarHome'].forEach(id=>{
-    const btn = document.getElementById(id);
-    if(btn){ btn.disabled=true; btn.style.opacity='.5'; }
+  document.querySelectorAll('.btn-refresh-cotacoes').forEach(btn=>{
+    btn.disabled=true; btn.style.opacity='.5';
   });
 }
 function hideRefreshToast(){
   document.getElementById('refreshToast')?.classList.remove('show');
-  ['btnAtualizar','btnAtualizarHome'].forEach(id=>{
-    const btn = document.getElementById(id);
-    if(btn){ btn.disabled=false; btn.style.opacity=''; }
+  document.querySelectorAll('.btn-refresh-cotacoes').forEach(btn=>{
+    btn.disabled=false; btn.style.opacity='';
   });
 }
 
