@@ -1801,6 +1801,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v21.8",d:"Jun/2026",items:[
+    "CORRIGIDO BUG GRAVE: ao adicionar um ativo, o preço digitado ficava só na memória da sessão — nunca ia pro cache do navegador. Se a página recarregasse antes de uma busca ao vivo confirmar aquele ticker, o preço sumia de vez e virava 'aguard.' pra sempre (foi o caso do EMBR3)",
+    "Agora todo preço definido — vindo de busca ao vivo OU de você cadastrando manualmente — é gravado no cache. Nada mais se perde entre sessões",
+  ]},
   {v:"v21.7",d:"Jun/2026",items:[
     "Pílula de Proventos voltou pro cabeçalho, perto do Patrimônio, junto de Variação e Lucro Total",
     "Home reestruturada: rosca 'Ativos na Carteira' menor e à esquerda, com 2 quadros novos ao lado — 'Maiores Posições' (ranking de tudo que você tem, cruzando todas as classes) e 'Evolução do Patrimônio'",
@@ -4526,6 +4530,7 @@ async function confirmarAddAtivo(){
       D.acoes.push({tk,co:tk,st:setor,pm,cotas,dy:0,teto,obj:"Manter"});
     }
     prices[tk]=prices[tk]||pm; // não sobrescreve cotação ao vivo já existente
+    if(!getPriceCacheStore()[tk]) savePriceCache(tk, prices[tk]); // grava no cache local — sem isso, um recarregamento de página perde o valor de vez
   } else if(addAtivoTipo==="fiis"){
     if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Cotas."); return; }
     const existente=D.fiis.find(x=>x.tk===tk);
@@ -4538,6 +4543,7 @@ async function confirmarAddAtivo(){
       D.fiis.push({tk,seg:setor,pm,cotas,dy:0,prov:0,st:"NEUTRO"});
     }
     prices[tk]=prices[tk]||pm;
+    if(!getPriceCacheStore()[tk]) savePriceCache(tk, prices[tk]);
   } else if(addAtivoTipo==="cripto"){
     if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Qtd. moeda."); return; }
     const existente=D.cripto.find(x=>x.moeda===tk);
