@@ -828,6 +828,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </div>
   </div>
   <div class="hdr-r">
+    <button class="ibtn" onclick="goHome()" title="Início"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg></button>
     <button class="ibtn" onclick="toggleTheme()" id="themeBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
     <button class="ibtn" onclick="openMod('metas')">⚙️</button>
     <button class="avt" onclick="openPerfil()" id="avtBtn">D</button>
@@ -907,17 +908,17 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <button class="btn-pri" style="white-space:nowrap" onclick="goTab('acoes');openAddAtivo('acoes')">＋ Adicionar primeiro ativo</button>
 </div>
 
+<!-- Toast de atualização (global — visível em qualquer aba) -->
+<div class="refresh-toast" id="refreshToast"><span class="toast-spin">↻</span> Atualizando preços…</div>
+
 <!-- VISÃO GERAL -->
 <section class="panel on" id="p-visao">
   <div class="refbar">
-    <span id="lastUpd">—</span>
+    <span class="last-upd-text">—</span>
     <span style="flex:1"></span>
     <button class="refbtn" onclick="location.reload()" title="Recarrega a página inteira do zero">↻ Recarregar página</button>
     <button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-weight:600;border-color:var(--gold);color:var(--gold)" title="Busca cotações novas sem recarregar a página">📊 Atualizar cotações</button>
   </div>
-
-  <!-- Toast de atualização (não bloqueante) -->
-  <div class="refresh-toast" id="refreshToast"><span class="toast-spin">↻</span> Atualizando preços…</div>
 
   <div class="home-grid">
     <div>
@@ -977,7 +978,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-acoes">
   <div class="two tbl-full">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="ac-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('acoes')">＋ Adicionar ação</button><button class="refbtn" onclick="openColunasModal('ac')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="ac-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('acoes')">＋ Adicionar ação</button><button class="refbtn" onclick="openColunasModal('ac')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button><span class="last-upd-text" style="font-size:10px;color:var(--muted)">—</span></div>
       <div class="tw">
         <table data-tbl="ac">
           <thead><tr>
@@ -1015,7 +1016,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-fiis">
   <div class="two tbl-full">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="fi-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('fiis')">＋ Adicionar FII</button><button class="refbtn" onclick="openColunasModal('fi')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="fi-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('fiis')">＋ Adicionar FII</button><button class="refbtn" onclick="openColunasModal('fi')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button><span class="last-upd-text" style="font-size:10px;color:var(--muted)">—</span></div>
       <div class="tw">
         <table data-tbl="fi">
           <thead><tr>
@@ -1055,7 +1056,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-rf">
   <div class="two">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições <button class="add-btn" onclick="openAddRF()">＋ Adicionar título</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições <button class="add-btn" onclick="openAddRF()">＋ Adicionar título</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button><span class="last-upd-text" style="font-size:10px;color:var(--muted)">—</span></div>
       <div class="tw"><table><thead><tr><th>Título</th><th class="r">Cotas</th><th class="r">Investido</th><th class="r">Total bruto</th><th class="r">Ganho</th><th></th></tr></thead><tbody id="rfTbl"></tbody></table></div>
     </div>
     <div>
@@ -1071,7 +1072,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-etfs">
   <div class="two tbl-full">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições ETFs — USD e BRL <button class="add-btn" onclick="openAddAtivo('etfs')">＋ Adicionar ETF</button><button class="refbtn" onclick="openColunasModal('et')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições ETFs — USD e BRL <button class="add-btn" onclick="openAddAtivo('etfs')">＋ Adicionar ETF</button><button class="refbtn" onclick="openColunasModal('et')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button><span class="last-upd-text" style="font-size:10px;color:var(--muted)">—</span></div>
       <div class="tw">
         <table data-tbl="et">
           <thead><tr>
@@ -1104,7 +1105,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-stocks">
   <div class="two tbl-full">
     <div>
-      <div class="st" style="display:flex;align-items:center;gap:8px">Posições Stocks — USD e BRL <button class="add-btn" onclick="openAddAtivo('stocks')">＋ Adicionar Stock</button><button class="refbtn" onclick="openColunasModal('sk')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições Stocks — USD e BRL <button class="add-btn" onclick="openAddAtivo('stocks')">＋ Adicionar Stock</button><button class="refbtn" onclick="openColunasModal('sk')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button><span class="last-upd-text" style="font-size:10px;color:var(--muted)">—</span></div>
       <div class="tw">
         <table data-tbl="sk">
           <thead><tr>
@@ -1139,7 +1140,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 <!-- CRIPTO -->
 <section class="panel" id="p-cripto">
-  <div class="st" style="display:flex;align-items:center;gap:8px">Posições — Cripto <span id="cripto-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('cripto')">＋ Adicionar moeda</button><button class="refbtn" onclick="openColunasModal('cr')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button></div>
+  <div class="st" style="display:flex;align-items:center;gap:8px">Posições — Cripto <span id="cripto-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('cripto')">＋ Adicionar moeda</button><button class="refbtn" onclick="openColunasModal('cr')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button><span class="last-upd-text" style="font-size:10px;color:var(--muted)">—</span></div>
   <div class="tw">
     <table data-tbl="cr">
       <thead><tr>
@@ -1820,6 +1821,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v23.2",d:"Jun/2026",items:[
+    "Novo ícone de 'Início' fixo no header (casinha, ao lado do sol/lua) — volta pra Visão Geral (rosca, Maiores Posições, Evolução do Patrimônio) na hora, sem recarregar a página. Antes só dava pra voltar pelo menu lateral",
+  ]},
+  {v:"v23.1",d:"Jun/2026",items:[
+    "CORRIGIDO BUG GRAVE: clicar em 'Atualizar cotações' fora da Visão Geral realmente atualizava os preços, mas o aviso 'Atualizando…' e o horário final ficavam escondidos numa aba diferente da que você estava. Agora o aviso é global (aparece em qualquer aba) e cada aba tem seu próprio texto de horário",
+  ]},
   {v:"v23.0",d:"Jun/2026",items:[
     "NOVO DIFERENCIAL: Cotação agora fica verde quando sobe e vermelha quando desce, comparando com o último preço confirmado — igual corretora de verdade. A bolinha pulsando continua marcando 'é dado vivo', a cor é sobre a direção do movimento (fica azul enquanto não houver histórico de comparação ainda)",
   ]},
@@ -2582,6 +2589,12 @@ function setLdStatus(txt){ const el=document.getElementById("ldStatus"); if(el) 
 
 /* ─── COTAÇÕES: Yahoo Finance batch ─────────────────────────────────── */
 let _refreshing = false;
+function setLastUpdText(text, color){
+  document.querySelectorAll('.last-upd-text').forEach(el=>{
+    el.textContent = text;
+    el.style.color = color || '';
+  });
+}
 function showRefreshToast(){
   document.getElementById('refreshToast')?.classList.add('show');
   document.querySelectorAll('.btn-refresh-cotacoes').forEach(btn=>{
@@ -2723,10 +2736,9 @@ async function refreshPrices(manual=false){
   const faltaram = tksEsperadosBR - brOK;
   if(brOK>0){
     pricesArelive=true;
-    document.getElementById('lastUpd').textContent = faltaram>0
+    setLastUpdText(faltaram>0
       ? `Preços atualizados — ${nowTs} (${faltaram} ativo${faltaram>1?"s":""} sem confirmação)`
-      : `Preços atualizados — ${nowTs}`;
-    document.getElementById('lastUpd').style.color='';
+      : `Preços atualizados — ${nowTs}`);
     const chip=document.getElementById('snapChip');
     if(chip){chip.textContent=`Ao vivo — ${nowTs}`;chip.className='snap-chip live';}
     const s1=document.getElementById('ac-src'),s2=document.getElementById('fi-src');
@@ -2734,15 +2746,14 @@ async function refreshPrices(manual=false){
   } else {
     const chip=document.getElementById('snapChip');
     if(chip&&!chip.classList.contains('live')){chip.textContent='Dados salvos';chip.className='snap-chip';}
-    document.getElementById('lastUpd').textContent = window._lastFetchError
+    setLastUpdText(window._lastFetchError
       ? `Sem conexão — ${window._lastFetchError}`
-      : 'Sem conexão — usando snapshot';
+      : 'Sem conexão — usando snapshot');
   }
   render();
   } catch(fatalErr) {
     console.error('refreshPrices erro inesperado:', fatalErr);
-    const el=document.getElementById('lastUpd');
-    if(el) el.textContent = 'Erro ao atualizar: ' + fatalErr.message;
+    setLastUpdText('Erro ao atualizar: ' + fatalErr.message);
   } finally {
     if(manual) hideRefreshToast();
     _refreshing = false;
@@ -4813,7 +4824,7 @@ function openPerfil(){
   }
   const uEl=document.getElementById('perfilUpd');
   if(uEl){
-    const ultimo=document.getElementById('lastUpd');
+    const ultimo=document.querySelector('.last-upd-text');
     uEl.textContent = (ultimo && ultimo.textContent && ultimo.textContent!=='—') ? ultimo.textContent : 'aguardando…';
   }
   document.getElementById("modPerfil").classList.add("open");
@@ -5160,7 +5171,7 @@ async function startApp(){
 
   /* 4. Brapi + Yahoo em background */
   setLdStatus("Buscando cotações…");
-  document.getElementById("lastUpd").textContent="Buscando cotações…";
+  setLastUpdText("Buscando cotações…");
   await refreshPrices();
 
   /* 5. Auto-refresh a cada 60s */
@@ -5173,8 +5184,7 @@ async function startApp(){
   } catch(fatalErr) {
     console.error("INIT ERRO:", fatalErr);
     hideLoading();
-    const el = document.getElementById("lastUpd");
-    if(el) el.textContent = "Erro ao inicializar: " + fatalErr.message;
+    setLastUpdText("Erro ao inicializar: " + fatalErr.message);
     render(); // tenta renderizar mesmo com erro
   }
 }
