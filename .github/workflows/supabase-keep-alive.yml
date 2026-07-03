@@ -1,0 +1,18 @@
+name: Supabase Keep-Alive
+
+# Roda toda terça e sexta às 09:00 UTC (evita a pausa de 7 dias por inatividade do plano gratuito)
+on:
+  schedule:
+    - cron: '0 9 * * 2,5'
+  workflow_dispatch: # também permite rodar manualmente pelo botão "Run workflow" no GitHub
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase (SELECT leve)
+        run: |
+          curl -s -X GET \
+            "https://pojzzwxuawpqvrethncz.supabase.co/rest/v1/metas?select=user_id&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}"
