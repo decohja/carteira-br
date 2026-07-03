@@ -37,10 +37,10 @@ html,body{font-family:var(--font);font-size:14px;background:var(--bg);color:var(
     radial-gradient(ellipse 800px 500px at 100% 100%, rgba(59,130,246,.025), transparent 60%),
     var(--bg);
 }
-body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.03;
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.06;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:200px}
-[data-theme="dark"] body::before{opacity:.045}
+[data-theme="dark"] body::before{opacity:.09}
 .wrap{position:relative;z-index:1}
 
 /* ─── LOADING SCREEN ─────────────────── */
@@ -125,8 +125,9 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   border-bottom:1px solid #EAD9AE;
 }
 [data-theme="dark"] .hdr{
-  background:linear-gradient(180deg,#171A22,#0D0F15);
-  border-bottom:1px solid rgba(200,146,42,.16);
+  background:linear-gradient(180deg,#241D14,#12100D);
+  border-bottom:1px solid rgba(200,146,42,.4);
+  box-shadow:0 1px 0 rgba(200,146,42,.1),0 4px 18px rgba(0,0,0,.35);
 }
 .reserva-explica{
   font-size:12px;line-height:1.65;color:var(--muted);
@@ -214,7 +215,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .ibtn{width:36px;height:36px;border-radius:9px;border:1px solid var(--border2);
   background:var(--bg3);color:var(--muted);display:flex;align-items:center;
   justify-content:center;cursor:pointer;font-size:16px;transition:all .15s;flex-shrink:0;}
-.ibtn:hover{border-color:var(--border3);color:var(--text)}
+.ibtn:hover{border-color:var(--gold-dim);color:var(--gold);background:var(--gold-bg)}
 .avt{width:36px;height:36px;border-radius:50%;border:2px solid var(--gold);
   background:linear-gradient(135deg,#6B4E15,var(--gold));
   display:flex;align-items:center;justify-content:center;cursor:pointer;
@@ -1834,6 +1835,11 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v23.5",d:"Jun/2026",items:[
+    "Header do modo escuro refeito com contraste de verdade — gradiente marrom-dourado bem visível (antes era um preto quase idêntico ao resto da tela, por isso parecia que nada tinha mudado)",
+    "Ícones do header (Início, tema) ganharam brilho dourado nítido ao passar o mouse",
+    "Textura de fundo triplicada de intensidade — as duas tentativas anteriores estavam sutis demais pra notar na prática",
+  ]},
   {v:"v23.4",d:"Jun/2026",items:[
     "Cotação: removido o azul neutro — agora só existe verde (subiu) ou vermelho (desceu) comparado com o último preço confirmado, ou cor de texto normal só no caso raríssimo de ser a primeiríssima vez que aquele ticker é buscado (nunca antes, em nenhuma sessão). Bolinha pulsando continua marcando dado vivo",
   ]},
