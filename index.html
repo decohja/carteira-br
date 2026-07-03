@@ -112,12 +112,13 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 /* ─── B3 HEADER BADGE ────────────────── */
 .b3-badge{
   display:flex;align-items:center;justify-content:center;
-  height:36px;padding:0 12px;border-radius:9px;flex-shrink:0;
-  border:1px solid var(--gold-dim);background:var(--gold-bg);color:var(--gold);
-  cursor:pointer;transition:background .15s,transform .15s;
+  height:36px;padding:0 10px;border-radius:9px;flex-shrink:0;
+  border:1px solid var(--border2);background:var(--bg3);color:var(--muted);
+  cursor:pointer;transition:all .15s;
 }
-.b3-badge:hover{background:var(--gold-dim);transform:translateY(-1px)}
-.b3-badge:active{transform:translateY(0)}
+.b3-badge:hover{border-color:var(--gold-dim);color:var(--gold);background:var(--gold-bg)}
+.b3-badge:active{transform:translateY(1px)}
+.hdr-sep{width:1px;height:22px;background:var(--border);flex-shrink:0;margin:0 4px}
 
 /* ─── HEADER ─────────────────────────── */
 .hdr{
@@ -835,6 +836,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </div>
   </div>
   <div class="hdr-r">
+    <span class="hdr-sep"></span>
     <button class="b3-badge" onclick="b3EmBreve()" title="Integração direta com a B3 — em breve">
       <svg width="30" height="18" viewBox="0 0 42 26" fill="none">
         <path d="M5 3 L5 23" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
@@ -1095,6 +1097,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
             <th class="r sort" data-col="inv" data-t="et">Investido <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="atual" data-t="et">Valor Atual <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="et">Lucro</th>
+            <th class="r sort" data-col="cotas" data-t="et">Cotas</th>
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pelo ETF nos últimos 12 meses, em relação ao preço atual da cota.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este ETF dentro da carteira de ETFs. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração da categoria inteira deste ETF (ex: S&P 500, Industrial) em relação ao teto que você definiu para a categoria. Clique no valor para editar.">?</span></th>
@@ -1127,6 +1130,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
             <th class="r sort" data-col="inv" data-t="sk">Investido <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="atual" data-t="sk">Valor Atual <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="sk">Lucro</th>
+            <th class="r sort" data-col="cotas" data-t="sk">Cotas</th>
             <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pela empresa nos últimos 12 meses, em relação ao preço atual da ação.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para esta Stock dentro da carteira de Stocks. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração do setor inteiro desta Stock (ex: Tecnologia, Financeiro) em relação ao teto que você definiu para o setor. Clique no valor para editar.">?</span></th>
@@ -1832,6 +1836,14 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v22.5",d:"Jun/2026",items:[
+    "ACHADO O BUG DE VERDADE da coluna Cotas sumida: inserir a coluna deslocou o índice de qualquer coluna que você já tivesse escondido antes em ETFs/Stocks, e a preferência salva passou a apontar (por coincidência) pra Cotas. Migração automática única limpa essa configuração antiga só nessas 2 tabelas",
+    "Card de Proventos removido da fileira horizontal — já virou card fixo no cabeçalho, ficava duplicado",
+    "Botão B3: perdeu o fundo dourado tipo pílula (agora neutro, só fica dourado no hover) e ganhou um separador visual — não fica mais colado nas cotações de Ibovespa/Dólar",
+  ]},
+  {v:"v22.4",d:"Jun/2026",items:[
+    "CORRIGIDO: coluna Cotas nunca tinha sido adicionada em ETFs e Stocks — o número já era usado internamente (Preço Médio = Investido ÷ Cotas), mas não aparecia na tabela pra conferência. Agora aparece, logo depois de Lucro, igual em Ações/FIIs",
+  ]},
   {v:"v22.3",d:"Jun/2026",items:[
     "Pílulas soltas (Variação, Lucro Total, Proventos) viraram CARDS de verdade — ícone, rótulo e valor grande, com borda e fundo, no espírito do que você mandou do Investidor10",
     "CORRIGIDO: Cripto não aparecia em Metas de Alocação quando o saldo era R$0 — as outras 5 classes sempre aparecem mesmo zeradas, então isso te impedia de definir uma meta % pra Cripto antes de comprar. Agora é consistente com as demais",
@@ -3168,8 +3180,6 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
     {name:"Cripto",val:brl(totCripto,2),
       sub2:sgn(lucroCripto2)+brl(Math.abs(lucroCripto2),2),sub2cls:lucroCripto2>=0?"pos":"neg",
       pct:Math.min(100,pctOf(totCripto)),c:"#EF4444",tab:"cripto"},
-    {name:"Proventos",val:brl(totProvFII,2),
-      sub:"acumulado FIIs",sub2cls:"gold",pct:Math.min(100,totProvFII/500*100),c:"#22C55E",tab:"prov"},
     {name:"Metas de Alocação",val:totalResumo>0?brl(totalResumo,2):"—",
       sub:totalMetaConfigResumo===0?"não configurada":`${classesNaMeta}/${classesResumo.length} classes na meta`,sub2cls:"gold",
       pct:classesResumo.length>0?(classesNaMeta/classesResumo.length*100):0,c:"var(--gold)",tab:"metasaloc"},
@@ -3298,6 +3308,19 @@ function getCriptoTotal(){
 
 /* ─── COLUNAS OCULTÁVEIS (genérico — Ações, FIIs, ETFs, Stocks, Cripto) ── */
 const COLS_KEY = "colunasVisiveis";
+// Migração pontual (jun/2026): a coluna Cotas foi inserida em ETFs/Stocks, o que deslocou o índice
+// de qualquer coluna que o usuário já tivesse escondido antes — a preferência salva passava a apontar
+// pro lugar errado (e por coincidência escondia a Cotas nova). Reseta só essas 2 tabelas, uma vez.
+(function migrarColunasEtSk(){
+  const MIGR_KEY = "colMigracaoCotasEtSk_v1";
+  if(localStorage.getItem(MIGR_KEY)) return;
+  try{
+    const ocultas = JSON.parse(localStorage.getItem(COLS_KEY)||"{}");
+    delete ocultas.et; delete ocultas.sk;
+    localStorage.setItem(COLS_KEY, JSON.stringify(ocultas));
+  }catch(e){}
+  try{ localStorage.setItem(MIGR_KEY, "1"); }catch(e){}
+})();
 
 // Registro de colunas por tabela: nome amigável + índice (1-based, igual nth-child)
 const COLUNAS_REGISTRO = {
@@ -3334,10 +3357,11 @@ const COLUNAS_REGISTRO = {
     {idx:4, label:"Investido"},
     {idx:5, label:"Valor Atual"},
     {idx:6, label:"Lucro"},
-    {idx:7, label:"DY%"},
-    {idx:8, label:"% Teto Individual"},
-    {idx:9, label:"% Teto Setor"},
-    {idx:10, label:"Excluir", obrigatoria:true},
+    {idx:7, label:"Cotas"},
+    {idx:8, label:"DY%"},
+    {idx:9, label:"% Teto Individual"},
+    {idx:10, label:"% Teto Setor"},
+    {idx:11, label:"Excluir", obrigatoria:true},
   ],
   sk: [
     {idx:1, label:"Stock", obrigatoria:true},
@@ -3346,10 +3370,11 @@ const COLUNAS_REGISTRO = {
     {idx:4, label:"Investido"},
     {idx:5, label:"Valor Atual"},
     {idx:6, label:"Lucro"},
-    {idx:7, label:"DY%"},
-    {idx:8, label:"% Teto Individual"},
-    {idx:9, label:"% Teto Setor"},
-    {idx:10, label:"Excluir", obrigatoria:true},
+    {idx:7, label:"Cotas"},
+    {idx:8, label:"DY%"},
+    {idx:9, label:"% Teto Individual"},
+    {idx:10, label:"% Teto Setor"},
+    {idx:11, label:"Excluir", obrigatoria:true},
   ],
   cr: [
     {idx:1, label:"Moeda", obrigatoria:true},
@@ -3992,6 +4017,7 @@ function renderETFs(sc,sd){
       <td class="r" style="white-space:nowrap">${usd(e.atual)}<div class="usd2">${brl(e.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),2)}</div></td>
+      <td class="r">${e.cotas>0?e.cotas:"—"}</td>
       <td class="r">${e.dy.toFixed(2)}%</td>
       <td>${tetoCell(e.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("ETFs", e.fun, pctSetor, tetoSetorAtual, rows.length===1)}</td>
@@ -4006,7 +4032,7 @@ function renderETFs(sc,sd){
     {val:`${usdTotal(tI)}<div class="usd2">${brlTotal(tI*usdBRL,2)}</div>`,r:true},
     {val:`${usdTotal(tA)}<div class="usd2">${brlTotal(tA*usdBRL,2)}</div>`,r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usdTotal(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brlTotal(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   mkHBars(rows.map(e=>({label:e.tk,v:e.atual,pct:tot>0?e.atual/tot*100:0})),"et-hbars","#38BDF8");
   mkDY(rows.map(e=>({label:e.tk,v:e.dy})),"et-dy"); // ETFs sem mapa de cor por categoria — usa dourado padrão
@@ -4046,6 +4072,7 @@ function renderStocks(sc,sd){
       <td class="r" style="white-space:nowrap">${usd(s.atual)}<div class="usd2">${brl(s.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
+      <td class="r">${s.cotas>0?s.cotas:"—"}</td>
       <td class="r">${s.dy.toFixed(2)}%</td>
       <td>${tetoCell(s.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("Stocks", s.setor, pctSetor, tetoSetorAtual, rows.length===1)}</td>
@@ -4060,7 +4087,7 @@ function renderStocks(sc,sd){
     {val:`${usdTotal(tI)}<div class="usd2">${brlTotal(tI*usdBRL,2)}</div>`,r:true},
     {val:`${usdTotal(tA)}<div class="usd2">${brlTotal(tA*usdBRL,2)}</div>`,r:true},
     {val:`<span style="color:${tL>=0?"var(--pos)":"var(--neg)"}">${sgn(tL)}${usdTotal(Math.abs(tL))}<div class="usd2">${sgn(tL)}${brlTotal(Math.abs(tL*usdBRL),2)}</div></span>`,r:true},
-    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   mkHBars(rows.map(s=>({label:s.tk,v:s.atual,pct:tot>0?s.atual/tot*100:0})),"sk-hbars","#818CF8");
   const mapSt={};rows.forEach(s=>{mapSt[s.setor]=(mapSt[s.setor]||0)+s.atual});
