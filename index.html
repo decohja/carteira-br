@@ -223,6 +223,11 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .hero{background:var(--bg2);border-bottom:1px solid var(--border);padding:16px 18px 13px}
 .hero-row{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap}
 .hero-left{flex-shrink:0}
+.hero-pills{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;margin-top:2px;flex:1}
+.hpill{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 16px;min-width:130px}
+.hpill-lbl{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.hpill-val{display:block;font-family:var(--mono);font-size:17px;font-weight:600}
 .eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:2px}
 .patr{font-family:var(--mono);font-size:36px;font-weight:500;letter-spacing:-.04em;line-height:1}
 .patr-var-row{display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap}
@@ -237,8 +242,10 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .var-pill.up{border-color:var(--pos-dim);background:var(--pos-bg);color:var(--pos)}
 .var-pill.dn{border-color:var(--neg-dim);background:var(--neg-bg);color:var(--neg)}
 .snap-chip{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--border2);
-  color:var(--muted);background:var(--bg3);white-space:nowrap}
+  color:var(--muted);background:var(--bg3);white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
 .snap-chip.live{border-color:var(--pos-dim);color:var(--pos);background:var(--pos-bg)}
+.snap-chip.live::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;
+  background:var(--pos);animation:liveDotPulse 1.8s ease-in-out infinite}
 /* ── Refresh toast (não bloqueante) ── */
 .refresh-toast{
   position:fixed;top:54px;left:50%;
@@ -415,9 +422,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 /* ─── ALLOC ──────────────────────────── */
 .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:12px}
-.alocmini{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:6px}
-.aloc-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;
-  background:var(--bg3);border:1px solid var(--border2);font-size:12px;font-weight:500;cursor:default}
 .acard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;
   transition:border-color .15s,transform .15s;cursor:pointer}
 .acard:hover{border-color:var(--border3);transform:translateY(-1px)}
@@ -758,7 +762,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       <button onclick="closeMenu();goTab('stocks')">📊 Stocks</button>
       <button onclick="closeMenu();goTab('cripto')">₿ Cripto</button>
       <button onclick="closeMenu();goTab('prov')">💵 Proventos</button>
-      <button onclick="closeMenu();goTab('metasaloc')">📐 Metas de Alocação</button>
       <div class="side-sep"></div>
       <button onclick="closeMenu();openMod('metas')">🎯 Metas</button>
       <button onclick="closeMenu();openMod('app')">⚙️ Configurações</button>
@@ -816,12 +819,19 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <span class="snap-chip" id="snapChip" title="'Ao vivo' significa que os preços foram atualizados agora há pouco direto da fonte de cotações. 'Dados salvos' significa que está mostrando o último preço salvo, porque não foi possível buscar uma cotação mais recente no momento.">aguardando…</span>
       </div>
     </div>
-    <!-- hstats removido — dados nos cards abaixo -->
-    <div style="display:none">
-      <span id="hAcoes"></span><span id="hAcoesSub"></span>
-      <span id="hFiis"></span><span id="hFiisSub"></span>
-      <span id="hEUA"></span><span id="hEUASub"></span>
-      <span id="hLucro"></span><span id="hLucroTotal"></span>
+    <div class="hero-pills" id="heroPills">
+      <div class="hpill">
+        <span class="hpill-lbl">Lucro total</span>
+        <span class="hpill-val" id="hpLucro">—</span>
+      </div>
+      <div class="hpill">
+        <span class="hpill-lbl">Proventos (12M)</span>
+        <span class="hpill-val" id="hpProv">—</span>
+      </div>
+      <div class="hpill">
+        <span class="hpill-lbl">Rentabilidade</span>
+        <span class="hpill-val" id="hpRent">—</span>
+      </div>
     </div>
   </div>
   <div class="meta-row">
@@ -874,22 +884,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <div class="refresh-toast" id="refreshToast"><span class="toast-spin">↻</span> Atualizando preços…</div>
 
   <div class="st" style="display:flex;align-items:center;justify-content:space-between">
-    <span>Metas de alocação <span class="info-ic" title="Resumo rápido — veja a tabela completa em ⚙ Metas de Alocação no menu.">?</span></span>
-    <button class="refbtn" onclick="goTab('metasaloc')" style="font-size:11px">Ver tudo →</button>
-  </div>
-  <div class="alocmini" id="alocMiniResumo"></div>
-
-  <div class="st" style="margin-top:16px;display:flex;align-items:center;justify-content:space-between">
-    <span>Reserva e caixa <span class="info-ic" title="Não entram na meta de investimentos nem no patrimônio investido — são reservas separadas.">?</span></span>
-    <button class="refbtn" onclick="openAddExtraItem()" style="font-size:11px">+ Adicionar item</button>
-  </div>
-  <div class="agrid agrid-extra" id="allocExtra"></div>
-  <div id="extraTotalBar" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:right"></div>
-</section>
-
-<!-- METAS DE ALOCAÇÃO (própria seção) -->
-<section class="panel" id="p-metasaloc">
-  <div class="st" style="display:flex;align-items:center;justify-content:space-between">
     <span>Metas de alocação</span>
     <button class="refbtn" onclick="saveMetas()" style="color:var(--pos)">💾 Salvar metas</button>
   </div>
@@ -911,6 +905,13 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       <tbody id="metasAlocTbody"></tbody>
     </table>
   </div>
+
+  <div class="st" style="margin-top:16px;display:flex;align-items:center;justify-content:space-between">
+    <span>Reserva e caixa <span class="info-ic" title="Não entram na meta de investimentos nem no patrimônio investido — são reservas separadas.">?</span></span>
+    <button class="refbtn" onclick="openAddExtraItem()" style="font-size:11px">+ Adicionar item</button>
+  </div>
+  <div class="agrid agrid-extra" id="allocExtra"></div>
+  <div id="extraTotalBar" style="margin-top:6px;font-size:11px;color:var(--muted);text-align:right"></div>
 </section>
 
 <!-- AÇÕES BR -->
@@ -1758,6 +1759,14 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v20.7",d:"Jun/2026",items:[
+    "Metas de Alocação voltou pra home com destaque de verdade — tabela completa, não mais escondida atrás de menu",
+    "Removidas as pílulas-resumo (eram inúteis, viraram a tabela completa de novo)",
+    "Removido o card 'Carteira Total' da fileira de cards — os dados dele (Patrimônio, Lucro, % da meta) subiram pro cabeçalho, perto de 'Patrimônio de Investimentos', usando o espaço vazio que tinha ali",
+    "Novas pílulas no cabeçalho: Lucro total, Proventos (12M) e Rentabilidade — inspirado no que você mandou do Investidor10",
+    "CORRIGIDO: 'Variação' e o novo 'Lucro total' não incluíam Renda Fixa no cálculo — agora incluem",
+    "Chip 'Ao vivo' ganhou um pontinho pulsando, mais alinhado com o resto do app",
+  ]},
   {v:"v20.6",d:"Jun/2026",items:[
     "REFORMA DA HOME (fase 1 — limpeza): removida a seção 'Alocação por classe' (repetia os cards do topo, mesma informação)",
     "Metas de Alocação virou seção própria no menu lateral (📐 Metas de Alocação) — antes dividia espaço com o resto da home",
@@ -2645,24 +2654,6 @@ function computeMetasAlocData(){
   return {metas, classes, total};
 }
 
-function renderAlocMiniResumo(){
-  const el = document.getElementById("alocMiniResumo");
-  if(!el) return;
-  const {metas, classes, total} = computeMetasAlocData();
-  const totalMetaConfig = Object.values(metas).reduce((a,b)=>a+b,0);
-  if(totalMetaConfig===0 || total===0){
-    el.innerHTML = `<div style="font-size:11px;color:var(--muted);padding:6px 0">Configure suas metas em <a href="#" onclick="goTab('metasaloc');return false" style="color:var(--gold)">Metas de Alocação</a> pra ver o resumo aqui.</div>`;
-    return;
-  }
-  el.innerHTML = classes.map(c=>{
-    const pct = total>0 ? c.val/total*100 : 0;
-    const meta = metas[c.id]||0;
-    const tier = gapTier(pct, meta);
-    return `<span class="aloc-pill" style="border-color:${tier.dot}66" title="${tier.label}: ${c.name} está em ${pct.toFixed(1)}% (meta ${meta}%)">
-      <span class="meta-gap-dot" style="background:${tier.dot}"></span>${c.name}</span>`;
-  }).join("");
-}
-
 function renderMetasAloc(){
   const tbody = document.getElementById("metasAlocTbody");
   if(!tbody) return;
@@ -2704,7 +2695,6 @@ function renderMetasAloc(){
     <td class="r" id="totalMetaPct" style="font-family:var(--mono);color:${Math.abs(totalMeta-100)>0.1?"var(--neg)":"var(--pos)"}">${totalMeta.toFixed(1)}%</td>
     <td></td><td></td>
   </tr>`;
-  renderAlocMiniResumo();
 }
 
 function recalcMetaRow(inp){
@@ -2728,7 +2718,6 @@ function recalcMetaRow(inp){
   document.querySelectorAll(".meta-inp").forEach(i=>{ totalMeta += parseFloat(i.value)||0; });
   const tm = document.getElementById("totalMetaPct");
   if(tm){ tm.textContent = totalMeta.toFixed(1)+"%"; tm.style.color = Math.abs(totalMeta-100)>0.1?"var(--neg)":"var(--pos)"; }
-  renderAlocMiniResumo();
 }
 
 function saveMetas(){
@@ -2792,9 +2781,10 @@ function render(){
   const custoETF   = D.etfs.reduce((s,e)=>s+e.inv,0)*usdBRL;
   const custoSTK   = D.stocks.reduce((s,s2)=>s+s2.inv,0)*usdBRL;
   const custoCripto = D.cripto.reduce((s,c)=>s+c.pm*c.qtd,0);
-  const custoTotal = custoAcoes+custoFiis+custoETF+custoSTK+custoCripto;
+  const custoRF = D.rf.reduce((s,r)=>s+(r.inv||0),0);
+  const custoTotal = custoAcoes+custoFiis+custoETF+custoSTK+custoCripto+custoRF;
   const lucroCriptoCalc = getCriptoTotal()-custoCripto;
-  const lucroTotalPortfolio = lucroAcoes+lucroFiis+lucroETF+lucroSTK+lucroCriptoCalc;
+  const lucroTotalPortfolio = lucroAcoes+lucroFiis+lucroETF+lucroSTK+lucroCriptoCalc+lucroRF;
   const variacaoPct = custoTotal>0 ? (lucroTotalPortfolio/custoTotal*100) : 0;
   const pillEl = document.getElementById("hVariacaoPill");
   const hVar = document.getElementById("hVariacao");
@@ -2821,11 +2811,12 @@ function render(){
   setHS("hFiisSub",lucroFiis,true);
   g("hEUA").textContent=brl(totETF+totSTK,2);
   setHS("hEUASub",lucroETF+lucroSTK,true);
-  const lEl=g("hLucro"); lEl.textContent=sgn(lucroAcoes)+brl(Math.abs(lucroAcoes),2);
-  lEl.className="hv "+(lucroAcoes>=0?"pos":"neg");
-  const lucroTotal=lucroAcoes+lucroFiis+lucroETF+lucroSTK;
-  const ltEl=g("hLucroTotal"); ltEl.textContent=sgn(lucroTotal)+brl(Math.abs(lucroTotal),2);
-  ltEl.className="hv "+(lucroTotal>=0?"pos":"neg");
+  const totProvFII12M=D.fiis.reduce((s,f)=>s+f.prov,0);
+  const hpL=g("hpLucro"); hpL.textContent=sgn(lucroTotalPortfolio)+brl(Math.abs(lucroTotalPortfolio),2);
+  hpL.style.color = lucroTotalPortfolio>=0?"var(--pos)":"var(--neg)";
+  g("hpProv").textContent=brl(totProvFII12M,2);
+  const hpR=g("hpRent"); hpR.textContent=(variacaoPct>=0?'+':'')+variacaoPct.toFixed(2)+"%";
+  hpR.style.color = variacaoPct>=0?"var(--pos)":"var(--neg)";
   g("metaPct").textContent= !meta ? "—" : pct>=100 ? "100%+" : pct.toFixed(1)+"%";
   const metaAtiva = (D.metas.length && D.metas[D.activeMeta]) ? D.metas[D.activeMeta] : null;
   g("metaLbl").textContent= metaAtiva ? metaAtiva.lbl : "Meta não configurada";
@@ -2867,9 +2858,6 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
   const lucroTotal2=lucroAcoes+lucroFiis+lucroETF2+lucroSTK2+lucroCripto2;
   const pctOf=v=> meta>0 ? v/meta*100 : 0; // evita divisão por zero quando não há meta configurada
   const items=[
-    {name:"Carteira Total",val:brl(D.invest.reduce((s,c)=>s+c.v,0),2),
-      sub:meta>0?pct.toFixed(1)+"% da meta":"sem meta definida",sub2:sgn(lucroTotal2)+brl(Math.abs(lucroTotal2),2),
-      sub2cls:lucroTotal2>=0?"pos":"neg",pct,c:"var(--gold)",tab:"visao"},
     {name:"Ações BR",val:brl(totAcoes,2),
       sub2:sgn(lucroAcoes)+brl(Math.abs(lucroAcoes),2),sub2cls:lucroAcoes>=0?"pos":"neg",
       pct:pctOf(totAcoes),c:"#F59E0B",tab:"acoes"},
