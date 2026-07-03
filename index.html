@@ -127,6 +127,10 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   display:flex;align-items:center;padding:0 18px;gap:0;
 }
+[data-theme="light"] .hdr{
+  background:linear-gradient(180deg,#FFFDF7,#FFF9EC);
+  border-bottom:1px solid #EAD9AE;
+}
 .ham-btn{
   width:34px;height:34px;background:none;border:none;cursor:pointer;
   display:flex;flex-direction:column;justify-content:center;gap:5px;
@@ -163,12 +167,12 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   display:none;backdrop-filter:blur(2px);
 }
 .side-overlay.open{display:block}
-.logo{display:flex;align-items:center;gap:8px;padding-right:16px;
-  border-right:1px solid var(--border);font-size:15px;font-weight:600;
+.logo{display:flex;align-items:center;gap:9px;padding-right:16px;margin-left:10px;
+  border-right:1px solid var(--border);font-size:17px;font-weight:600;
   letter-spacing:-.025em;color:var(--text);text-decoration:none;flex-shrink:0;}
-.logo-m{width:28px;height:28px;border-radius:7px;flex-shrink:0;
+.logo-m{width:34px;height:34px;border-radius:8px;flex-shrink:0;
   background:linear-gradient(135deg,var(--gold-l),var(--gold),#8B5E0A);
-  display:flex;align-items:center;justify-content:center;font-size:13px;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
   font-weight:700;color:#fff;box-shadow:0 2px 8px rgba(200,146,42,.4);}
 .logo em{color:var(--gold);font-style:normal}
 
@@ -447,13 +451,17 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .sdon-sep{font-family:var(--mono);font-size:12px;color:var(--faint);justify-self:center}
 
 /* ─── ATIVOS NA CARTEIRA (home) ──────── */
-.ativoscart-wrap{display:flex;align-items:center;justify-content:center;gap:36px;flex-wrap:wrap;padding:14px 4px}
-.ativoscart-legend{display:flex;flex-direction:column;gap:10px;min-width:180px}
-.ativoscart-row{display:flex;align-items:center;gap:10px;cursor:pointer;padding:4px 6px;border-radius:6px;transition:background .15s}
-.ativoscart-row:hover{background:var(--bg3)}
+.ativoscart-wrap{display:flex;align-items:center;justify-content:flex-start;gap:44px;flex-wrap:wrap;padding:18px 8px}
+.ativoscart-legend{display:grid;grid-template-columns:auto auto auto;column-gap:9px;row-gap:11px;align-items:center}
+.ativoscart-row{display:contents;cursor:pointer}
+.ativoscart-row:hover .ativoscart-n,.ativoscart-row:hover .ativoscart-pct{color:var(--gold)}
 .ativoscart-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
-.ativoscart-n{color:var(--text);font-weight:500;font-size:13.5px;min-width:118px}
-.ativoscart-pct{font-family:var(--mono);font-size:13.5px;font-weight:700;color:var(--text)}
+.ativoscart-n{color:var(--text);font-weight:500;font-size:13.5px;white-space:nowrap;transition:color .15s;padding-right:14px}
+.ativoscart-pct{font-family:var(--mono);font-size:13.5px;font-weight:700;color:var(--text);text-align:right;transition:color .15s}
+.donut3d-stage{perspective:900px;flex-shrink:0}
+.donut3d-tilt{transform:rotateX(48deg) rotateZ(-6deg);transform-style:preserve-3d;position:relative;width:208px;height:208px}
+.donut3d-wall{position:absolute;top:11px;left:0;filter:blur(0.3px)}
+.donut3d-top{position:absolute;top:0;left:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
 .sdon-cap{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);
   white-space:nowrap;cursor:pointer;text-align:left;justify-self:start;min-width:3.2ch}
 .sdon-cap u{text-decoration-style:dotted}
@@ -543,6 +551,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   background:var(--bg2);
   border-top:1px solid var(--border2);
   padding:0;font-size:11px;color:var(--muted);overflow:hidden;
+}
+[data-theme="light"] .footer{
+  background:linear-gradient(180deg,#FFF9EC,#FFFCF6);
+  border-top:1px solid #EAD9AE;
 }
 .f-top{
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;
@@ -1761,6 +1773,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v21.5",d:"Jun/2026",items:[
+    "Rosca 'Ativos na Carteira': removido o gradiente (era o que você não gostou), agora é 3D de verdade — inclinada em perspectiva, com uma 'parede' escura simulando profundidade, não mais um efeito de brilho artificial",
+    "Legenda da rosca alinhada em grid de verdade — nome e porcentagem ficam retinhos em coluna, e tudo foi pro lado esquerdo",
+    "Modo claro: header e rodapé ganharam um dourado bem sutil (gradiente + borda), em vez de branco puro",
+    "Logo maior (34px, antes 28px) e com espaço do botão de menu ao lado",
+  ]},
   {v:"v21.4",d:"Jun/2026",items:[
     "REESTRUTURADO DE VEZ: Metas de Alocação e Reserva e Caixa viraram abas de verdade, exatamente como Ações BR/FIIs/etc — clica no card, mostra SÓ aquele conteúdo, nada de rosca ou outra seção junto",
     "Home (Visão Geral) agora só tem a rosca 'Ativos na Carteira' — o resto tem aba própria",
@@ -2704,33 +2722,22 @@ function renderAtivosCarteira(){
   }
   const R=84,cx=104,cy=104,sw=34,circ=2*Math.PI*R;
   const ordenado=[...ativos].sort((a,b)=>b.val-a.val);
-  // Gradientes por fatia (efeito 3D/glossy) + sombra do grupo inteiro
-  let defs=`<defs><filter id="donut3d" x="-30%" y="-30%" width="160%" height="160%">
-    <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.35"/>
-  </filter>`;
-  ordenado.forEach((c,i)=>{
-    const color=CLASSE_COLORS[c.id]||"var(--gold)";
-    defs+=`<linearGradient id="grad${i}" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="${color}" stop-opacity="1"/>
-      <stop offset="55%" stop-color="${color}" stop-opacity="0.88"/>
-      <stop offset="100%" stop-color="#000" stop-opacity="0.18"/>
-    </linearGradient>`;
-  });
-  defs+=`</defs>`;
-  let arcs=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="${sw}"/>`;
-  let off=circ/4;
-  ordenado.forEach((c,i)=>{
-    const pct=c.val/total*100, arc=pct/100*circ, gap=circ-arc;
-    arcs+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="url(#grad${i})" stroke-width="${sw}"
-      stroke-dasharray="${arc.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"
-      style="cursor:pointer" onclick="goTab('${CLASSE_TABS[c.id]||'visao'}')"><title>${c.name}: ${pct.toFixed(1)}%</title></circle>`;
-    off-=arc;
-  });
-  // Brilho sutil no topo do anel (reforça a sensação de volume)
-  const shineArc = circ*0.22;
-  arcs+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#fff" stroke-width="${sw*0.28}"
-    stroke-dasharray="${shineArc.toFixed(2)} ${(circ-shineArc).toFixed(2)}" stroke-dashoffset="${(circ*0.13).toFixed(2)}"
-    stroke-linecap="round" opacity="0.16" pointer-events="none"/>`;
+
+  // Monta os arcos uma vez, reaproveitados nas duas camadas (parede escura embaixo + topo colorido)
+  function buildArcs(darkWall){
+    let s=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${darkWall?'#00000055':'var(--bg4)'}" stroke-width="${sw}"/>`;
+    let off=circ/4;
+    ordenado.forEach(c=>{
+      const pct=c.val/total*100, arc=pct/100*circ, gap=circ-arc;
+      const color=CLASSE_COLORS[c.id]||"var(--gold)";
+      s+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${darkWall?'#000':color}" stroke-width="${sw}"
+        stroke-dasharray="${arc.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"
+        ${darkWall?'opacity="0.4"':`style="cursor:pointer" onclick="goTab('${CLASSE_TABS[c.id]||'visao'}')"`}><title>${darkWall?'':`${c.name}: ${pct.toFixed(1)}%`}</title></circle>`;
+      off-=arc;
+    });
+    return s;
+  }
+
   const legend=ordenado.map(c=>{
     const pct=c.val/total*100;
     const color=CLASSE_COLORS[c.id]||"var(--gold)";
@@ -2740,8 +2747,14 @@ function renderAtivosCarteira(){
       <span class="ativoscart-pct">${pct.toFixed(2)}%</span>
     </div>`;
   }).join("");
+
   el.innerHTML = `<div class="ativoscart-wrap">
-    <svg width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}" style="flex-shrink:0;filter:url(#donut3d)">${defs}${arcs}</svg>
+    <div class="donut3d-stage">
+      <div class="donut3d-tilt">
+        <svg class="donut3d-wall" width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}">${buildArcs(true)}</svg>
+        <svg class="donut3d-top" width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}">${buildArcs(false)}</svg>
+      </div>
+    </div>
     <div class="ativoscart-legend">${legend}</div>
   </div>`;
 }
