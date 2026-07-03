@@ -1764,6 +1764,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v21.2",d:"Jun/2026",items:[
+    "ACHADO: o card de Reserva e Caixa na fileira nunca tinha sido criado — só mexi na seção de baixo por engano. Agora existe de verdade, mostra o total, clica e rola até a seção",
+    "Card de Metas de Alocação: tirei o 'X/Y classes na meta' como valor principal (confuso) — agora mostra o valor total rastreado (bate com o TOTAL da tabela), e o 'X/Y na meta' virou só um detalhe menor embaixo",
+  ]},
   {v:"v21.1",d:"Jun/2026",items:[
     "CORRIGIDO DE VEZ: Reserva e Caixa tinha um placeholder pontilhado redundante dentro do grid (além do botão que já existia no título) — removido, já não tem mais nada pontilhado ali",
     "Rosca 'Ativos na Carteira': maior e bem mais grossa, com efeito 3D (gradiente + sombra + brilho no topo), valores da legenda mais próximos do nome, tudo centralizado no bloco",
@@ -2942,6 +2946,7 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
     const tier = gapTier(pctC, metasResumo[c.id]||0);
     if(tier.label==="Na meta") classesNaMeta++;
   });
+  const totalReservaCaixa = getAllExtra().reduce((s,c)=>s+c.v,0);
   const items=[
     {name:"Ações BR",val:brl(totAcoes,2),
       sub2:sgn(lucroAcoes)+brl(Math.abs(lucroAcoes),2),sub2cls:lucroAcoes>=0?"pos":"neg",
@@ -2962,10 +2967,13 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
       pct:Math.min(100,pctOf(totCripto)),c:"#F7931A",tab:"cripto"},
     {name:"Proventos",val:brl(totProvFII,2),
       sub:"acumulado FIIs",sub2cls:"gold",pct:Math.min(100,totProvFII/500*100),c:"#22C55E",tab:"prov"},
-    {name:"Metas de Alocação",val:totalMetaConfigResumo===0?"—":`${classesNaMeta}/${classesResumo.length}`,
-      sub:totalMetaConfigResumo===0?"não configurada":"classes na meta",sub2cls:"gold",
+    {name:"Metas de Alocação",val:totalResumo>0?brl(totalResumo,2):"—",
+      sub:totalMetaConfigResumo===0?"não configurada":`${classesNaMeta}/${classesResumo.length} classes na meta`,sub2cls:"gold",
       pct:classesResumo.length>0?(classesNaMeta/classesResumo.length*100):0,c:"var(--gold)",tab:"visao",
       onclick:()=>{goTab('visao');toggleMetasAloc(true);}},
+    {name:"Reserva e Caixa",val:brl(totalReservaCaixa,2),
+      sub:"fora do patrimônio investido",pct:totalReservaCaixa>0?100:0,c:"#22C55E",tab:"visao",
+      onclick:()=>{goTab('visao');setTimeout(()=>document.querySelector('.reserva-card')?.scrollIntoView({behavior:'smooth',block:'start'}),80);}},
   ];
   items.forEach(it=>{
     const p=Math.min(100,it.pct), R=22, circ=2*Math.PI*R, dash=circ*p/100, gap=circ-dash, sz=R*2+8, cxy=R+4;
