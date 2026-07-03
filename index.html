@@ -322,14 +322,18 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .content{max-width:1300px;margin:0 auto;padding:16px 18px 80px}
 .panel{display:none}.panel.on{display:block}
 .two{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
-.home-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;align-items:start}
-.home-side{display:flex;flex-direction:column;gap:14px}
+.home-grid{display:grid;grid-template-columns:max-content max-content;gap:16px;align-items:start;max-width:min(100%,720px)}
+.home-side{display:flex;flex-direction:column;gap:12px}
 @media(max-width:820px){.home-grid{grid-template-columns:1fr}}
 .two.eq{grid-template-columns:1fr 1fr}
 .two>div{min-width:0} /* permite a coluna encolher abaixo do conteúdo — senão a tabela empurra o grid inteiro em vez de rolar internamente */
 .st{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;
   color:var(--muted);display:flex;align-items:center;gap:8px;margin-bottom:9px}
 .st::after{content:"";flex:1;height:1px;background:var(--border)}
+.st-hl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;
+  display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.st-hl.gold{color:var(--gold)}
+.st-hl-big{font-size:15px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--text)}
 
 /* ─── TABLES ─────────────────────────── */
 .tw{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow-x:auto;overflow-y:hidden;margin-bottom:12px}
@@ -470,7 +474,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .ativoscart-n{color:var(--text);font-weight:500;font-size:13.5px;white-space:nowrap;transition:color .15s;padding-right:14px}
 .ativoscart-pct{font-family:var(--mono);font-size:13.5px;font-weight:700;color:var(--text);text-align:right;transition:color .15s}
 .donut3d-stage{perspective:900px;flex-shrink:0}
-.donut3d-tilt{transform:rotateX(48deg) rotateZ(-6deg);transform-style:preserve-3d;position:relative;width:172px;height:172px}
+.donut3d-tilt{transform:rotateX(48deg) rotateZ(-6deg);transform-style:preserve-3d;position:relative;width:236px;height:236px}
 .donut3d-wall{position:absolute;top:11px;left:0;filter:blur(0.3px)}
 .donut3d-top{position:absolute;top:0;left:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
 .sdon-cap{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);
@@ -904,16 +908,16 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
   <div class="home-grid">
     <div>
-      <div class="st">Ativos na carteira</div>
-      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;max-width:480px;width:fit-content"></div>
+      <div class="st-hl st-hl-big gold">Ativos na carteira</div>
+      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;max-width:560px;width:fit-content"></div>
     </div>
     <div class="home-side">
       <div>
-        <div class="st">Maiores posições</div>
+        <div class="st-hl gold">Maiores posições</div>
         <div class="bx" id="maioresPosicoesBox" style="max-width:360px;width:fit-content"></div>
       </div>
       <div>
-        <div class="st">Evolução do patrimônio</div>
+        <div class="st-hl gold">Evolução do patrimônio</div>
         <div class="bx" id="evolucaoPatrBox" style="max-width:360px;width:fit-content"></div>
       </div>
     </div>
@@ -1801,6 +1805,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v22.0",d:"Jun/2026",items:[
+    "Home compactada pra metade esquerda da tela — rosca, Maiores Posições e Evolução do Patrimônio mais próximos, sem espaço sobrando",
+    "Rosca 'Ativos na Carteira' maior, mais grossa, com destaque de título — e agora mostra o NOME de cada classe escrito dentro da própria fatia (quando ela é grande o suficiente pra caber)",
+    "CORRIGIDO: paleta de cores tinha pares quase idênticos (Ações e Cripto no mesmo laranja, Stocks e FIIs no mesmo roxo, ETFs e Renda Fixa no mesmo azul) — agora as 6 classes têm cores bem diferentes entre si, e isso vale em toda parte do app (cards, rosca, Maiores Posições)",
+    "Títulos das seções da home perderam a linha cinza decorativa — ficaram maiores e com cor dourada de destaque no lugar",
+  ]},
   {v:"v21.9",d:"Jun/2026",items:[
     "CORRIGIDO DE VEZ o espaço vazio nos quadros da home: eram esticados pra preencher toda a largura da coluna do grid, mesmo sem precisar. Agora têm largura máxima e encolhem pro tamanho do conteúdo — rosca, Maiores Posições e Evolução do Patrimônio",
     "Barras de 'Maiores Posições' tinham largura elástica (esticavam demais) — agora têm largura fixa",
@@ -2195,9 +2205,9 @@ const D={
     {n:"Renda Fixa",v:0,m:15520,c:"#3B82F6",fonte:"calc"},
     {n:"Ações Brasil",   v:0,  m:16490,c:"#F59E0B",fonte:"calc"},
     {n:"FIIs",           v:0,  m:13580,c:"#A78BFA",fonte:"calc"},
-    {n:"ETFs EUA",       v:0,  m:15520,c:"#38BDF8",fonte:"calc"},
-    {n:"Stocks EUA",     v:0,  m:11640,c:"#818CF8",fonte:"calc"},
-    {n:"Cripto",         v:0,  m:2910, c:"#F97316",fonte:"manual"},
+    {n:"ETFs EUA",       v:0,  m:15520,c:"#14B8A6",fonte:"calc"},
+    {n:"Stocks EUA",     v:0,  m:11640,c:"#EC4899",fonte:"calc"},
+    {n:"Cripto",         v:0,  m:2910, c:"#EF4444",fonte:"manual"},
   ],
   extra:[], // preenchido dinamicamente por renderAllocExtra() (somente itens manuais do usuário)
   cripto:[], // moedas adicionadas manualmente: {moeda, nome, qtd, pm, c (cor)}
@@ -2752,7 +2762,7 @@ function computeMetasAlocData(){
 }
 
 // Mesmas cores usadas nos cards da fileira — mantém a rosca visualmente conectada ao resto
-const CLASSE_COLORS = {fiis:"#A78BFA",acoes:"#F59E0B",stocks:"#818CF8",etfs:"#38BDF8",rf:"#3B82F6",cripto:"#F7931A"};
+const CLASSE_COLORS = {acoes:"#F59E0B",fiis:"#A78BFA",rf:"#3B82F6",etfs:"#14B8A6",stocks:"#EC4899",cripto:"#EF4444"};
 const CLASSE_TABS = {fiis:"fiis",acoes:"acoes",stocks:"stocks",etfs:"etfs",rf:"rf",cripto:"cripto"};
 
 // Junta posições de todas as classes num só ranking, pra "Maiores Posições"
@@ -2836,8 +2846,9 @@ function renderAtivosCarteira(){
     el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">Adicione ativos pra ver a distribuição da sua carteira aqui.</div>`;
     return;
   }
-  const R=68,cx=86,cy=86,sw=28,circ=2*Math.PI*R;
+  const R=94,cx=118,cy=118,sw=46,circ=2*Math.PI*R;
   const ordenado=[...ativos].sort((a,b)=>b.val-a.val);
+  const NOME_CURTO = {acoes:"Ações",fiis:"FIIs",rf:"Renda Fixa",etfs:"ETFs",stocks:"Stocks",cripto:"Cripto"};
 
   // Monta os arcos uma vez, reaproveitados nas duas camadas (parede escura embaixo + topo colorido)
   function buildArcs(darkWall){
@@ -2854,6 +2865,21 @@ function renderAtivosCarteira(){
     return s;
   }
 
+  // Nome de cada grupo escrito dentro da própria fatia (só quando ela é grande o bastante pra caber)
+  let labels="";
+  let cumFrac=0;
+  ordenado.forEach(c=>{
+    const frac=c.val/total;
+    const midFrac=cumFrac+frac/2;
+    const angleRad=(-90+midFrac*360)*Math.PI/180;
+    const lx=cx+R*Math.cos(angleRad), ly=cy+R*Math.sin(angleRad);
+    cumFrac+=frac;
+    if(frac>0.07){
+      labels+=`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle"
+        font-size="12" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:2.5px;pointer-events:none">${NOME_CURTO[c.id]||c.name}</text>`;
+    }
+  });
+
   const legend=ordenado.map(c=>{
     const pct=c.val/total*100;
     const color=CLASSE_COLORS[c.id]||"var(--gold)";
@@ -2868,7 +2894,7 @@ function renderAtivosCarteira(){
     <div class="donut3d-stage">
       <div class="donut3d-tilt">
         <svg class="donut3d-wall" width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}">${buildArcs(true)}</svg>
-        <svg class="donut3d-top" width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}">${buildArcs(false)}</svg>
+        <svg class="donut3d-top" width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}">${buildArcs(false)}${labels}</svg>
       </div>
     </div>
     <div class="ativoscart-legend">${legend}</div>
@@ -3099,13 +3125,13 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
       sub2:sgn(lucroRF)+brl(Math.abs(lucroRF),2),sub2cls:lucroRF>=0?"pos":"neg",pct:pctOf(totRF),c:"#3B82F6",tab:"rf"},
     {name:"ETFs",val:usd(D.etfs.reduce((s,e)=>s+e.atual,0)),
       sub:brl(totETF,2),sub2:sgn(lucroETF2)+brl(Math.abs(lucroETF2),2),sub2cls:lucroETF2>=0?"pos":"neg",
-      pct:pctOf(totETF),c:"#38BDF8",tab:"etfs"},
+      pct:pctOf(totETF),c:"#14B8A6",tab:"etfs"},
     {name:"Stocks",val:usd(D.stocks.reduce((s,s2)=>s+s2.atual,0)),
       sub:brl(totSTK,2),sub2:sgn(lucroSTK2)+brl(Math.abs(lucroSTK2),2),sub2cls:lucroSTK2>=0?"pos":"neg",
-      pct:pctOf(totSTK),c:"#818CF8",tab:"stocks"},
+      pct:pctOf(totSTK),c:"#EC4899",tab:"stocks"},
     {name:"Cripto",val:brl(totCripto,2),
       sub2:sgn(lucroCripto2)+brl(Math.abs(lucroCripto2),2),sub2cls:lucroCripto2>=0?"pos":"neg",
-      pct:Math.min(100,pctOf(totCripto)),c:"#F7931A",tab:"cripto"},
+      pct:Math.min(100,pctOf(totCripto)),c:"#EF4444",tab:"cripto"},
     {name:"Proventos",val:brl(totProvFII,2),
       sub:"acumulado FIIs",sub2cls:"gold",pct:Math.min(100,totProvFII/500*100),c:"#22C55E",tab:"prov"},
     {name:"Metas de Alocação",val:totalResumo>0?brl(totalResumo,2):"—",
