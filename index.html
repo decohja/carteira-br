@@ -1502,6 +1502,7 @@ let currentUser = null;     // { id, email, user_metadata:{name,avatar_url} }
 
 // Token Brapi embutido — nunca exposto em campo de UI, plano free (15k req/mês)
 const BRAPI_TOKEN = 'cAycArQLxF2iZbAuzqJyta';
+const FINNHUB_TOKEN = 'd94mkb1r01qgvhqpjfmgd94mkb1r01qgvhqpjfn0';
 
 const SB = {
   headers(extra){
@@ -1836,6 +1837,43 @@ const TICKER_SETOR_EUA = {
   LIN:"Industrial", GE:"Industrial", CAT:"Industrial", BA:"Industrial", UPS:"Industrial",
 };
 
+// Setor de tickers dos EUA fora do mapa fixo acima: busca na Finnhub (finnhubIndustry) e cacheia
+// pra sempre no navegador — só faz a chamada de API na primeira vez que aquele ticker aparece.
+const SETOR_CACHE_KEY = "setorEuaCache_v1";
+function getSetorCacheEUA(){
+  try{ return JSON.parse(localStorage.getItem(SETOR_CACHE_KEY)||"{}"); }catch(e){ return {}; }
+}
+function saveSetorCacheEUA(tk, setor){
+  try{
+    const c = getSetorCacheEUA();
+    c[tk] = setor;
+    localStorage.setItem(SETOR_CACHE_KEY, JSON.stringify(c));
+  }catch(e){}
+}
+// A Finnhub retorna categorias bem granulares (ex: "Semiconductors", "Biotechnology") — mapeia
+// pras nossas 6 categorias simples, por palavra-chave.
+function mapFinnhubIndustria(industria){
+  if(!industria) return "Outros";
+  const s = industria.toLowerCase();
+  if(/tech|software|semiconductor|internet|electronic/.test(s)) return "Tecnologia";
+  if(/bank|financ|insurance|credit|capital markets/.test(s)) return "Financeiro";
+  if(/health|pharma|biotech|medical/.test(s)) return "Saúde";
+  if(/energy|oil|gas|petroleum/.test(s)) return "Energia";
+  if(/retail|consumer|food|beverage|restaurant|apparel/.test(s)) return "Consumo";
+  if(/industrial|machinery|aerospace|defense|transport/.test(s)) return "Industrial";
+  return "Outros";
+}
+async function buscarSetorFinnhub(tk){
+  const cache = getSetorCacheEUA();
+  if(cache[tk]) return cache[tk];
+  try{
+    const j = await corsGetJSON(`https://finnhub.io/api/v1/stock/profile2?symbol=${tk}&token=${FINNHUB_TOKEN}`);
+    const setor = mapFinnhubIndustria(j?.finnhubIndustry);
+    saveSetorCacheEUA(tk, setor);
+    return setor;
+  }catch(e){ console.warn(`Setor Finnhub falhou pra ${tk}:`, e.message); return null; }
+}
+
 function setSbStatus(ok){
   sbOK = ok;
   const dot = document.getElementById('sbStatusDot');
@@ -1849,6 +1887,14 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v24.5",d:"Jun/2026",items:[
+    "Setor de Ações BR/Stocks EUA agora fica TRAVADO quando o ticker é reconhecido — antes só preenchia automaticamente, mas deixava editar (o mapa ticker→setor já existia, faltava travar)",
+    "NOVO: tickers de Stocks fora da lista conhecida buscam o setor automaticamente na Finnhub (com a chave que você cadastrou) e ficam salvos em cache pra sempre — próxima vez que aparecer, nem precisa buscar de novo",
+    "Ainda falta a parte de lista completa de ativos (B3 + EUA) pra autocomplete — fica pra próxima leva, é o item mais trabalhoso dos 3",
+  ]},
+  {v:"v24.4",d:"Jun/2026",items:[
+    "Cripto ganhou o botão '＋' por linha pra comprar mais da mesma moeda — igual Ações, FIIs, ETFs e Stocks já tinham. Antes só dava pra excluir e recriar do zero",
+  ]},
   {v:"v24.3",d:"Jun/2026",items:[
     "Cripto: coluna 'Preço Médio' adicionada — existia internamente, mas nunca era exibida na tabela",
     "Cripto: campo 'Valor atual' do formulário de adicionar renomeado pra 'Preço médio pago' — o rótulo antigo confundia sobre o que realmente preencher",
@@ -3384,7 +3430,7 @@ function renderCripto(){
       <td class="r" style="font-family:var(--mono);color:${precoVivo?'var(--text)':'var(--muted)'}">${precoVivo?brl(preco,2):'PM'}${chgTxt}</td>
       <td class="r" style="font-family:var(--mono);color:${lucroColor};font-weight:600">${lucro>=0?'+':''}${brl(lucro,2)}</td>
       <td>${tetoCell(c.moeda, pctCart, tetoAtual, D.cripto.length===1)}</td>
-      <td class="r"><button class="refbtn" onclick="deleteCripto(${idx})" style="color:var(--neg);border-color:var(--neg);padding:3px 9px;font-size:11px" title="Remover esta posição">✕ Excluir</button></td>
+      <td class="r" style="white-space:nowrap;padding-left:4px;padding-right:8px"><button class="refbtn" onclick="openAddAtivo('cripto','${c.moeda}')" style="color:var(--pos);border-color:var(--pos);padding:3px 6px;font-size:11px;margin-right:3px" title="Comprar mais ${c.moeda}">＋</button><button class="refbtn" onclick="deleteCripto(${idx})" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Remover esta posição">✕</button></td>
     </tr>`;
   }).join("");
 
@@ -4517,6 +4563,7 @@ function populateSelect(id, options){
   const sel = document.getElementById(id);
   if(!sel) return;
   sel.innerHTML = options.map(o=>`<option>${o}</option>`).join("");
+  sel.disabled = false; // reseta — só trava de novo se o ticker digitado tiver setor conhecido
 }
 
 function openAddAtivo(tipo, presetTicker){
@@ -4664,9 +4711,18 @@ document.getElementById("addTicker")?.addEventListener("blur", async function(){
   // Ações BR e FIIs: busca preço atual via Brapi + auto-associa setor
   if(addAtivoTipo==="acoes" || addAtivoTipo==="fiis"){
     // Auto-associa setor (só pra Ações BR — FIIs usa "Segmento" com opções diferentes no select)
-    if(addAtivoTipo==="acoes" && TICKER_SETOR_BR[tk]){
+    if(addAtivoTipo==="acoes"){
       const setorField=document.getElementById("addSetor");
-      if(setorField) setorField.value=TICKER_SETOR_BR[tk];
+      if(setorField){
+        if(TICKER_SETOR_BR[tk]){
+          setorField.value=TICKER_SETOR_BR[tk];
+          setorField.disabled=true;
+          setorField.title=`Setor de ${tk} é fixo — associado automaticamente, não editável.`;
+        } else {
+          setorField.disabled=false;
+          setorField.title="";
+        }
+      }
     }
     const cached=getCachedQuote(tk);
     if(cached!=null){
@@ -4692,9 +4748,26 @@ document.getElementById("addTicker")?.addEventListener("blur", async function(){
 
   // ETFs e Stocks EUA: busca preço atual via Yahoo Finance (mesma fonte do refresh automático) + auto-associa setor
   if(addAtivoTipo==="etfs" || addAtivoTipo==="stocks"){
-    if(addAtivoTipo==="stocks" && TICKER_SETOR_EUA[tk]){
+    if(addAtivoTipo==="stocks"){
       const setorField=document.getElementById("addSetor");
-      if(setorField) setorField.value=TICKER_SETOR_EUA[tk];
+      if(setorField){
+        if(TICKER_SETOR_EUA[tk]){
+          setorField.value=TICKER_SETOR_EUA[tk];
+          setorField.disabled=true;
+          setorField.title=`Setor de ${tk} é fixo — associado automaticamente, não editável.`;
+        } else {
+          setorField.disabled=false;
+          setorField.title="";
+          // não está no mapa fixo — tenta buscar na Finnhub (cacheia pra próxima vez)
+          buscarSetorFinnhub(tk).then(setor=>{
+            if(setor && _lastAutoTicker===tk){ // só aplica se o usuário não trocou de ticker enquanto buscava
+              setorField.value=setor;
+              setorField.disabled=true;
+              setorField.title=`Setor de ${tk} é fixo — associado automaticamente via Finnhub, não editável.`;
+            }
+          });
+        }
+      }
     }
     const cached=getCachedQuote(tk);
     if(cached!=null){
