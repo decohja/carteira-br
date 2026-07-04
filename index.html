@@ -1763,8 +1763,8 @@ const TICKERS_ACOES_BR = [
   'TIMS3','TOTS3','UGPA3','USIM5','VALE3','VBBR3','VIVT3','WEGE3','WIZC3','YDUQ3',
 ];
 const TICKERS_FIIS_BR = [
-  'BCFF11','BCIA11','BCRI11','BTCI11','BTLG11','CPTS11','FEXC11','FIIB11','FLCR11',
-  'GGRC11','GARE11','HGLG11','HGRU11','HGBS11','HSLG11','HSML11','IFIX11','ITLG11',
+  'BCFF11','BCIA11','BCRI11','BTCI11','BTLG11','CPTS11','FIIB11','FLCR11',
+  'GGRC11','GARE11','HGLG11','HGRU11','HGBS11','HSLG11','HSML11','INLG11',
   'JSAF11','JSRE11','KFOF11','KINP11','KNCT11','KNRI11','KNSC11','LVBI11','MCCI11',
   'MXRF11','OUJP11','PATL11','PVBI11','RBCO11','RBRF11','RBRP11','RECR11','RZAK11',
   'SNAG11','SNEL11','TGAR11','TPFT11','TRXF11','URPR11','VGIR11','VILG11','VISC11',
@@ -1774,24 +1774,30 @@ const TICKERS_BR = [...TICKERS_ACOES_BR, ...TICKERS_FIIS_BR]; // combinada — u
 
 // Opções de Setor/Segmento por classe — listas distintas, sem misturar Ações com FIIs
 const SETORES_ACOES = ["Financeiro","Energia","Indústria","Saneamento","Serviços","Saúde","Consumo","Tecnologia","Outros"];
-const SEGMENTOS_FII = ["Papel (Recebíveis)","Tijolo","Logística","Shoppings","Lajes Corporativas","Híbrido","Fundo de Fundos (FOF)","Energia/Infraestrutura","Saneamento","Outros"];
+const SEGMENTOS_FII = ["Papel (Recebíveis)","Tijolo","Logística","Shoppings","Lajes Corporativas","Híbrido","Fundo de Fundos (FOF)","Energia/Infraestrutura","Saneamento","Fiagro/Agro","Outros"];
 
 // Mapa ticker → segmento pra FIIs conhecidos (mesmo espírito do TICKER_SETOR_BR/EUA).
 // Só inclui os que tenho confiança razoável — o que não estiver aqui cai em "Outros"
 // (prefiro isso a arriscar classificar errado).
 const TICKER_SEGMENTO_FII = {
   BCFF11:"Fundo de Fundos (FOF)", KFOF11:"Fundo de Fundos (FOF)", RBRF11:"Fundo de Fundos (FOF)",
+  BCIA11:"Fundo de Fundos (FOF)", JSAF11:"Fundo de Fundos (FOF)", TPFT11:"Fundo de Fundos (FOF)",
   BCRI11:"Papel (Recebíveis)", BTCI11:"Papel (Recebíveis)", CPTS11:"Papel (Recebíveis)",
   FLCR11:"Papel (Recebíveis)", KINP11:"Papel (Recebíveis)", KNCT11:"Papel (Recebíveis)",
   KNSC11:"Papel (Recebíveis)", MCCI11:"Papel (Recebíveis)", MXRF11:"Papel (Recebíveis)",
   OUJP11:"Papel (Recebíveis)", RECR11:"Papel (Recebíveis)", VGIR11:"Papel (Recebíveis)",
-  VRTA11:"Papel (Recebíveis)",
+  VRTA11:"Papel (Recebíveis)", RZAK11:"Papel (Recebíveis)", URPR11:"Papel (Recebíveis)",
+  VOTS11:"Papel (Recebíveis)",
   BTLG11:"Logística", HGLG11:"Logística", HSLG11:"Logística", LVBI11:"Logística",
   PATL11:"Logística", VILG11:"Logística", XPLG11:"Logística", GGRC11:"Logística",
+  FIIB11:"Logística", INLG11:"Logística", VTLT11:"Logística",
   HGBS11:"Shoppings", HSML11:"Shoppings", VISC11:"Shoppings", XPML11:"Shoppings",
   JSRE11:"Lajes Corporativas", PVBI11:"Lajes Corporativas", RBCO11:"Lajes Corporativas",
   XPPR11:"Lajes Corporativas",
   HGRU11:"Híbrido", KNRI11:"Híbrido", GARE11:"Híbrido", RBRP11:"Híbrido",
+  TRXF11:"Híbrido", TGAR11:"Híbrido",
+  SNEL11:"Energia/Infraestrutura",
+  SNAG11:"Fiagro/Agro",
 };
 const SETORES_EUA = ["Tecnologia","Financeiro","Saúde","Consumo","Industrial","Energia","Outros"];
 
@@ -1905,6 +1911,15 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v25.0",d:"Jun/2026",items:[
+    "Todos os 49 FIIs da lista agora têm segmento classificado — zero em 'Outros'",
+    "FEXC11 removido (virou BTCI11, que já estava na lista) — ITLG11 renomeado pra INLG11 (ticker mudou)",
+    "IFIX11 removido — não existe como FII",
+    "Nova categoria 'Fiagro/Agro' criada pra SNAG11, que não se encaixava em nenhuma das existentes",
+  ]},
+  {v:"v24.9",d:"Jun/2026",items:[
+    "SNEL11 classificado como Energia/Infraestrutura (confirmado por você)",
+  ]},
   {v:"v24.8",d:"Jun/2026",items:[
     "CORRIGIDO BUG GRAVE: os tetos por setor (35% Financeiro, 25% Energia, 20% Indústria, etc) eram uma lista FIXA no código, do dono original — e vazavam pra QUALQUER conta nova, tanto na validação de 'soma não pode passar de 100%' quanto na exibição dos valores. Uma conta nova com 1 ativo em 'Energia' já 'herdava' os 75% dos outros setores do dono, travando qualquer configuração nova",
     "Corrigido em 5 lugares: as 4 tabelas (Ações/FIIs/ETFs/Stocks) e a rosca de resumo de cada uma — agora só conta e mostra setores que a pessoa realmente tem posição, nunca a lista fixa de outra conta",
