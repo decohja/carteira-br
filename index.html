@@ -1887,6 +1887,11 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v24.6",d:"Jun/2026",items:[
+    "CORRIGIDO: campo de Setor no formulário de adicionar agora fica travado SEMPRE — nunca mais dá pra escolher manualmente, só o código preenche (era possível clicar e trocar antes)",
+    "CORRIGIDO BUG GRAVE: quando você nunca tinha configurado um teto por setor, o app inventava 20% (Ações/FIIs) ou 30% (ETFs/Stocks) sozinho e chegava a mostrar aviso de 'estourou' contra esse número que ninguém escolheu. Agora mostra 'configurar' de forma neutra, sem inventar limite nem falso alarme",
+    "CORRIGIDO: preço sugerido ao adicionar Ação/FII/ETF/Stock demorava demais — o formulário usava um cache próprio, separado do cache principal que a página já mantém há muito tempo. Agora consulta o cache principal primeiro (quase sempre já tem o preço, aparece na hora)",
+  ]},
   {v:"v24.5",d:"Jun/2026",items:[
     "Setor de Ações BR/Stocks EUA agora fica TRAVADO quando o ticker é reconhecido — antes só preenchia automaticamente, mas deixava editar (o mapa ticker→setor já existia, faltava travar)",
     "NOVO: tickers de Stocks fora da lista conhecida buscam o setor automaticamente na Finnhub (com a chave que você cadastrou) e ficam salvos em cache pra sempre — próxima vez que aparecer, nem precisa buscar de novo",
@@ -3698,6 +3703,15 @@ function tetoCell(tk, pctCart, tetoAtual, unica){
 
 /* Renderiza a célula de Teto por Setor numa linha — mostra a concentração do SETOR inteiro, não só do ticker */
 function tetoSetorCell(classe, setor, pctSetorAtual, tetoSetorAtual, unica){
+  if(tetoSetorAtual==null){
+    // Ninguém configurou um teto pra esse setor ainda — não inventa número, só mostra
+    // a concentração atual e convida a configurar, sem acusar "estouro" de nada.
+    return `<div class="tbar">
+      <span class="ttxt" style="cursor:pointer;color:var(--muted)" onclick="editTetoSetor('${classe}','${setor}',30)" title="Nenhum teto configurado pra esse setor ainda. Clique para definir um.">
+        ${pctSetorAtual.toFixed(1)}% / <u>configurar</u>
+      </span>
+    </div>`;
+  }
   const ov = pctSetorAtual > tetoSetorAtual && !unica;
   const w = Math.min(100, tetoSetorAtual>0 ? pctSetorAtual/tetoSetorAtual*100 : 0);
   return `<div class="tbar">
@@ -3931,7 +3945,7 @@ function renderAcoes(totAcoes,sc,sd){
     const tetoAtual = getTetoTicker(a.tk, a.teto);
     const pctSetor = totAcoes>0 ? (mapSetorAC[a.st]||0)/totAcoes*100 : 0;
     const tetoBR = D.tetosBR.find(t=>t.s===a.st);
-    const tetoSetorAtual = getTetoSetor("Ações BR", a.st, tetoBR?tetoBR.teto:20);
+    const tetoSetorAtual = getTetoSetor("Ações BR", a.st, tetoBR?tetoBR.teto:null);
     const opts=objs.map(o=>`<option${o===a.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(a.tk)}<div><div class="tk">${a.tk}</div><div class="co">${a.co}</div></div></div></td>
@@ -3987,7 +4001,7 @@ function renderFiis(totFiis,sc,sd){
     const tetoAtual = getTetoTicker(f.tk, 25); // padrão 25% se não definido
     const pctSetor = totFiis>0 ? (mapSegFI[f.seg]||0)/totFiis*100 : 0;
     const tetoFII = D.tetosFII.find(t=>t.s===f.seg);
-    const tetoSetorAtual = getTetoSetor("FIIs", f.seg, tetoFII?tetoFII.teto:20);
+    const tetoSetorAtual = getTetoSetor("FIIs", f.seg, tetoFII?tetoFII.teto:null);
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(f.tk)}<div><div class="tk">${f.tk}</div><div class="co">${f.seg}</div></div></div></td>
       <td class="r" style="${isPriceStale(f.tk)?"color:var(--muted)":""};white-space:nowrap" title="${isPriceStale(f.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${isPriceStale(f.tk)?brl(f.price,2)+' <svg class="stale-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg>':`<span class="cot-live ${window._priceDirection[f.tk]||''}"><span class="live-dot"></span>${brl(f.price,2)}</span>`}</td>
@@ -4187,7 +4201,7 @@ function renderETFs(sc,sd){
     const tetoAtual=getTetoTicker(e.tk, 30); // padrão 30% se não definido
     const pctSetor = tot>0 ? (mapFunET[e.fun]||0)/tot*100 : 0;
     const tetoET = D.tetosETF.find(t=>t.s===e.fun);
-    const tetoSetorAtual = getTetoSetor("ETFs", e.fun, tetoET?tetoET.teto:30);
+    const tetoSetorAtual = getTetoSetor("ETFs", e.fun, tetoET?tetoET.teto:null);
     const pmET = e.cotas>0 ? e.inv/e.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
       <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!eLive?"—":isPriceStale(e.tk)?usd(eLive)+' <svg class="stale-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg>':`<span class="cot-live ${window._priceDirection[e.tk]||''}"><span class="live-dot"></span>${usd(eLive)}</span>`}</td>
@@ -4242,7 +4256,7 @@ function renderStocks(sc,sd){
     const tetoAtual=getTetoTicker(s.tk, 30); // padrão 30% se não definido
     const pctSetor = tot>0 ? (mapSetorSK[s.setor]||0)/tot*100 : 0;
     const tetoSK = D.setoresEUA.find(t=>t.s===s.setor);
-    const tetoSetorAtual = getTetoSetor("Stocks", s.setor, tetoSK?tetoSK.teto:30);
+    const tetoSetorAtual = getTetoSetor("Stocks", s.setor, tetoSK?tetoSK.teto:null);
     const pmSK = s.cotas>0 ? s.inv/s.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
       <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!sLive?"—":isPriceStale(s.tk)?usd(sLive)+' <svg class="stale-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg>':`<span class="cot-live ${window._priceDirection[s.tk]||''}"><span class="live-dot"></span>${usd(sLive)}</span>`}</td>
@@ -4563,7 +4577,7 @@ function populateSelect(id, options){
   const sel = document.getElementById(id);
   if(!sel) return;
   sel.innerHTML = options.map(o=>`<option>${o}</option>`).join("");
-  sel.disabled = false; // reseta — só trava de novo se o ticker digitado tiver setor conhecido
+  sel.disabled = true; // travado sempre — só o código preenche, nunca escolha manual do usuário
 }
 
 function openAddAtivo(tipo, presetTicker){
@@ -4713,18 +4727,13 @@ document.getElementById("addTicker")?.addEventListener("blur", async function(){
     // Auto-associa setor (só pra Ações BR — FIIs usa "Segmento" com opções diferentes no select)
     if(addAtivoTipo==="acoes"){
       const setorField=document.getElementById("addSetor");
-      if(setorField){
-        if(TICKER_SETOR_BR[tk]){
-          setorField.value=TICKER_SETOR_BR[tk];
-          setorField.disabled=true;
-          setorField.title=`Setor de ${tk} é fixo — associado automaticamente, não editável.`;
-        } else {
-          setorField.disabled=false;
-          setorField.title="";
-        }
+      if(setorField && TICKER_SETOR_BR[tk]){
+        setorField.value=TICKER_SETOR_BR[tk];
+        setorField.title=`Setor de ${tk} — associado automaticamente, não editável.`;
       }
     }
-    const cached=getCachedQuote(tk);
+    const precoPrincipal = prices[tk];
+    const cached = precoPrincipal!=null ? precoPrincipal : getCachedQuote(tk);
     if(cached!=null){
       pmField.value=cached.toFixed(2);
       pmField.style.borderColor="var(--pos)";
@@ -4753,23 +4762,22 @@ document.getElementById("addTicker")?.addEventListener("blur", async function(){
       if(setorField){
         if(TICKER_SETOR_EUA[tk]){
           setorField.value=TICKER_SETOR_EUA[tk];
-          setorField.disabled=true;
-          setorField.title=`Setor de ${tk} é fixo — associado automaticamente, não editável.`;
+          setorField.title=`Setor de ${tk} — associado automaticamente, não editável.`;
         } else {
-          setorField.disabled=false;
-          setorField.title="";
           // não está no mapa fixo — tenta buscar na Finnhub (cacheia pra próxima vez)
           buscarSetorFinnhub(tk).then(setor=>{
             if(setor && _lastAutoTicker===tk){ // só aplica se o usuário não trocou de ticker enquanto buscava
               setorField.value=setor;
-              setorField.disabled=true;
-              setorField.title=`Setor de ${tk} é fixo — associado automaticamente via Finnhub, não editável.`;
+              setorField.title=`Setor de ${tk} — associado automaticamente via Finnhub, não editável.`;
             }
           });
         }
       }
     }
-    const cached=getCachedQuote(tk);
+    // Preço: cache principal do app primeiro (quase sempre já tem, ativo rastreado há tempo),
+    // depois o cache rápido deste modal, e só por último uma busca ao vivo (mais lenta).
+    const precoPrincipal = prices[tk];
+    const cached = precoPrincipal!=null ? precoPrincipal : getCachedQuote(tk);
     if(cached!=null){
       pmField.value=cached.toFixed(2);
       pmField.style.borderColor="var(--pos)";
