@@ -1845,6 +1845,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v24.0",d:"Jun/2026",items:[
+    "CORRIGIDO DE VEZ: Preço Médio de AVGO, GOOGL, JNJ, KO, JPM, V, ACN e NU — adicionada a quantidade real de cada um (dado que nunca tinha sido registrado desde que essas posições foram criadas). Preço Médio agora calcula certo, permanentemente",
+  ]},
   {v:"v23.9",d:"Jun/2026",items:[
     "Porcentagem da meta, 'Faltam R$X' e 'de R$Y' combinados numa linha só, mais elegante (antes ficavam espalhados em 3 linhas separadas)",
   ]},
@@ -2366,14 +2369,14 @@ const D={
     {tk:"XLV",fun:"Saúde/Biotech",    cotas:1.2462,inv:193.25,atual:193.94,lucro:0.69, dy:1.57},
   ],
   stocks:[
-    {tk:"AVGO",co:"Broadcom",   setor:"Tecnologia", inv:191.01,atual:205.93,lucro:14.92,dy:0.64,obj:"Manter"},
-    {tk:"GOOGL",co:"Alphabet",  setor:"Tecnologia", inv:137.01,atual:162.91,lucro:25.90,dy:0.30,obj:"Manter"},
-    {tk:"JNJ", co:"J&J",        setor:"Saúde",      inv:134.90,atual:154.89,lucro:19.99,dy:3.00,obj:"Comprar"},
-    {tk:"KO",  co:"Coca-Cola",  setor:"Consumo",    inv:139.00,atual:147.96,lucro:8.96, dy:2.80,obj:"Manter"},
-    {tk:"JPM", co:"JP Morgan",  setor:"Financeiro", inv:133.00,atual:145.39,lucro:12.39,dy:2.50,obj:"Manter"},
-    {tk:"V",   co:"Visa",       setor:"Financeiro", inv:91.00, atual:98.23, lucro:7.23, dy:0.75,obj:"Manter"},
-    {tk:"ACN", co:"Accenture",  setor:"Tecnologia", inv:90.00, atual:61.34, lucro:-28.66,dy:2.60,obj:"Manter"},
-    {tk:"NU",  co:"Nubank",     setor:"Financeiro", inv:65.72, atual:49.82, lucro:-15.90,dy:0,  obj:"Comprar"},
+    {tk:"AVGO",co:"Broadcom",   setor:"Tecnologia", inv:191.01,atual:205.93,lucro:14.92,dy:0.64,obj:"Manter",cotas:0.54342723},
+    {tk:"GOOGL",co:"Alphabet",  setor:"Tecnologia", inv:137.01,atual:162.91,lucro:25.90,dy:0.30,obj:"Manter",cotas:0.47398088},
+    {tk:"JNJ", co:"J&J",        setor:"Saúde",      inv:134.90,atual:154.89,lucro:19.99,dy:3.00,obj:"Comprar",cotas:0.63257035},
+    {tk:"KO",  co:"Coca-Cola",  setor:"Consumo",    inv:139.00,atual:147.96,lucro:8.96, dy:2.80,obj:"Manter",cotas:1.83977056},
+    {tk:"JPM", co:"JP Morgan",  setor:"Financeiro", inv:133.00,atual:145.39,lucro:12.39,dy:2.50,obj:"Manter",cotas:0.43385372},
+    {tk:"V",   co:"Visa",       setor:"Financeiro", inv:91.00, atual:98.23, lucro:7.23, dy:0.75,obj:"Manter",cotas:0.29729398},
+    {tk:"ACN", co:"Accenture",  setor:"Tecnologia", inv:90.00, atual:61.34, lucro:-28.66,dy:2.60,obj:"Manter",cotas:0.48761013},
+    {tk:"NU",  co:"Nubank",     setor:"Financeiro", inv:65.72, atual:49.82, lucro:-15.90,dy:0,  obj:"Comprar",cotas:4.00141715},
   ],
   setoresEUA:[
     {s:"Tecnologia",teto:40},{s:"Financeiro",teto:30},{s:"Saúde",teto:15},{s:"Consumo",teto:10},
@@ -4172,7 +4175,7 @@ function renderStocks(sc,sd){
       <td class="r" style="white-space:nowrap">${usd(s.atual)}<div class="usd2">${brl(s.atual*usdBRL,2)}</div></td>
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
-      <td class="r">${s.cotas>0?s.cotas.toLocaleString("pt-BR",{maximumFractionDigits:6}):"—"}</td>
+      <td class="r">${s.cotas>0?s.cotas.toLocaleString("pt-BR",{maximumFractionDigits:8}):"—"}</td>
       <td class="r">${s.dy.toFixed(2)}%</td>
       <td>${tetoCell(s.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("Stocks", s.setor, pctSetor, tetoSetorAtual, rows.length===1)}</td>
