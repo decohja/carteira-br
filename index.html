@@ -1845,6 +1845,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v24.1",d:"Jun/2026",items:[
+    "ACHADO O MOTIVO DE VERDADE do Preço Médio continuar zerado: sua conta já tinha dado salvo no Supabase de muito antes — mudar a 'semente' no código só afeta conta nova, nunca ia corrigir o que já estava gravado pra você",
+    "Nova migração automática: corrige a quantidade das 8 Stocks direto no dado já salvo na nuvem, e grava de volta — roda uma vez só, sozinha, no próximo carregamento",
+  ]},
   {v:"v24.0",d:"Jun/2026",items:[
     "CORRIGIDO DE VEZ: Preço Médio de AVGO, GOOGL, JNJ, KO, JPM, V, ACN e NU — adicionada a quantidade real de cada um (dado que nunca tinha sido registrado desde que essas posições foram criadas). Preço Médio agora calcula certo, permanentemente",
   ]},
@@ -5083,6 +5087,25 @@ const OWNER_EMAIL = 'decohja@gmail.com'; // única conta que herda a carteira de
 let carteiraEhSemente = false; // true = dados ainda não foram salvos na nuvem (primeiro acesso do dono)
 let primeiroAcessoVazio = false; // true = conta nova (não-dono) com carteira zerada
 
+// Migração pontual (jun/2026): essas 8 Stocks foram salvas na nuvem antes da Quantidade existir
+// como campo. Corrige o dado JÁ GRAVADO (não a semente do código, que só afeta conta nova) e
+// salva de volta na nuvem — roda uma vez só, silenciosamente.
+const MIGRACAO_QTD_STOCKS = {AVGO:0.54342723,GOOGL:0.47398088,JNJ:0.63257035,KO:1.83977056,
+  JPM:0.43385372,V:0.29729398,ACN:0.48761013,NU:4.00141715};
+function migrarQuantidadeStocksAntigas(){
+  try{
+    if(localStorage.getItem("migrQtdStocks_v1")) return; // já rodou nessa conta/navegador
+    let mudou = false;
+    D.stocks.forEach(s=>{
+      if(MIGRACAO_QTD_STOCKS[s.tk] && !(s.cotas>0)){
+        s.cotas = MIGRACAO_QTD_STOCKS[s.tk];
+        mudou = true;
+      }
+    });
+    localStorage.setItem("migrQtdStocks_v1", "1");
+    if(mudou) salvarCarteiraNaNuvem(); // persiste a correção de volta no Supabase
+  }catch(e){ console.warn("Migração de quantidade de stocks falhou:", e.message); }
+}
 async function carregarCarteiraDaNuvem(){
   const rows = await SB.get('portfolio_data', {'user_id':'eq.'+currentUser.id, 'select':'*'});
   if(rows && rows.length){
@@ -5160,6 +5183,7 @@ async function startApp(){
   try{
     // carteira do usuário logado (Ações, FIIs, ETFs, Stocks, RF)
     await carregarCarteiraDaNuvem();
+    migrarQuantidadeStocksAntigas();
 
     // proventos — só os da conta logada
     // try isolado: se a coluna user_id ainda não existir no banco, não derruba o resto
