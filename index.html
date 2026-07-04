@@ -1173,6 +1173,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       <thead><tr>
         <th>Moeda</th>
         <th class="r">Qtd.</th>
+        <th class="r">Preço Médio <span class="info-ic" title="Preço médio pago por unidade da moeda, considerando todas as compras já feitas.">?</span></th>
         <th class="r">Total Investido <span class="info-ic" title="Quanto você efetivamente pagou: preço médio de compra × quantidade da moeda.">?</span></th>
         <th class="r">Total Corretora <span class="info-ic" title="Quanto vale hoje na corretora: cotação atual × quantidade da moeda. Mostra 'PM' quando não há cotação ao vivo disponível para essa moeda.">?</span></th>
         <th class="r">Preço</th>
@@ -1181,7 +1182,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <th></th>
       </tr></thead>
       <tbody id="cryptoTbl">
-        <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px 0">
+        <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px 0">
           Nenhuma posição em cripto ainda. Clique em "+ Adicionar moeda" para começar.
         </td></tr>
       </tbody>
@@ -1848,6 +1849,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v24.3",d:"Jun/2026",items:[
+    "Cripto: coluna 'Preço Médio' adicionada — existia internamente, mas nunca era exibida na tabela",
+    "Cripto: campo 'Valor atual' do formulário de adicionar renomeado pra 'Preço médio pago' — o rótulo antigo confundia sobre o que realmente preencher",
+    "Cripto: '+ Adicionar moeda' já existia e parece funcional na revisão do código — se ainda não funcionar pra você, me manda um print do que acontece ao clicar",
+    "Proventos: busca automática filtrada pra só trazer o que é recente/futuro (últimos 60 dias pra frente) — antes trazia o histórico completo desde sempre, direto da fonte, bagunçando a lista de sugestões",
+  ]},
   {v:"v24.2",d:"Jun/2026",items:[
     "Ícone estático '⚠︎' de cotação desatualizada trocado por um spinner discreto girando — passa a ideia de 'buscando de novo' em vez de 'algo está errado' (Ações, FIIs, ETFs, Stocks)",
   ]},
@@ -3345,7 +3352,7 @@ function renderCripto(){
   saveCriptoAtivos();
 
   if(!D.cripto.length){
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px 0">
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px 0">
       Nenhuma posição em cripto ainda. Clique em "+ Adicionar moeda" para começar.
     </td></tr>`;
     return;
@@ -3371,6 +3378,7 @@ function renderCripto(){
         <div><div class="tk">${c.moeda}</div><div class="co">${c.nome}</div></div>
       </div></td>
       <td class="r" style="font-family:var(--mono)">${c.qtd}</td>
+      <td class="r" style="font-family:var(--mono);color:var(--muted)">${brl(c.pm,2)}</td>
       <td class="r" style="font-family:var(--mono)">${brl(totInv,2)}</td>
       <td class="r" style="font-family:var(--mono)">${brl(totCorretora,2)}</td>
       <td class="r" style="font-family:var(--mono);color:${precoVivo?'var(--text)':'var(--muted)'}">${precoVivo?brl(preco,2):'PM'}${chgTxt}</td>
@@ -3434,6 +3442,17 @@ const COLS_KEY = "colunasVisiveis";
   }catch(e){}
   try{ localStorage.setItem(MIGR_KEY, "1"); }catch(e){}
 })();
+// Mesma migração, agora pra Cripto — Preço Médio foi inserido como nova coluna
+(function migrarColunasCripto(){
+  const MIGR_KEY = "colMigracaoPMCripto_v1";
+  if(localStorage.getItem(MIGR_KEY)) return;
+  try{
+    const ocultas = JSON.parse(localStorage.getItem(COLS_KEY)||"{}");
+    delete ocultas.cr;
+    localStorage.setItem(COLS_KEY, JSON.stringify(ocultas));
+  }catch(e){}
+  try{ localStorage.setItem(MIGR_KEY, "1"); }catch(e){}
+})();
 
 // Registro de colunas por tabela: nome amigável + índice (1-based, igual nth-child)
 const COLUNAS_REGISTRO = {
@@ -3492,12 +3511,13 @@ const COLUNAS_REGISTRO = {
   cr: [
     {idx:1, label:"Moeda", obrigatoria:true},
     {idx:2, label:"Qtd."},
-    {idx:3, label:"Total Investido"},
-    {idx:4, label:"Total Corretora"},
-    {idx:5, label:"Preço"},
-    {idx:6, label:"Lucro"},
-    {idx:7, label:"% Teto Individual"},
-    {idx:8, label:"Excluir", obrigatoria:true},
+    {idx:3, label:"Preço Médio"},
+    {idx:4, label:"Total Investido"},
+    {idx:5, label:"Total Corretora"},
+    {idx:6, label:"Preço"},
+    {idx:7, label:"Lucro"},
+    {idx:8, label:"% Teto Individual"},
+    {idx:9, label:"Excluir", obrigatoria:true},
   ],
 };
 const TABELA_NOMES = {ac:"Ações BR", fi:"FIIs", et:"ETFs", sk:"Stocks", cr:"Cripto"};
@@ -4323,8 +4343,13 @@ function coletarProventosSugeridos(tk, cashDividends){
   const ativo = D.acoes.find(a=>a.tk===tk) || D.fiis.find(f=>f.tk===tk);
   if(!ativo || !ativo.cotas) return; // não possui esse ativo — ignora
   const cotas = ativo.cotas;
+  // Só interessa o que é recente/futuro — a Brapi devolve o histórico completo (às vezes anos pra trás),
+  // e isso bagunçava a lista com coisa irrelevante. Corta em 60 dias atrás: pega "a receber" e o que
+  // acabou de virar "recebido", sem trazer o passado distante.
+  const limiteAntigo = new Date(); limiteAntigo.setDate(limiteAntigo.getDate()-60);
   cashDividends.forEach(cd=>{
     if(!cd.paymentDate || !cd.rate) return; // sem data de pagamento definida ainda — não dá pra sugerir lançamento
+    if(new Date(cd.paymentDate) < limiteAntigo) return; // provento antigo — fora do escopo
     const pg = cd.paymentDate.split("-").reverse().join("/"); // YYYY-MM-DD → DD/MM/YYYY
     const vc = cd.rate;
     // já foi lançado manualmente ou já está na lista de sugestões? não duplica
@@ -4527,7 +4552,7 @@ function openAddAtivo(tipo, presetTicker){
     tickerInput.placeholder="BTC, ETH, SOL…";
     tickerInput.setAttribute("list","cryptoTickerList");
     setorRow.style.display="none";
-    pmLabel.textContent="Valor atual (R$)";
+    pmLabel.textContent="Preço médio pago (R$)";
     cotasLabel.textContent="Qtd. moeda";
   } else if(tipo==="acoes"){
     cotasInput.step="1"; cotasInput.placeholder="23";
@@ -4751,7 +4776,7 @@ async function confirmarAddAtivo(){
     prices[tk]=prices[tk]||pm;
     if(!getPriceCacheStore()[tk]) savePriceCache(tk, prices[tk]);
   } else if(addAtivoTipo==="cripto"){
-    if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Qtd. moeda."); return; }
+    if(!tk||!pm||!cotas){ alert("Preencha Ticker, Preço médio pago e Qtd. moeda."); return; }
     const existente=D.cripto.find(x=>x.moeda===tk);
     if(existente){
       const novaQtd=existente.qtd+cotas;
