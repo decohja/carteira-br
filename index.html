@@ -295,7 +295,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 @keyframes mcelebrate{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.35)}50%{box-shadow:0 0 8px 2px rgba(34,197,94,.45)}}
 .meta-pct-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 .meta-gap-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:6px;vertical-align:middle}
-.gap-legenda{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.gap-legenda{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--border);justify-content:flex-end}
 .gap-legenda span{display:flex;align-items:center}
 .meta-pct{font-family:var(--mono);font-size:12px;font-weight:500;white-space:nowrap}
 .meta-val-sub{font-size:11.5px;color:var(--muted);font-family:var(--mono);white-space:nowrap;text-align:center;width:100%}
@@ -353,9 +353,9 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 /* ─── TABLES ─────────────────────────── */
 .tw{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow-x:auto;overflow-y:hidden;margin-bottom:12px}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
-  color:var(--muted);text-align:left;padding:10px 12px;
-  background:var(--bg3);border-bottom:1px solid var(--border);white-space:nowrap;user-select:none}
+th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text);text-align:left;padding:11px 12px;
+  background:var(--bg4);border-bottom:1px solid var(--border2);white-space:nowrap;user-select:none}
 th.r{text-align:right}
 th.sort{cursor:pointer}th.sort:hover{color:var(--text)}
 th.sa::after{content:" ↑";color:var(--gold)}th.sd::after{content:" ↓";color:var(--gold)}
@@ -955,10 +955,13 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 <section class="panel" id="p-metasaloc">
   <div class="st" style="display:flex;align-items:center;justify-content:space-between">
     <span>Metas de alocação</span>
-    <button class="refbtn" onclick="saveMetas()" style="color:var(--pos)">💾 Salvar metas</button>
+    <span style="display:flex;align-items:center;gap:10px">
+      <span id="metasAutoSaveStatus" style="font-size:11px;color:var(--muted)"></span>
+      <button class="refbtn" onclick="saveMetas(true)" style="color:var(--pos)">💾 Salvar agora</button>
+    </span>
   </div>
   <div id="metasAlocHint" style="display:none;font-size:11px;color:var(--muted);margin-bottom:8px">
-    💡 Defina quanto % da carteira você quer em cada classe na coluna <strong>% Meta</strong> e clique em <strong>Salvar metas</strong>.
+    💡 Defina quanto % da carteira você quer em cada classe na coluna <strong>% Meta</strong> — salva sozinho automaticamente, sem precisar clicar em nada.
   </div>
   <div style="overflow-x:auto;margin-top:6px">
     <table class="atab" style="width:100%">
@@ -1842,6 +1845,11 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v23.8",d:"Jun/2026",items:[
+    "Metas de Alocação agora salva SOZINHA, ~1,2s depois de você parar de editar — mostra 'editando…' e depois '✓ salvo automaticamente'. Botão manual '💾 Salvar agora' continua ali como reforço, mas não é mais obrigatório",
+    "Legenda de cores (abaixo/OK/acima) movida pro lado direito",
+    "Cabeçalhos de TODAS as tabelas (Ações, FIIs, Renda Fixa, ETFs, Stocks, Cripto, Metas de Alocação) com mais contraste e peso — texto e fundo mais escuros, mais fáceis de identificar de relance",
+  ]},
   {v:"v23.7",d:"Jun/2026",items:[
     "'Gap' renomeado pra 'Diferença' — nome mais claro em português",
     "'Deveria Ter' ganhou '(R$)' no final, deixando explícito que é valor em reais",
@@ -3086,17 +3094,35 @@ function recalcMetaRow(inp){
   document.querySelectorAll(".meta-inp").forEach(i=>{ totalMeta += parseFloat(i.value)||0; });
   const tm = document.getElementById("totalMetaPct");
   if(tm){ tm.textContent = totalMeta.toFixed(1)+"%"; tm.style.color = Math.abs(totalMeta-100)>0.1?"var(--neg)":"var(--pos)"; }
+  scheduleAutoSaveMetas();
 }
 
-function saveMetas(){
+// Salva sozinho pouco depois que a pessoa para de editar — evita o "editei e esqueci de salvar"
+let _metasAutoSaveTimer = null;
+function scheduleAutoSaveMetas(){
+  const status = document.getElementById("metasAutoSaveStatus");
+  if(status){ status.textContent = "editando…"; status.style.color = "var(--muted)"; }
+  clearTimeout(_metasAutoSaveTimer);
+  _metasAutoSaveTimer = setTimeout(()=>saveMetas(false), 1200);
+}
+
+function saveMetas(manual){
   const metas = {};
   document.querySelectorAll(".meta-inp").forEach(inp=>{
     metas[inp.dataset.id] = parseFloat(inp.value)||0;
   });
   localStorage.setItem(METAS_KEY, JSON.stringify(metas));
-  // Feedback visual
-  const btn = document.querySelector('[onclick="saveMetas()"]');
-  if(btn){ const orig=btn.textContent; btn.textContent="✓ Salvo!"; btn.style.color="var(--pos)"; setTimeout(()=>{btn.textContent=orig;btn.style.color="";},1500); }
+  // Feedback visual: status discreto (auto) + botão (quando clicado manualmente)
+  const status = document.getElementById("metasAutoSaveStatus");
+  if(status){
+    status.textContent = "✓ salvo automaticamente";
+    status.style.color = "var(--pos)";
+    setTimeout(()=>{ if(status.textContent.includes("automaticamente")) status.textContent=""; }, 2500);
+  }
+  if(manual){
+    const btn = document.querySelector('[onclick="saveMetas(true)"]');
+    if(btn){ const orig=btn.textContent; btn.textContent="✓ Salvo!"; btn.style.color="var(--pos)"; setTimeout(()=>{btn.textContent=orig;btn.style.color="";},1500); }
+  }
 }
 // Helper global — preço ao vivo ou fallback snapshot
 function px(tk){ return prices[tk]||0; }
