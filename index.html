@@ -1775,6 +1775,24 @@ const TICKERS_BR = [...TICKERS_ACOES_BR, ...TICKERS_FIIS_BR]; // combinada — u
 // Opções de Setor/Segmento por classe — listas distintas, sem misturar Ações com FIIs
 const SETORES_ACOES = ["Financeiro","Energia","Indústria","Saneamento","Serviços","Saúde","Consumo","Tecnologia","Outros"];
 const SEGMENTOS_FII = ["Papel (Recebíveis)","Tijolo","Logística","Shoppings","Lajes Corporativas","Híbrido","Fundo de Fundos (FOF)","Energia/Infraestrutura","Saneamento","Outros"];
+
+// Mapa ticker → segmento pra FIIs conhecidos (mesmo espírito do TICKER_SETOR_BR/EUA).
+// Só inclui os que tenho confiança razoável — o que não estiver aqui cai em "Outros"
+// (prefiro isso a arriscar classificar errado).
+const TICKER_SEGMENTO_FII = {
+  BCFF11:"Fundo de Fundos (FOF)", KFOF11:"Fundo de Fundos (FOF)", RBRF11:"Fundo de Fundos (FOF)",
+  BCRI11:"Papel (Recebíveis)", BTCI11:"Papel (Recebíveis)", CPTS11:"Papel (Recebíveis)",
+  FLCR11:"Papel (Recebíveis)", KINP11:"Papel (Recebíveis)", KNCT11:"Papel (Recebíveis)",
+  KNSC11:"Papel (Recebíveis)", MCCI11:"Papel (Recebíveis)", MXRF11:"Papel (Recebíveis)",
+  OUJP11:"Papel (Recebíveis)", RECR11:"Papel (Recebíveis)", VGIR11:"Papel (Recebíveis)",
+  VRTA11:"Papel (Recebíveis)",
+  BTLG11:"Logística", HGLG11:"Logística", HSLG11:"Logística", LVBI11:"Logística",
+  PATL11:"Logística", VILG11:"Logística", XPLG11:"Logística", GGRC11:"Logística",
+  HGBS11:"Shoppings", HSML11:"Shoppings", VISC11:"Shoppings", XPML11:"Shoppings",
+  JSRE11:"Lajes Corporativas", PVBI11:"Lajes Corporativas", RBCO11:"Lajes Corporativas",
+  XPPR11:"Lajes Corporativas",
+  HGRU11:"Híbrido", KNRI11:"Híbrido", GARE11:"Híbrido", RBRP11:"Híbrido",
+};
 const SETORES_EUA = ["Tecnologia","Financeiro","Saúde","Consumo","Industrial","Energia","Outros"];
 
 // Tickers comuns dos EUA pra autocomplete — não exaustivo, mas cobre os mais buscados
@@ -1887,6 +1905,13 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v24.8",d:"Jun/2026",items:[
+    "CORRIGIDO BUG GRAVE: os tetos por setor (35% Financeiro, 25% Energia, 20% Indústria, etc) eram uma lista FIXA no código, do dono original — e vazavam pra QUALQUER conta nova, tanto na validação de 'soma não pode passar de 100%' quanto na exibição dos valores. Uma conta nova com 1 ativo em 'Energia' já 'herdava' os 75% dos outros setores do dono, travando qualquer configuração nova",
+    "Corrigido em 5 lugares: as 4 tabelas (Ações/FIIs/ETFs/Stocks) e a rosca de resumo de cada uma — agora só conta e mostra setores que a pessoa realmente tem posição, nunca a lista fixa de outra conta",
+  ]},
+  {v:"v24.7",d:"Jun/2026",items:[
+    "FIIs ganhou a mesma associação automática de Segmento que Ações/Stocks já tinham — cerca de 30 FIIs conhecidos são classificados certos (Logística, Papel, Shoppings, etc). Os que ainda não estão no nosso mapa caem em 'Outros' honestamente, em vez de ficar travado no primeiro item da lista por acaso",
+  ]},
   {v:"v24.6",d:"Jun/2026",items:[
     "CORRIGIDO: campo de Setor no formulário de adicionar agora fica travado SEMPRE — nunca mais dá pra escolher manualmente, só o código preenche (era possível clicar e trocar antes)",
     "CORRIGIDO BUG GRAVE: quando você nunca tinha configurado um teto por setor, o app inventava 20% (Ações/FIIs) ou 30% (ETFs/Stocks) sozinho e chegava a mostrar aviso de 'estourou' contra esse número que ninguém escolheu. Agora mostra 'configurar' de forma neutra, sem inventar limite nem falso alarme",
@@ -2647,7 +2672,7 @@ function mkSetores(data,id,map,classe,totalPosicoes){
   const nomesConfig=new Set(data.map(t=>t.s));
   const extras=Object.keys(map).filter(k=>!nomesConfig.has(k)&&map[k]>0).map(s=>({s,teto:100}));
   const rows=[...data,...extras].map((t,i)=>{
-    const tetoAtual=classe?getTetoSetor(classe,t.s,t.teto):t.teto;
+    const tetoAtual=classe?(getTetoSetor(classe,t.s,null)??100):t.teto;
     const atual=(map[t.s]||0)/total*100;
     return {s:t.s,atual,tetoAtual,over:atual>tetoAtual && !unica,color:SETOR_PALETTE[i%SETOR_PALETTE.length]};
   });
@@ -2680,28 +2705,26 @@ function editTetoSetor(classe, setor, tetoAtual){
     alert("Esta tabela de setores ainda não suporta edição.");
     return;
   }
-  const novo = prompt(`Teto máximo do setor "${setor}" em ${classe} (%):`, tetoAtual);
+  const novo = prompt(`Teto máximo do setor "${setor}" em ${classe} (%):`, tetoAtual===null?"":tetoAtual);
   if(novo===null) return;
   const v = parseFloat(novo.replace(",","."));
   if(isNaN(v)||v<=0){ alert("Digite um valor numérico válido maior que zero."); return; }
 
-  // Trava: soma dos tetos de setor dentro da mesma classe não pode passar de 100%
-  const todosOsSetores = classe==="Ações BR" ? D.tetosBR.map(t=>t.s)
-    : classe==="FIIs" ? D.tetosFII.map(t=>t.s)
-    : classe==="ETFs" ? D.tetosETF.map(t=>t.s)
-    : classe==="Stocks" ? D.setoresEUA.map(t=>t.s) : [];
-  const padraoOrig = classe==="Ações BR" ? D.tetosBR
-    : classe==="FIIs" ? D.tetosFII
-    : classe==="ETFs" ? D.tetosETF
-    : classe==="Stocks" ? D.setoresEUA : [];
+  // Trava: soma dos tetos de setor não pode passar de 100% — mas só conta os setores que a
+  // PESSOA de verdade tem na carteira dela, nunca uma lista fixa genérica (isso travava conta
+  // nova: setores que nem existem pra aquele usuário "consumiam" % que não eram deles).
+  const todosOsSetores = classe==="Ações BR" ? [...new Set(D.acoes.map(a=>a.st))]
+    : classe==="FIIs" ? [...new Set(D.fiis.map(f=>f.seg))]
+    : classe==="ETFs" ? [...new Set(D.etfs.map(e=>e.fun))]
+    : classe==="Stocks" ? [...new Set(D.stocks.map(s=>s.setor))] : [];
   const outrosSetores = todosOsSetores.filter(s=>s!==setor);
   const somaOutros = outrosSetores.reduce((s,st)=>{
-    const padrao = padraoOrig.find(p=>p.s===st)?.teto||0;
-    return s+getTetoSetor(classe, st, padrao);
+    const t = getTetoSetor(classe, st, null);
+    return s + (t||0); // setor sem teto configurado ainda não consome nada do total
   },0);
   const somaTotal = somaOutros + v;
   if(somaTotal > 100){
-    alert(`A soma dos tetos por setor em ${classe} não pode passar de 100%.\n\nSoma atual dos outros setores: ${somaOutros.toFixed(1)}%\nVocê está tentando definir: ${v}%\nTotal ficaria: ${somaTotal.toFixed(1)}%\n\nReduza o teto de outro setor primeiro, ou use um valor menor.`);
+    alert(`A soma dos tetos por setor em ${classe} não pode passar de 100%.\n\nSoma atual dos outros setores configurados: ${somaOutros.toFixed(1)}%\nVocê está tentando definir: ${v}%\nTotal ficaria: ${somaTotal.toFixed(1)}%\n\nReduza o teto de outro setor primeiro, ou use um valor menor.`);
     return;
   }
 
@@ -3944,8 +3967,7 @@ function renderAcoes(totAcoes,sc,sd){
   rows.forEach(a=>{
     const tetoAtual = getTetoTicker(a.tk, a.teto);
     const pctSetor = totAcoes>0 ? (mapSetorAC[a.st]||0)/totAcoes*100 : 0;
-    const tetoBR = D.tetosBR.find(t=>t.s===a.st);
-    const tetoSetorAtual = getTetoSetor("Ações BR", a.st, tetoBR?tetoBR.teto:null);
+    const tetoSetorAtual = getTetoSetor("Ações BR", a.st, null);
     const opts=objs.map(o=>`<option${o===a.obj?" selected":""}>${o}</option>`).join("");
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(a.tk)}<div><div class="tk">${a.tk}</div><div class="co">${a.co}</div></div></div></td>
@@ -4000,8 +4022,7 @@ function renderFiis(totFiis,sc,sd){
     const opts=sts.map(o=>`<option${o===f.st?" selected":""}>${o}</option>`).join("");
     const tetoAtual = getTetoTicker(f.tk, 25); // padrão 25% se não definido
     const pctSetor = totFiis>0 ? (mapSegFI[f.seg]||0)/totFiis*100 : 0;
-    const tetoFII = D.tetosFII.find(t=>t.s===f.seg);
-    const tetoSetorAtual = getTetoSetor("FIIs", f.seg, tetoFII?tetoFII.teto:null);
+    const tetoSetorAtual = getTetoSetor("FIIs", f.seg, null);
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(f.tk)}<div><div class="tk">${f.tk}</div><div class="co">${f.seg}</div></div></div></td>
       <td class="r" style="${isPriceStale(f.tk)?"color:var(--muted)":""};white-space:nowrap" title="${isPriceStale(f.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${isPriceStale(f.tk)?brl(f.price,2)+' <svg class="stale-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg>':`<span class="cot-live ${window._priceDirection[f.tk]||''}"><span class="live-dot"></span>${brl(f.price,2)}</span>`}</td>
@@ -4200,8 +4221,7 @@ function renderETFs(sc,sd){
     const pctCart=tot>0?e.atual/tot*100:0;
     const tetoAtual=getTetoTicker(e.tk, 30); // padrão 30% se não definido
     const pctSetor = tot>0 ? (mapFunET[e.fun]||0)/tot*100 : 0;
-    const tetoET = D.tetosETF.find(t=>t.s===e.fun);
-    const tetoSetorAtual = getTetoSetor("ETFs", e.fun, tetoET?tetoET.teto:null);
+    const tetoSetorAtual = getTetoSetor("ETFs", e.fun, null);
     const pmET = e.cotas>0 ? e.inv/e.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(e.tk)}<div><div class="tk">${e.tk}</div><div class="co">${e.fun}</div></div></div></td>
       <td class="r" style="${eLive?(isPriceStale(e.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${eLive&&isPriceStale(e.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!eLive?"—":isPriceStale(e.tk)?usd(eLive)+' <svg class="stale-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg>':`<span class="cot-live ${window._priceDirection[e.tk]||''}"><span class="live-dot"></span>${usd(eLive)}</span>`}</td>
@@ -4255,8 +4275,7 @@ function renderStocks(sc,sd){
     const pctCart=tot>0?s.atual/tot*100:0;
     const tetoAtual=getTetoTicker(s.tk, 30); // padrão 30% se não definido
     const pctSetor = tot>0 ? (mapSetorSK[s.setor]||0)/tot*100 : 0;
-    const tetoSK = D.setoresEUA.find(t=>t.s===s.setor);
-    const tetoSetorAtual = getTetoSetor("Stocks", s.setor, tetoSK?tetoSK.teto:null);
+    const tetoSetorAtual = getTetoSetor("Stocks", s.setor, null);
     const pmSK = s.cotas>0 ? s.inv/s.cotas : 0;
     tr.innerHTML=`<td><div class="ativo-cell">${logoImg(s.tk)}<div><div class="tk">${s.tk}</div><div class="co">${s.co}</div></div></div></td>
       <td class="r" style="${sLive?(isPriceStale(s.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${sLive&&isPriceStale(s.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">${!sLive?"—":isPriceStale(s.tk)?usd(sLive)+' <svg class="stale-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg>':`<span class="cot-live ${window._priceDirection[s.tk]||''}"><span class="live-dot"></span>${usd(sLive)}</span>`}</td>
@@ -4724,12 +4743,22 @@ document.getElementById("addTicker")?.addEventListener("blur", async function(){
 
   // Ações BR e FIIs: busca preço atual via Brapi + auto-associa setor
   if(addAtivoTipo==="acoes" || addAtivoTipo==="fiis"){
-    // Auto-associa setor (só pra Ações BR — FIIs usa "Segmento" com opções diferentes no select)
+    // Auto-associa setor (Ações) ou segmento (FIIs) — cada um com sua própria lista de opções
     if(addAtivoTipo==="acoes"){
       const setorField=document.getElementById("addSetor");
       if(setorField && TICKER_SETOR_BR[tk]){
         setorField.value=TICKER_SETOR_BR[tk];
         setorField.title=`Setor de ${tk} — associado automaticamente, não editável.`;
+      }
+    } else if(addAtivoTipo==="fiis"){
+      const segField=document.getElementById("addSetor");
+      if(segField){
+        // Reconhecido no mapa: usa o segmento real. Não reconhecido: "Outros" (honesto — não arrisca chutar errado)
+        const seg = TICKER_SEGMENTO_FII[tk] || "Outros";
+        segField.value = seg;
+        segField.title = TICKER_SEGMENTO_FII[tk]
+          ? `Segmento de ${tk} — associado automaticamente, não editável.`
+          : `${tk} não está no nosso mapa de segmentos ainda — marcado como "Outros" por padrão.`;
       }
     }
     const precoPrincipal = prices[tk];
