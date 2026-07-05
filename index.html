@@ -379,7 +379,7 @@ tr.total-row td:first-child{
 tr.total-row td.r{font-family:var(--mono);font-size:15px;letter-spacing:-.01em;
   border-left:1px solid var(--border2);padding-left:16px}
 tr.total-row td.r:empty{border-left:none;padding-left:11px}
-.tot-cur{font-size:10px;font-weight:500;color:var(--muted);margin-right:1px}
+.tot-cur{font-size:10px;font-weight:500;color:var(--muted);margin-right:3px}
 .tk{font-weight:600;font-size:13px}
 .co{font-size:11px;color:var(--muted);margin-top:1px}
 .ativo-logo{width:36px;height:36px;border-radius:8px;object-fit:contain;background:var(--bg3);
@@ -1966,6 +1966,11 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v25.8",d:"Jun/2026",items:[
+    "CORRIGIDO: espaço entre 'R$' pequeno e o número nos totais estava espremido (1px), principalmente feio quando tinha o sinal de + na frente. Aumentado pra respirar melhor",
+    "NOVO: DY% de Stocks agora busca dado real da Finnhub (a Brapi não cobre bolsa americana, então esse número nunca tinha atualizado ao vivo antes — ficava parado no valor de quando você cadastrou o ativo)",
+    "Sendo honesto: pro lado brasileiro (Ações/FIIs), a Brapi continua sendo a única fonte de DY% que temos — não achei alternativa gratuita viável pra isso ainda. Segue sujeito à mesma instabilidade de sempre",
+  ]},
   {v:"v25.7",d:"Jun/2026",items:[
     "Teto por Setor ganhou tolerância de 3 pontos (mesma lógica de Metas de Alocação) — não mostra mais aviso por qualquer excesso mínimo",
     "2 níveis de aviso: ⚠ amarelo (3-5 pontos acima) e 🔴 vermelho (mais de 5 pontos acima), cada um com texto explicando o que significa ao passar o mouse",
@@ -2982,6 +2987,17 @@ async function refreshPrices(manual=false){
         D.etfs.filter(e=>e.tk===tk).forEach(e=>{e.priceUSD=p;e.prevClose=prev;});
         D.stocks.filter(s=>s.tk===tk).forEach(s=>{s.priceUSD=p;s.prevClose=prev;});
       }
+    }catch(e){}
+  }));
+
+  /* 3b. DY% de Stocks EUA via Finnhub — a Brapi não cobre bolsa americana, e esse dado nunca
+        era atualizado ao vivo antes (ficava parado no valor de quando o ativo foi cadastrado) */
+  window._dyUS = window._dyUS || {};
+  await Promise.allSettled(D.stocks.map(async s=>{
+    try{
+      const j = await corsGetJSON(`https://finnhub.io/api/v1/stock/metric?symbol=${s.tk}&metric=all&token=${FINNHUB_TOKEN}`);
+      const dy = j?.metric?.dividendYieldIndicatedAnnual ?? j?.metric?.currentDividendYieldTTM;
+      if(dy!=null && !isNaN(dy)) window._dyUS[s.tk] = dy; // Finnhub já retorna em % (ex: 1.5 = 1.5%)
     }catch(e){}
   }));
 
@@ -4392,7 +4408,7 @@ function renderStocks(sc,sd){
       <td class="r" style="color:${s.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(s.lucro)}${usd(Math.abs(s.lucro))}<div class="usd2">${sgn(s.lucro)}${brl(Math.abs(s.lucro*usdBRL),2)}</div></td>
       <td class="r">${s.cotas>0?s.cotas.toLocaleString("pt-BR",{maximumFractionDigits:8}):"—"}</td>
-      <td class="r">${s.dy.toFixed(2)}%</td>
+      <td class="r">${(window._dyUS&&window._dyUS[s.tk]!=null?window._dyUS[s.tk]:s.dy).toFixed(2)}%${window._dyUS&&window._dyUS[s.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
       <td>${tetoCell(s.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("Stocks", s.setor, pctSetor, tetoSetorAtual, rows.length===1)}</td>
       <td class="r" style="white-space:nowrap;padding-left:4px;padding-right:8px"><button class="refbtn" onclick="openAddAtivo('stocks','${s.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 6px;font-size:11px;margin-right:3px" title="Comprar mais ${s.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('stocks','${s.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Remover este ativo">✕</button></td>`;
