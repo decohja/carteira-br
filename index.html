@@ -380,6 +380,19 @@ tr.total-row td.r{font-family:var(--mono);font-size:15px;letter-spacing:-.01em;
   border-left:1px solid var(--border2);padding-left:16px}
 tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .tot-cur{font-size:10px;font-weight:500;color:var(--muted);margin-right:3px}
+
+/* Barras pareadas: % atual vs % meta, por classe — reaproveitado na home e em Metas de Alocação */
+.mbc-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.mbc-label{width:88px;flex-shrink:0;font-size:11px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mbc-bars{flex:1;display:flex;flex-direction:column;gap:3px;min-width:60px}
+.mbc-track{height:7px;border-radius:4px;background:var(--bg4);overflow:hidden}
+.mbc-fill{height:100%;border-radius:4px;transition:width .3s}
+.mbc-fill.meta{background:var(--muted);opacity:.5}
+.mbc-vals{display:flex;flex-direction:column;gap:3px;width:46px;text-align:right;font-family:var(--mono);font-size:10px;flex-shrink:0}
+.mbc-vals .meta{color:var(--muted)}
+.mbc-legend{display:flex;gap:14px;font-size:10px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.mbc-legend span{display:flex;align-items:center;gap:4px}
+.mbc-legend-dot{width:8px;height:8px;border-radius:2px}
 .tk{font-weight:600;font-size:13px}
 .co{font-size:11px;color:var(--muted);margin-top:1px}
 .ativo-logo{width:36px;height:36px;border-radius:8px;object-fit:contain;background:var(--bg3);
@@ -949,6 +962,8 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <div>
       <div class="st-hl st-hl-big gold">Ativos na carteira</div>
       <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;max-width:560px;width:fit-content"></div>
+      <div class="st-hl gold">Atual vs. Meta por classe</div>
+      <div class="bx" id="metaBarChartHome" style="margin-bottom:16px;max-width:560px"></div>
     </div>
     <div class="home-side">
       <div>
@@ -975,6 +990,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <div id="metasAlocHint" style="display:none;font-size:11px;color:var(--muted);margin-bottom:8px">
     💡 Defina quanto % da carteira você quer em cada classe na coluna <strong>% Meta</strong> — salva sozinho automaticamente, sem precisar clicar em nada.
   </div>
+  <div class="bx" id="metaBarChartMetas" style="margin-bottom:16px"></div>
   <div style="overflow-x:auto;margin-top:6px">
     <table class="atab" style="width:100%">
       <thead>
@@ -2039,6 +2055,13 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v27.3",d:"Jun/2026",items:[
+    "NOVO: gráfico de barras pareadas 'Atual vs. Meta por classe' — mostra visualmente onde cada classe está em relação à meta configurada, sem precisar ler números crus. Aparece na Home (abaixo da rosca) e em Metas de Alocação (acima da tabela), mesmo componente nos dois lugares",
+  ]},
+  {v:"v27.2",d:"Jun/2026",items:[
+    "CORRIGIDO A CAUSA REAL do DY ficando 'preso tentando': quando a busca FALHAVA (comum em alguns ETFs, cuja fonte às vezes não tem o dado), a gente nunca registrava a tentativa — então tentava de novo em TODO refresh, pra sempre, sem parar",
+    "Agora registra a tentativa mesmo quando falha, e só tenta de novo depois de 7 dias — DY muda pouco de um dia pro outro, não precisa reconferir toda hora. Primeira busca continua imediata, o intervalo maior é só pras próximas",
+  ]},
   {v:"v27.1",d:"Jun/2026",items:[
     "CORRIGIDO BUG GRAVE: DY% nunca tinha cache persistente — vivia só na memória da sessão, então voltava pra '0.00% (aguardando)' toda vez que a página recarregava, mesmo já tendo sido confirmado antes. Agora salva em cache local igual a cotação já fazia — sobrevive a reload e nova sessão",
   ]},
@@ -2754,6 +2777,8 @@ function getDyCacheStore(){
   try{ return JSON.parse(localStorage.getItem(DY_CACHE_KEY)||'{}'); }catch(e){ return {}; }
 }
 function saveDyCache(tk, dy){
+  // dy pode ser null — registra a TENTATIVA mesmo sem sucesso, pra não ficar retentando
+  // pra sempre em ativos que a fonte simplesmente não tem dado (comum em alguns ETFs).
   try{
     const store = getDyCacheStore();
     store[tk] = {dy, ts: Date.now()};
@@ -2765,10 +2790,21 @@ function loadDyCache(){
   window._dyBR = window._dyBR || {};
   window._dyUS = window._dyUS || {};
   Object.keys(store).forEach(tk=>{
-    if(!store[tk] || typeof store[tk].dy !== 'number') return;
+    if(!store[tk] || typeof store[tk].dy !== 'number') return; // só aplica valor real — tentativa vazia não preenche, mas também não retenta à toa (ver dyPrecisaTentar)
     if(window._dyBR[tk]==null) window._dyBR[tk]=store[tk].dy;
     if(window._dyUS[tk]==null) window._dyUS[tk]=store[tk].dy;
   });
+}
+// DY muda pouco de um dia pro outro (só quando um dividendo novo entra/sai da janela de 12 meses,
+// ou o preço se move bastante) — não precisa reconferir a cada "Atualizar cotações". 7 dias é uma
+// folga razoável: reage rápido o bastante a mudanças reais, sem martelar a fonte à toa.
+const DY_REFRESH_DIAS = 7;
+function dyPrecisaTentar(tk){
+  const store = getDyCacheStore();
+  const entry = store[tk];
+  if(!entry) return true; // nunca tentamos — precisa
+  const idadeDias = (Date.now()-entry.ts)/86400000;
+  return idadeDias >= DY_REFRESH_DIAS;
 }
 
 /* ── TOTALS ROW ─────────────────────── */
@@ -3082,7 +3118,7 @@ async function refreshPrices(manual=false){
         pagos no último ano e divide pelo preço atual. Não troca a Brapi, só preenche a lacuna
         dela; sabidamente o dado de dividendo do Yahoo é mais incompleto pra B3 do que pros EUA,
         então nem todo ticker vai conseguir — mas ajuda bastante nos que a Brapi nunca confirma. */
-  const tksSemDY = tksBR.filter(tk=> tk!=='^BVSP' && window._dyBR[tk]==null);
+  const tksSemDY = tksBR.filter(tk=> tk!=='^BVSP' && window._dyBR[tk]==null && dyPrecisaTentar(tk));
   if(tksSemDY.length){
     let dyOK=0;
     await Promise.allSettled(tksSemDY.map(async tk=>{
@@ -3092,11 +3128,13 @@ async function refreshPrices(manual=false){
         const result = j?.chart?.result?.[0];
         const divEvents = result?.events?.dividends;
         const precoAtual = prices[tk] || result?.meta?.regularMarketPrice;
+        let dyEncontrado = null;
         if(divEvents && precoAtual>0){
           const totalDividendos = Object.values(divEvents).reduce((acc,d)=>acc+(d.amount||0),0);
-          if(totalDividendos>0){ window._dyBR[tk] = (totalDividendos/precoAtual)*100; saveDyCache(tk, window._dyBR[tk]); dyOK++; }
+          if(totalDividendos>0){ dyEncontrado = (totalDividendos/precoAtual)*100; window._dyBR[tk] = dyEncontrado; dyOK++; }
         }
-      }catch(e){ /* Yahoo sem dado de dividendo pra esse ticker — fica "aguardando", sem problema */ }
+        saveDyCache(tk, dyEncontrado); // registra mesmo se null — não retenta antes de 7 dias
+      }catch(e){ saveDyCache(tk, null); /* Yahoo sem dado de dividendo pra esse ticker — registra a tentativa mesmo assim */ }
     }));
     if(dyOK) console.log(`Fallback DY Yahoo: ${dyOK} de ${tksSemDY.length} tickers BR resgatados`);
   }
@@ -3144,12 +3182,15 @@ async function refreshPrices(manual=false){
   /* 3b. DY% de Stocks/ETFs EUA via Finnhub — a Brapi não cobre bolsa americana, e esse dado nunca
         era atualizado ao vivo antes (ficava parado no valor de quando o ativo foi cadastrado) */
   window._dyUS = window._dyUS || {};
-  await Promise.allSettled([...D.stocks, ...D.etfs].map(async s=>{
+  const stocksEEtfsPrecisamDY = [...D.stocks, ...D.etfs].filter(s=> dyPrecisaTentar(s.tk));
+  await Promise.allSettled(stocksEEtfsPrecisamDY.map(async s=>{
     try{
       const j = await corsGetJSON(`https://finnhub.io/api/v1/stock/metric?symbol=${s.tk}&metric=all&token=${FINNHUB_TOKEN}`);
       const dy = j?.metric?.dividendYieldIndicatedAnnual ?? j?.metric?.currentDividendYieldTTM;
-      if(dy!=null && !isNaN(dy)){ window._dyUS[s.tk] = dy; saveDyCache(s.tk, dy); } // Finnhub já retorna em % (ex: 1.5 = 1.5%)
-    }catch(e){}
+      const dyValido = (dy!=null && !isNaN(dy)) ? dy : null;
+      if(dyValido!=null) window._dyUS[s.tk] = dyValido; // Finnhub já retorna em % (ex: 1.5 = 1.5%)
+      saveDyCache(s.tk, dyValido); // registra mesmo se null — não retenta antes de 7 dias
+    }catch(e){ saveDyCache(s.tk, null); }
   }));
 
   // Status
@@ -3236,6 +3277,37 @@ function gapTier(pctAtual, pctMeta){
   if(diff <= -3) return {color:'var(--neg)',  dot:'var(--neg)',  label:'Abaixo da meta'};
   if(diff >= 3)  return {color:'var(--gold)', dot:'var(--gold)', label:'Acima da meta'};
   return               {color:'var(--muted)', dot:'var(--muted)',label:'OK — dentro da tolerância (±3 pontos)'};
+}
+
+// Barras pareadas — % Atual vs % Meta, por classe. Reaproveitada na home e em Metas de Alocação
+// (mesmo componente nos dois lugares, só muda o container onde desenha).
+function mkMetaBarChart(containerId){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  const {metas, classes, total} = computeMetasAlocData();
+  const maxPct = Math.max(...classes.map(c=>{
+    const atual = total>0 ? c.val/total*100 : 0;
+    return Math.max(atual, metas[c.id]||0);
+  }), 10); // piso de 10% pra escala não ficar esmagada quando tudo é pequeno
+  const rows = classes.map(c=>{
+    const atual = total>0 ? c.val/total*100 : 0;
+    const meta = metas[c.id]||0;
+    const wAtual = Math.min(100, atual/maxPct*100);
+    const wMeta = Math.min(100, meta/maxPct*100);
+    const color = CLASSE_COLORS[c.id]||"var(--gold)";
+    return `<div class="mbc-row">
+      <div class="mbc-label" title="${c.name}">${c.name}</div>
+      <div class="mbc-bars">
+        <div class="mbc-track"><div class="mbc-fill" style="width:${wAtual.toFixed(1)}%;background:${color}"></div></div>
+        <div class="mbc-track"><div class="mbc-fill meta" style="width:${wMeta.toFixed(1)}%"></div></div>
+      </div>
+      <div class="mbc-vals"><span style="color:${color};font-weight:600">${atual.toFixed(1)}%</span><span class="meta">${meta.toFixed(1)}%</span></div>
+    </div>`;
+  }).join("");
+  el.innerHTML = rows + `<div class="mbc-legend">
+    <span><span class="mbc-legend-dot" style="background:var(--gold)"></span>Atual</span>
+    <span><span class="mbc-legend-dot" style="background:var(--muted);opacity:.5"></span>Meta</span>
+  </div>`;
 }
 
 function computeMetasAlocData(){
@@ -3342,6 +3414,7 @@ function renderEvolucaoPatrimonio(){
 function renderAtivosCarteira(){
   const el = document.getElementById("ativosCarteiraBox");
   if(!el) return;
+  mkMetaBarChart("metaBarChartHome");
   const {classes, total} = computeMetasAlocData();
   const ativos = classes.filter(c=>c.val>0);
   if(!ativos.length || total<=0){
@@ -3406,6 +3479,7 @@ function renderAtivosCarteira(){
 function renderMetasAloc(){
   const tbody = document.getElementById("metasAlocTbody");
   if(!tbody) return;
+  mkMetaBarChart("metaBarChartMetas");
   const {metas, classes, total} = computeMetasAlocData();
   const hint = document.getElementById("metasAlocHint");
   const totalMetaConfig = Object.values(metas).reduce((a,b)=>a+b,0);
