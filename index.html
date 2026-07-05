@@ -1966,6 +1966,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v25.7",d:"Jun/2026",items:[
+    "Teto por Setor ganhou tolerância de 3 pontos (mesma lógica de Metas de Alocação) — não mostra mais aviso por qualquer excesso mínimo",
+    "2 níveis de aviso: ⚠ amarelo (3-5 pontos acima) e 🔴 vermelho (mais de 5 pontos acima), cada um com texto explicando o que significa ao passar o mouse",
+  ]},
   {v:"v25.6",d:"Jun/2026",items:[
     "CORRIGIDO: busca por nome da empresa (ex: 'Itaú', 'Coca-Cola') não achava nada, porque dependia só da Brapi/Finnhub confirmarem o nome — mesma instabilidade de sempre. Agora tem um mapa fixo com o nome das ~110 Ações BR e ~50 Stocks EUA já cadastrados, que não depende de nenhuma API",
   ]},
@@ -2768,7 +2772,16 @@ function mkSetores(data,id,map,classe,totalPosicoes){
   const rows=[...data,...extras].map((t,i)=>{
     const tetoAtual=classe?(getTetoSetor(classe,t.s,null)??100):t.teto;
     const atual=(map[t.s]||0)/total*100;
-    return {s:t.s,atual,tetoAtual,over:atual>tetoAtual && !unica,color:SETOR_PALETTE[i%SETOR_PALETTE.length]};
+    // Mesmo espírito da Diferença em Metas de Alocação: tolerância de ±3 pontos antes de
+    // considerar "acima do teto" — e um segundo nível (>5 pontos) pra sinalizar excesso forte.
+    const diff = atual - tetoAtual;
+    let tier = "ok", tierMsg = "Dentro da margem de tolerância (±3 pontos) do teto configurado — nada a fazer.";
+    if(!unica && diff > 5){
+      tier = "muito"; tierMsg = `Passou bastante do teto configurado (${diff.toFixed(1)} pontos acima) — esse setor está mais concentrado do que o planejado. Vale considerar reduzir novos aportes aqui até reequilibrar.`;
+    } else if(!unica && diff > 3){
+      tier = "leve"; tierMsg = `Passou um pouco do teto configurado (${diff.toFixed(1)} pontos acima). Ainda não é motivo de alarme, mas vale ficar de olho.`;
+    }
+    return {s:t.s,atual,tetoAtual,tier,tierMsg,over:tier!=="ok",color:SETOR_PALETTE[i%SETOR_PALETTE.length]};
   });
   const R=46,cx=58,cy=58,sw=15,circ=2*Math.PI*R;
   let arcs=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="${sw}"/>`;
@@ -2783,10 +2796,10 @@ function mkSetores(data,id,map,classe,totalPosicoes){
     <div class="sdon-row">
       <span class="sdon-dot" style="background:${r.color}"></span>
       <span class="sdon-n">${r.s}</span>
-      <span class="sdon-val" style="color:${r.over?"var(--neg)":"var(--text)"}" onclick="editTetoSetor('${classe}','${r.s}',${r.tetoAtual})" title="${unica?"Único ativo da classe — 100% é esperado até você diversificar. Clique para editar o teto.":"Clique para editar o teto deste setor"}">${r.atual.toFixed(1)}%</span>
+      <span class="sdon-val" style="color:${r.tier==='muito'?"var(--neg)":r.tier==='leve'?"#F59E0B":"var(--text)"}" onclick="editTetoSetor('${classe}','${r.s}',${r.tetoAtual})" title="${unica?"Único ativo da classe — 100% é esperado até você diversificar. Clique para editar o teto.":"Clique para editar o teto deste setor"}">${r.atual.toFixed(1)}%</span>
       <span class="sdon-sep">/</span>
       <span class="sdon-cap" onclick="editTetoSetor('${classe}','${r.s}',${r.tetoAtual})" title="Clique para editar o teto deste setor"><u>${r.tetoAtual}%</u></span>
-      <span class="sdon-warn">${r.over?"⚠":""}</span>
+      <span class="sdon-warn" title="${r.tierMsg}">${r.tier==='muito'?"🔴":r.tier==='leve'?"⚠":""}</span>
     </div>`).join("");
   c.innerHTML=`<div class="sdon-wrap">
     <svg width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}" style="flex-shrink:0">${arcs}</svg>
