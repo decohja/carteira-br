@@ -1423,6 +1423,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <input class="finp" id="addEmpresa" placeholder="Ex: Apple Inc."/>
       </div>
     </div>
+    <div id="addDataCompraRow" style="margin-bottom:10px;display:none">
+      <label class="flbl">Data de compra <span class="info-ic" title="Usada pra não mostrar proventos de antes de você ter esse ativo. Se já tinha comprado antes e só está cadastrando agora, coloca a data real da compra — não a de hoje.">?</span></label>
+      <input class="finp" id="addDataCompra" type="date" style="font-family:var(--mono)"/>
+    </div>
     <div id="addPreview" style="display:none;padding:10px;background:var(--bg3);border-radius:var(--rm);margin-bottom:10px;font-size:12px">
       <div style="display:flex;justify-content:space-between">
         <span style="color:var(--muted)">Total investido</span>
@@ -2055,6 +2059,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v27.4",d:"Jun/2026",items:[
+    "NOVO: campo 'Data de compra' ao adicionar Ação, FII ou BDR — usado pra filtrar Proventos de verdade (só mostra proventos de depois que você teve o ativo, não uma janela fixa de dias)",
+    "Ao comprar mais de um ativo que já existe, guarda sempre a data MAIS ANTIGA das compras — não sobrescreve com a data de hoje",
+    "Ativos cadastrados antes dessa mudança não têm essa data — continuam usando o corte de 60 dias que já existia, como reserva",
+    "BDR agora também entra na busca automática de Proventos (tinha ficado de fora até agora)",
+  ]},
   {v:"v27.3",d:"Jun/2026",items:[
     "NOVO: gráfico de barras pareadas 'Atual vs. Meta por classe' — mostra visualmente onde cada classe está em relação à meta configurada, sem precisar ler números crus. Aparece na Home (abaixo da rosca) e em Metas de Alocação (acima da tabela), mesmo componente nos dois lugares",
   ]},
@@ -4835,7 +4845,7 @@ async function buscarProventosManual(){
 // Busca dividends=true SEPARADO da cotação, um ticker por vez — se um ticker
 // específico falhar ou vier com payload grande, não derruba a atualização de preço.
 async function buscarProventosAutomaticos(){
-  const tks=[...D.acoes.map(a=>a.tk), ...D.fiis.map(f=>f.tk)];
+  const tks=[...D.acoes.map(a=>a.tk), ...D.fiis.map(f=>f.tk), ...D.bdrs.map(b=>b.tk)];
   let sucesso=0, falhas=0;
   window._proventosNovosNestaRodada = 0;
   await Promise.allSettled(tks.map(async tk=>{
@@ -4851,16 +4861,16 @@ async function buscarProventosAutomaticos(){
 }
 
 function coletarProventosSugeridos(tk, cashDividends){
-  const ativo = D.acoes.find(a=>a.tk===tk) || D.fiis.find(f=>f.tk===tk);
+  const ativo = D.acoes.find(a=>a.tk===tk) || D.fiis.find(f=>f.tk===tk) || D.bdrs.find(b=>b.tk===tk);
   if(!ativo || !ativo.cotas) return; // não possui esse ativo — ignora
   const cotas = ativo.cotas;
-  // Só interessa o que é recente/futuro — a Brapi devolve o histórico completo (às vezes anos pra trás),
-  // e isso bagunçava a lista com coisa irrelevante. Corta em 60 dias atrás: pega "a receber" e o que
-  // acabou de virar "recebido", sem trazer o passado distante.
-  const limiteAntigo = new Date(); limiteAntigo.setDate(limiteAntigo.getDate()-60);
+  // Corte de "desde quando interessa": se sabemos a data de compra real, usa ela — só mostra
+  // proventos de depois que você teve o ativo. Se não sabemos (ativo cadastrado antes desse
+  // campo existir), cai no corte de 60 dias que já usávamos, como reserva.
+  const limiteAntigo = ativo.dataCompra ? new Date(ativo.dataCompra) : (()=>{ const d=new Date(); d.setDate(d.getDate()-60); return d; })();
   cashDividends.forEach(cd=>{
     if(!cd.paymentDate || !cd.rate) return; // sem data de pagamento definida ainda — não dá pra sugerir lançamento
-    if(new Date(cd.paymentDate) < limiteAntigo) return; // provento antigo — fora do escopo
+    if(new Date(cd.paymentDate) < limiteAntigo) return; // provento antigo — fora do escopo (antes da compra, ou antes do corte de 60 dias)
     const pg = formatarDataBR(cd.paymentDate); // parse de verdade — a Brapi manda timestamp completo, não só a data
     const vc = cd.rate;
     // já foi lançado (automática ou manualmente) antes? não duplica
@@ -5105,6 +5115,15 @@ function openAddAtivo(tipo, presetTicker){
   document.getElementById("addCotasLabel").style.display="";
   col1.style.display="block"; col2.style.display="block"; col2.style.gridColumn="auto";
 
+  // Data de compra: só pra Ações/FIIs/BDR, que alimentam a busca automática de Proventos.
+  // Ao comprar mais de algo que já existe, o campo fica escondido — a data já registrada
+  // (a mais antiga) é a que vale, não dá pra editar aqui.
+  const dataCompraRow=document.getElementById("addDataCompraRow");
+  const dataCompraInput=document.getElementById("addDataCompra");
+  const usaDataCompra = ["acoes","fiis","bdrs"].includes(tipo) && !presetTicker;
+  dataCompraRow.style.display = usaDataCompra ? "block" : "none";
+  if(usaDataCompra) dataCompraInput.value = new Date().toISOString().slice(0,10);
+
   if(tipo==="cripto"){
     cotasInput.step="0.0001"; // evita notação científica nas setinhas (8 casas era exagero pro spinner)
     cotasInput.placeholder="0.00351089";
@@ -5335,6 +5354,7 @@ async function confirmarAddAtivo(){
   const pm=parseFloat(document.getElementById("addPM").value)||0;
   const cotas=parseFloat(document.getElementById("addCotas").value)||0;
   const setor=document.getElementById("addSetor").value;
+  const dataCompra=document.getElementById("addDataCompra").value||null; // YYYY-MM-DD ou null
   let mesclou=false; // true = a compra foi somada numa posição já existente (não criou linha nova)
 
   // Trava de segurança: preço e quantidade nunca podem ser negativos, pra nenhum tipo de ativo.
@@ -5373,10 +5393,11 @@ async function confirmarAddAtivo(){
       const novasCotas=existente.cotas+cotas;
       existente.pm=+(((existente.pm*existente.cotas)+(pm*cotas))/novasCotas).toFixed(4);
       existente.cotas=novasCotas;
+      if(dataCompra && (!existente.dataCompra || dataCompra<existente.dataCompra)) existente.dataCompra=dataCompra;
       mesclou=true;
     } else {
       const teto={"Financeiro":35,"Energia":25,"Indústria":20,"Saneamento":15,"Serviços":5}[setor]||20;
-      D.acoes.push({tk,co:TICKER_NOME_BR[tk]||tk,st:setor,pm,cotas,dy:0,teto,obj:"Manter"});
+      D.acoes.push({tk,co:TICKER_NOME_BR[tk]||tk,st:setor,pm,cotas,dy:0,teto,obj:"Manter",dataCompra});
     }
     prices[tk]=prices[tk]||pm; // não sobrescreve cotação ao vivo já existente
     if(!getPriceCacheStore()[tk]) savePriceCache(tk, prices[tk]); // grava no cache local — sem isso, um recarregamento de página perde o valor de vez
@@ -5387,10 +5408,11 @@ async function confirmarAddAtivo(){
       const novasCotas=existente.cotas+cotas;
       existente.pm=+(((existente.pm*existente.cotas)+(pm*cotas))/novasCotas).toFixed(4);
       existente.cotas=novasCotas;
+      if(dataCompra && (!existente.dataCompra || dataCompra<existente.dataCompra)) existente.dataCompra=dataCompra;
       mesclou=true;
     } else {
       const teto={"Financeiro":35,"Energia":25,"Indústria":20,"Saúde":20,"Consumo":25,"Tecnologia":30}[setor]||20;
-      D.bdrs.push({tk,co:TICKER_NOME_BDR[tk]||tk,st:setor,pm,cotas,dy:0,teto,obj:"Manter"});
+      D.bdrs.push({tk,co:TICKER_NOME_BDR[tk]||tk,st:setor,pm,cotas,dy:0,teto,obj:"Manter",dataCompra});
     }
     prices[tk]=prices[tk]||pm;
     if(!getPriceCacheStore()[tk]) savePriceCache(tk, prices[tk]);
@@ -5401,9 +5423,10 @@ async function confirmarAddAtivo(){
       const novasCotas=existente.cotas+cotas;
       existente.pm=+(((existente.pm*existente.cotas)+(pm*cotas))/novasCotas).toFixed(4);
       existente.cotas=novasCotas;
+      if(dataCompra && (!existente.dataCompra || dataCompra<existente.dataCompra)) existente.dataCompra=dataCompra;
       mesclou=true;
     } else {
-      D.fiis.push({tk,seg:setor,pm,cotas,dy:0,prov:0,st:"NEUTRO"});
+      D.fiis.push({tk,seg:setor,pm,cotas,dy:0,prov:0,st:"NEUTRO",dataCompra});
     }
     prices[tk]=prices[tk]||pm;
     if(!getPriceCacheStore()[tk]) savePriceCache(tk, prices[tk]);
