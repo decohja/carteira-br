@@ -521,6 +521,14 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .finp,.fsel{width:100%;padding:8px 10px;border-radius:var(--rm);border:1px solid var(--border2);
   background:var(--bg3);color:var(--text);font-family:var(--font);font-size:13px;transition:border-color .15s}
 .finp:focus,.fsel:focus{outline:none;border-color:var(--gold)}
+.ticker-search-results{position:absolute;top:100%;left:0;right:0;z-index:50;margin-top:3px;
+  background:var(--card);border:1px solid var(--border2);border-radius:var(--rm);
+  max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.ticker-search-item{padding:8px 11px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--border)}
+.ticker-search-item:last-child{border-bottom:none}
+.ticker-search-item:hover{background:var(--bg3)}
+.ticker-search-item strong{font-family:var(--mono)}
+.tsi-nome{color:var(--muted);font-size:11.5px}
 .btn-pri{padding:8px 16px;border-radius:var(--rm);background:var(--gold);color:#fff;
   font-family:var(--font);font-size:13px;font-weight:600;border:none;cursor:pointer}
 .btn-pri:hover{background:var(--gold-l)}
@@ -1309,15 +1317,12 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       <span id="addModalTitle">Adicionar ativo</span>
       <button class="m-close" onclick="closeAddAtivo()">×</button>
     </div>
-    <div class="form-group" style="margin-bottom:10px">
+    <div class="form-group" style="margin-bottom:10px;position:relative">
       <label class="flbl">Ticker</label>
-      <input class="finp" id="addTicker" placeholder="Ex: WEGE3, BTLG11, VOO"
-        list="tickerListAcoes" autocomplete="off" style="font-family:var(--mono);text-transform:uppercase"
-        oninput="this.value=this.value.toUpperCase()"/>
-      <datalist id="tickerListAcoes"></datalist>
-      <datalist id="tickerListFiis"></datalist>
-      <datalist id="tickerListETFs"></datalist>
-      <datalist id="tickerListStocks"></datalist>
+      <input class="finp" id="addTicker" placeholder="Digite o ticker ou o nome da empresa…"
+        autocomplete="off" style="font-family:var(--mono);text-transform:uppercase"
+        oninput="onTickerSearchInput(this)" onblur="setTimeout(hideTickerSearchResults,150)"/>
+      <div id="tickerSearchResults" class="ticker-search-results" style="display:none"></div>
       <datalist id="cryptoTickerList">
         <option value="BTC">Bitcoin</option>
         <option value="ETH">Ethereum</option>
@@ -1918,6 +1923,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v25.5",d:"Jun/2026",items:[
+    "NOVA busca de ativos: datalist nativo substituído por um campo de busca de verdade — só mostra resultados a partir de 2 caracteres digitados, e busca por TICKER OU NOME DA EMPRESA (ex: digitar 'coca' encontra KO). Vale pra Ações, FIIs, ETFs e Stocks",
+    "Mais leve: em vez de carregar milhares de opções de uma vez, só filtra e mostra até 20 resultados por vez, conforme você digita",
+  ]},
   {v:"v25.4",d:"Jun/2026",items:[
     "VARREDURA DE DADOS FIXOS concluída — chequei todos os outros pontos que poderiam vazar dado do dono pra conta nova (proventos mensais, indicadores macro, metas de alocação). Só achamos o bug do teto por setor mesmo, já corrigido",
     "NOVO: lista completa de tickers B3 (Brapi) + EUA (Finnhub) — busca uma vez, cacheia por 30 dias, e complementa a lista curada de sempre. Cobre Ações, FIIs, Stocks e ETFs de uma vez. Atualiza sozinho em segundo plano, sem travar o carregamento",
@@ -4624,6 +4633,57 @@ function populateSelect(id, options){
   sel.disabled = true; // travado sempre — só o código preenche, nunca escolha manual do usuário
 }
 
+// ── Busca customizada de ticker (substitui o datalist nativo pra Ações/FIIs/ETFs/Stocks) ──
+// Só mostra resultados a partir de 2 caracteres digitados, busca por ticker OU nome da empresa.
+let _tickerSearchLista = []; // [{tk, nome}] — montada conforme o tipo de ativo sendo adicionado
+
+function setTickerSearchLista(tipo){
+  const cache = getListaTickersCache();
+  const curada = tipo==="acoes" ? TICKERS_ACOES_BR
+    : tipo==="fiis" ? TICKERS_FIIS_BR
+    : tipo==="etfs" ? TICKERS_ETFS_US
+    : tipo==="stocks" ? TICKERS_STOCKS_US : [];
+  const completaComNome = tipo==="acoes" ? (cache?.acoesBR_nomes||{})
+    : tipo==="fiis" ? (cache?.fiisBR_nomes||{})
+    : tipo==="etfs" ? (cache?.etfsUS_nomes||{})
+    : tipo==="stocks" ? (cache?.stocksUS_nomes||{}) : {};
+  const completaLista = tipo==="acoes" ? (cache?.acoesBR||[])
+    : tipo==="fiis" ? (cache?.fiisBR||[])
+    : tipo==="etfs" ? (cache?.etfsUS||[])
+    : tipo==="stocks" ? (cache?.stocksUS||[]) : [];
+  const set = new Map();
+  curada.forEach(tk=>set.set(tk, {tk, nome: completaComNome[tk]||null}));
+  completaLista.forEach(tk=>{ if(!set.has(tk)) set.set(tk, {tk, nome: completaComNome[tk]||null}); });
+  _tickerSearchLista = [...set.values()];
+}
+
+function onTickerSearchInput(input){
+  input.value = input.value.toUpperCase();
+  const resultsEl = document.getElementById('tickerSearchResults');
+  const termo = input.value.trim().toLowerCase();
+  if(termo.length < 2){ resultsEl.style.display='none'; resultsEl.innerHTML=''; return; }
+  const matches = _tickerSearchLista.filter(item=>
+    item.tk.toLowerCase().includes(termo) || (item.nome && item.nome.toLowerCase().includes(termo))
+  ).slice(0, 20);
+  if(!matches.length){ resultsEl.style.display='none'; resultsEl.innerHTML=''; return; }
+  resultsEl.innerHTML = matches.map(m=>
+    `<div class="ticker-search-item" onmousedown="selecionarTickerBusca('${m.tk}')">
+      <strong>${m.tk}</strong>${m.nome?` <span class="tsi-nome">— ${m.nome}</span>`:''}
+    </div>`
+  ).join('');
+  resultsEl.style.display='block';
+}
+function selecionarTickerBusca(tk){
+  const input = document.getElementById('addTicker');
+  input.value = tk;
+  hideTickerSearchResults();
+  input.dispatchEvent(new Event('blur')); // dispara a lógica já existente de auto-preencher setor/preço
+}
+function hideTickerSearchResults(){
+  const el = document.getElementById('tickerSearchResults');
+  if(el){ el.style.display='none'; el.innerHTML=''; }
+}
+
 function openAddAtivo(tipo, presetTicker){
   addAtivoTipo=tipo;
   const titulos={acoes:"Adicionar Ação",fiis:"Adicionar FII",cripto:"Adicionar Cripto",etfs:"Adicionar ETF",stocks:"Adicionar Stock"};
@@ -4656,6 +4716,7 @@ function openAddAtivo(tipo, presetTicker){
     cotasInput.placeholder="0.00351089";
     tickerInput.placeholder="BTC, ETH, SOL…";
     tickerInput.setAttribute("list","cryptoTickerList");
+    _tickerSearchLista = [];
     setorRow.style.display="none";
     pmLabel.textContent="Preço médio pago (R$)";
     cotasLabel.textContent="Qtd. moeda";
@@ -4663,6 +4724,7 @@ function openAddAtivo(tipo, presetTicker){
     cotasInput.step="1"; cotasInput.placeholder="23";
     tickerInput.placeholder="Ex: WEGE3, ITUB4…";
     tickerInput.setAttribute("list","tickerListAcoes");
+    setTickerSearchLista("acoes");
     setorRow.style.display="grid";
     col2.style.display="none";
     col1Label.textContent="Setor";
@@ -4673,6 +4735,7 @@ function openAddAtivo(tipo, presetTicker){
     cotasInput.step="1"; cotasInput.placeholder="23";
     tickerInput.placeholder="Ex: BTLG11, KNRI11…";
     tickerInput.setAttribute("list","tickerListFiis");
+    setTickerSearchLista("fiis");
     setorRow.style.display="grid";
     col2.style.display="none";
     col1Label.textContent="Segmento";
@@ -4683,6 +4746,7 @@ function openAddAtivo(tipo, presetTicker){
     cotasInput.step="0.0001"; cotasInput.placeholder="1.25";
     tickerInput.placeholder="Ex: VOO, XLI…";
     tickerInput.setAttribute("list","tickerListETFs");
+    setTickerSearchLista("etfs");
     setorRow.style.display="none"; // sem Setor/Descrição pra ETFs
     pmLabel.textContent="Valor atual (US$)";
     cotasLabel.textContent="Qtd. cotas";
@@ -4690,6 +4754,7 @@ function openAddAtivo(tipo, presetTicker){
     cotasInput.step="1"; cotasInput.placeholder="10";
     tickerInput.placeholder="Ex: AAPL, MSFT…";
     tickerInput.setAttribute("list","tickerListStocks");
+    setTickerSearchLista("stocks");
     setorRow.style.display="grid";
     col2.style.display="none";
     col1Label.textContent="Setor";
@@ -5340,7 +5405,8 @@ async function atualizarListaCompletaTickers(){
   const idadeDias = cache ? (Date.now()-cache.ts)/86400000 : Infinity;
   if(cache && idadeDias < TICKER_LIST_MAX_DIAS) return cache; // cache ainda fresco — nem busca
 
-  const novo = {acoesBR:[], fiisBR:[], stocksUS:[], etfsUS:[], ts:Date.now()};
+  const novo = {acoesBR:[], fiisBR:[], stocksUS:[], etfsUS:[], ts:Date.now(),
+    acoesBR_nomes:{}, fiisBR_nomes:{}, stocksUS_nomes:{}, etfsUS_nomes:{}};
 
   // B3 — Brapi (endpoint de lista completa)
   try{
@@ -5349,8 +5415,9 @@ async function atualizarListaCompletaTickers(){
       j.stocks.forEach(item=>{
         const tk = item.stock || item.symbol;
         if(!tk) return;
-        if(item.type==="fund" || /11$/.test(tk)) novo.fiisBR.push(tk);
-        else novo.acoesBR.push(tk);
+        const nome = item.name || item.close_name || null;
+        if(item.type==="fund" || /11$/.test(tk)){ novo.fiisBR.push(tk); if(nome) novo.fiisBR_nomes[tk]=nome; }
+        else { novo.acoesBR.push(tk); if(nome) novo.acoesBR_nomes[tk]=nome; }
       });
     }
   }catch(e){ console.warn("Lista completa B3 falhou:", e.message); }
@@ -5361,8 +5428,9 @@ async function atualizarListaCompletaTickers(){
     if(Array.isArray(j)){
       j.forEach(item=>{
         if(!item.symbol || /[.^]/.test(item.symbol)) return; // ignora classes especiais/índices
-        if(item.type==="ETP" || item.type==="ETF") novo.etfsUS.push(item.symbol);
-        else if(item.type==="Common Stock") novo.stocksUS.push(item.symbol);
+        const nome = item.description || null;
+        if(item.type==="ETP" || item.type==="ETF"){ novo.etfsUS.push(item.symbol); if(nome) novo.etfsUS_nomes[item.symbol]=nome; }
+        else if(item.type==="Common Stock"){ novo.stocksUS.push(item.symbol); if(nome) novo.stocksUS_nomes[item.symbol]=nome; }
       });
     }
   }catch(e){ console.warn("Lista completa EUA falhou:", e.message); }
@@ -5374,15 +5442,6 @@ async function atualizarListaCompletaTickers(){
     return novo;
   }
   return cache;
-}
-
-// Une a lista curada (sempre presente, garante os mais comuns mesmo se a busca completa nunca rodou)
-// com a lista completa cacheada, sem duplicar. Limita o tamanho pra não travar o navegador com
-// dezenas de milhares de opções na caixa de busca.
-function montarListaTickers(curada, completa, limite){
-  const set = new Set(curada);
-  if(completa) completa.forEach(t=>set.add(t));
-  return [...set].slice(0, limite);
 }
 
 async function startApp(){
@@ -5469,30 +5528,13 @@ async function startApp(){
     loadAvatar_SB();
     loadSettings();
     updateProfileUI();
-    // popula datalist de tickers — usa o cache de lista completa (se existir) + a lista curada,
-    // sem duplicar. Isso já roda com o que tiver disponível AGORA (rápido, não trava o carregamento).
+    // datalist do campo genérico de "Metas" (continua usando datalist nativo — lista pequena)
     const dl = document.getElementById('tickerList');
     if(dl) TICKERS_BR.forEach(t=>{ const o=document.createElement('option'); o.value=t; dl.appendChild(o); });
-    const listaCacheInicial = getListaTickersCache();
-    function popularDatalist(id, lista){
-      const el = document.getElementById(id);
-      if(!el) return;
-      el.innerHTML = "";
-      lista.forEach(t=>{ const o=document.createElement('option'); o.value=t; el.appendChild(o); });
-    }
-    popularDatalist('tickerListAcoes', montarListaTickers(TICKERS_ACOES_BR, listaCacheInicial?.acoesBR, 2000));
-    popularDatalist('tickerListFiis', montarListaTickers(TICKERS_FIIS_BR, listaCacheInicial?.fiisBR, 500));
-    popularDatalist('tickerListETFs', montarListaTickers(TICKERS_ETFS_US, listaCacheInicial?.etfsUS, 2000));
-    popularDatalist('tickerListStocks', montarListaTickers(TICKERS_STOCKS_US, listaCacheInicial?.stocksUS, 3000));
-    // Atualiza a lista completa em segundo plano (só busca de verdade se o cache tiver vencido —
-    // 30 dias) e repopula os datalists se vier algo novo, sem precisar recarregar a página.
-    atualizarListaCompletaTickers().then(lista=>{
-      if(!lista) return;
-      popularDatalist('tickerListAcoes', montarListaTickers(TICKERS_ACOES_BR, lista.acoesBR, 2000));
-      popularDatalist('tickerListFiis', montarListaTickers(TICKERS_FIIS_BR, lista.fiisBR, 500));
-      popularDatalist('tickerListETFs', montarListaTickers(TICKERS_ETFS_US, lista.etfsUS, 2000));
-      popularDatalist('tickerListStocks', montarListaTickers(TICKERS_STOCKS_US, lista.stocksUS, 3000));
-    }).catch(()=>{});
+    // Atualiza a lista completa de tickers (B3+EUA) em segundo plano — só busca de verdade se
+    // o cache tiver vencido (30 dias). Usada pela busca customizada do modal de Adicionar Ativo,
+    // que já lê o cache mais recente sempre que abre (setTickerSearchLista), não precisa reagir aqui.
+    atualizarListaCompletaTickers().catch(()=>{});
     render(); // re-renderiza com dados do banco
     atualizarIndicadoresMacroRF().catch(()=>{}); // best-effort, não bloqueia o carregamento
     buscarProventosAutomaticos().then(()=>renderProv()).catch(()=>{}); // idem — roda em paralelo, não trava nada se falhar
