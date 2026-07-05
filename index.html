@@ -1966,6 +1966,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v26.0",d:"Jun/2026",items:[
+    "NOVO: DY% de Ações/FIIs BR agora tem um segundo fallback via Yahoo Finance (soma dividendos pagos nos últimos 12 meses ÷ preço atual) — usa o mesmo endpoint que já usávamos pra cotação, sem token, sem proxy. Só entra em ação quando a Brapi não confirma o DY daquele ticker",
+    "Isso não substitui a Brapi (continua sendo a fonte principal, mais completa) — só preenche a lacuna dela quando falha",
+  ]},
   {v:"v25.9",d:"Jun/2026",items:[
     "CORRIGIDO: ao adicionar Ação, Stock ou Cripto, o nome da empresa/moeda era preenchido com o próprio ticker repetido (ex: 'MSFT' embaixo de 'MSFT') — agora usa o nome real, aproveitando os mesmos mapas que já tínhamos pra busca",
     "Migração automática corrige o que já estava salvo com esse problema — roda uma vez só, sozinha",
@@ -2929,7 +2933,8 @@ async function refreshPrices(manual=false){
 
   /* 1c. Fallback de cotação: Yahoo Finance (sufixo .SA) pra qualquer ticker BR que a Brapi não confirmou
         agora há pouco. Yahoo não exige token nem proxy (endpoint libera acesso direto do navegador),
-        então serve como plano B só pra manter o PREÇO em dia — DY%/Proventos continuam vindo só da Brapi. */
+        então serve como plano B pra manter o PREÇO em dia — o DY% também tem fallback (ver 1d abaixo),
+        Proventos (o histórico detalhado pra lançar automaticamente) continua só pela Brapi. */
   const tksSemPrecoFresco = tksBR.filter(tk=>{
     if(tk==='^BVSP') return false;
     const ts = window._priceUpdatedAt[tk];
@@ -2952,6 +2957,30 @@ async function refreshPrices(manual=false){
       }catch(e){ console.warn(`Fallback Yahoo falhou pra ${tk}.SA:`,e.message); }
     }));
     if(yhOK) console.log(`Fallback Yahoo: ${yhOK} de ${tksSemPrecoFresco.length} tickers BR resgatados`);
+  }
+
+  /* 1d. Fallback de DY%: Yahoo Finance (mesmo endpoint acima, com events=div) pra ativos BR que
+        a Brapi não confirmou o Dividend Yield. Calcula "trailing 12 meses" — soma os dividendos
+        pagos no último ano e divide pelo preço atual. Não troca a Brapi, só preenche a lacuna
+        dela; sabidamente o dado de dividendo do Yahoo é mais incompleto pra B3 do que pros EUA,
+        então nem todo ticker vai conseguir — mas ajuda bastante nos que a Brapi nunca confirma. */
+  const tksSemDY = tksBR.filter(tk=> tk!=='^BVSP' && window._dyBR[tk]==null);
+  if(tksSemDY.length){
+    let dyOK=0;
+    await Promise.allSettled(tksSemDY.map(async tk=>{
+      try{
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${tk}.SA?range=1y&interval=1d&events=div`;
+        const j = await corsGetJSON(url);
+        const result = j?.chart?.result?.[0];
+        const divEvents = result?.events?.dividends;
+        const precoAtual = prices[tk] || result?.meta?.regularMarketPrice;
+        if(divEvents && precoAtual>0){
+          const totalDividendos = Object.values(divEvents).reduce((acc,d)=>acc+(d.amount||0),0);
+          if(totalDividendos>0){ window._dyBR[tk] = (totalDividendos/precoAtual)*100; dyOK++; }
+        }
+      }catch(e){ /* Yahoo sem dado de dividendo pra esse ticker — fica "aguardando", sem problema */ }
+    }));
+    if(dyOK) console.log(`Fallback DY Yahoo: ${dyOK} de ${tksSemDY.length} tickers BR resgatados`);
   }
 
   /* 2. USD/BRL + todas as criptos da carteira via AwesomeAPI — CORS nativo, sem token, cache de 1min */
