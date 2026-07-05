@@ -1218,7 +1218,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         </div>
       </div>
       <div class="st">Histórico</div>
-      <div class="tw"><table><thead><tr><th>Ativo</th><th>Tipo</th><th class="r">Data</th><th class="r">Val/cota</th><th class="r">Cotas</th><th class="r">Total</th></tr></thead><tbody id="provLog"></tbody></table></div>
+      <div class="tw"><table><thead><tr><th>Ativo</th><th>Tipo</th><th class="r">Data</th><th class="r">Data-com</th><th class="r">Val/cota</th><th class="r">Cotas</th><th class="r">Total</th></tr></thead><tbody id="provLog"></tbody></table></div>
     </div>
     <div>
       <div class="st">Evolução de proventos — últimos 12 meses</div>
@@ -1918,6 +1918,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v25.3",d:"Jun/2026",items:[
+    "Coluna 'Data-com' de volta na tabela de Proventos — tinha se perdido quando o fluxo virou automático",
+    "Lista de Proventos agora sempre ordena da data mais recente pra mais antiga, não importa a ordem que foram detectados/inseridos",
+  ]},
   {v:"v25.2",d:"Jun/2026",items:[
     "CORRIGIDO BUG DA DATA QUEBRADA: a Brapi manda a data do provento com hora embutida (tipo '2026-11-03T03:00:00.000Z'), e o código fazia um split ingênuo que quebrava tudo, tipo '03T03:00…/11/2026'. Agora parseia certo, sempre mostra DD/MM/AAAA limpo",
     "MUDANÇA GRANDE: proventos detectados automaticamente agora entram DIRETO no seu histórico real — sem precisar clicar em '+ Adicionar' um por um. Não existe função de editar/excluir provento no app hoje, então já ficam fixos por natureza",
@@ -4357,10 +4361,14 @@ function renderProv(){
     c.appendChild(el);
   });
   const fl=g("provLog"); fl.innerHTML="";
-  D.provLog.forEach(l=>{
+  // Ordena da data mais recente pra mais antiga — sempre, não depende da ordem de inserção
+  const parseData = (s)=>{ const [d,m,a]=(s||"").split("/"); return a&&m&&d ? new Date(+a,+m-1,+d).getTime() : 0; };
+  const logOrdenado = [...D.provLog].sort((a,b)=>parseData(b.pg)-parseData(a.pg));
+  logOrdenado.forEach(l=>{
     const tr=document.createElement("tr");
     tr.innerHTML=`<td class="tk">${l.tk}</td><td style="color:var(--muted);font-size:11px">${l.tipo}</td>
       <td class="r" style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.pg}</td>
+      <td class="r" style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.dc||"—"}</td>
       <td class="r">${brl(l.vc,4)}</td><td class="r">${l.cotas}</td>
       <td class="r" style="color:var(--gold);font-weight:600">${brl(l.total,2)}</td>`;
     fl.appendChild(tr);
@@ -4467,7 +4475,8 @@ function coletarProventosSugeridos(tk, cashDividends){
     if(jaLancado) return;
     const tipo = cd.label==="JCP" ? "JSCP" : "Dividendos";
     const total = +(vc*cotas).toFixed(2);
-    salvarProventoAuto({tk, tipo, pg, vc, cotas, total});
+    const dc = cd.lastDatePrior ? formatarDataBR(cd.lastDatePrior) : null;
+    salvarProventoAuto({tk, tipo, pg, vc, cotas, total, dc});
   });
 }
 
