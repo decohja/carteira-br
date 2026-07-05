@@ -1195,7 +1195,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
     <button class="refbtn" id="btnBuscarProv" onclick="buscarProventosManual()" style="font-size:11px">🔄 Buscar proventos agora</button>
   </div>
-  <div id="provSugeridos" class="prov-sug-box" style="display:none"></div>
   <div class="two eq">
     <div>
       <div class="st" style="display:flex;align-items:center;gap:8px">Lançar manualmente <span style="font-weight:400;color:var(--muted);font-size:11px">(backup — a busca automática já roda sozinha)</span></div>
@@ -1753,14 +1752,16 @@ async function corsGetJSON(url){
 // Lista de tickers B3 para dropdown (top ativos + FIIs comuns)
 const TICKERS_ACOES_BR = [
   'ABEV3','ALSO3','ARZZ3','ASAI3','AZUL4','B3SA3','BBAS3','BBDC3','BBDC4','BBSE3',
-  'BEEF3','BPAC11','BRAP4','BRFS3','BRKM5','BRML3','CCRO3','CIEL3','CMIG4','COGN3',
-  'CPFE3','CPLE3','CSAN3','CSMG3','CSNA3','CXSE3','CYRE3','DXCO3','ECOR3','EGIE3',
-  'ELET3','ELET6','EMBR3','ENEV3','ENGI11','EQTL3','ESPA3','FLRY3','GGBR4','GGPS3',
-  'GOAU4','GOLL4','HAPV3','HYPE3','IGTI11','IRBR3','ITSA4','ITUB4','JBSS3','JHSF3',
-  'KLBN11','LREN3','LWSA3','MGLU3','MRFG3','MRVE3','MULT3','MYPK3','NTCO3','PCAR3',
-  'PETR3','PETR4','PETZ3','POSI3','PRIO3','QUAL3','RADL3','RAIL3','RDOR3','RENT3',
-  'RRRP3','SAPR4','SBFG3','SBSP3','SIMH3','SLCE3','SMFT3','SOMA3','SUZB3','TAEE11',
-  'TIMS3','TOTS3','UGPA3','USIM5','VALE3','VBBR3','VIVT3','WEGE3','WIZC3','YDUQ3',
+  'BEEF3','BPAC11','BPAC3','BPAC5','BRAP3','BRAP4','BRFS3','BRKM5','BRML3','CCRO3',
+  'CIEL3','CMIG3','CMIG4','COGN3','CPFE3','CPLE3','CPLE6','CSAN3','CSMG3','CSNA3',
+  'CXSE3','CYRE3','DXCO3','ECOR3','EGIE3','ELET3','ELET6','EMBR3','ENEV3','ENGI11',
+  'ENGI3','ENGI4','EQTL3','ESPA3','FLRY3','GGBR3','GGBR4','GGPS3','GOAU3','GOAU4',
+  'GOLL4','HAPV3','HYPE3','IGTI11','IGTI3','IRBR3','ITSA3','ITSA4','ITUB3','ITUB4',
+  'JBSS3','JHSF3','KLBN11','KLBN3','KLBN4','LREN3','LWSA3','MGLU3','MRFG3','MRVE3',
+  'MULT3','MYPK3','NTCO3','PCAR3','PETR3','PETR4','PETZ3','POSI3','PRIO3','QUAL3',
+  'RADL3','RAIL3','RDOR3','RENT3','RRRP3','SAPR3','SAPR4','SAPR11','SBFG3','SBSP3',
+  'SIMH3','SLCE3','SMFT3','SOMA3','SUZB3','TAEE11','TAEE3','TAEE4','TIMS3','TOTS3',
+  'UGPA3','USIM3','USIM5','USIM6','VALE3','VBBR3','VIVT3','WEGE3','WIZC3','YDUQ3',
 ];
 const TICKERS_FIIS_BR = [
   'BCFF11','BCIA11','BCRI11','BTCI11','BTLG11','CPTS11','FIIB11','FLCR11',
@@ -1818,18 +1819,23 @@ const TICKERS_STOCKS_US = [
 const TICKER_SETOR_BR = {
   // Financeiro
   BBAS3:"Financeiro", BBDC3:"Financeiro", BBDC4:"Financeiro", BBSE3:"Financeiro",
-  BPAC11:"Financeiro", B3SA3:"Financeiro", CXSE3:"Financeiro", ITSA4:"Financeiro",
-  ITUB4:"Financeiro", IRBR3:"Financeiro", WIZC3:"Financeiro",
+  BPAC11:"Financeiro", BPAC3:"Financeiro", BPAC5:"Financeiro",
+  B3SA3:"Financeiro", CXSE3:"Financeiro", ITSA3:"Financeiro", ITSA4:"Financeiro",
+  ITUB3:"Financeiro", ITUB4:"Financeiro", IRBR3:"Financeiro", WIZC3:"Financeiro",
   // Energia
-  CPFE3:"Energia", CPLE3:"Energia", CMIG4:"Energia", EGIE3:"Energia",
-  ELET3:"Energia", ELET6:"Energia", ENEV3:"Energia", EQTL3:"Energia",
-  TAEE11:"Energia", VBBR3:"Energia", PRIO3:"Energia", PETR3:"Energia", PETR4:"Energia",
+  CPFE3:"Energia", CPLE3:"Energia", CPLE6:"Energia", CMIG3:"Energia", CMIG4:"Energia",
+  EGIE3:"Energia", ELET3:"Energia", ELET6:"Energia", ENEV3:"Energia", EQTL3:"Energia",
+  ENGI3:"Energia", ENGI4:"Energia",
+  TAEE11:"Energia", TAEE3:"Energia", TAEE4:"Energia",
+  VBBR3:"Energia", PRIO3:"Energia", PETR3:"Energia", PETR4:"Energia",
   // Indústria
-  WEGE3:"Indústria", EMBR3:"Indústria", BRKM5:"Indústria", GGBR4:"Indústria",
-  GOAU4:"Indústria", CSNA3:"Indústria", USIM5:"Indústria", KLBN11:"Indústria",
+  WEGE3:"Indústria", EMBR3:"Indústria", BRKM5:"Indústria", GGBR3:"Indústria", GGBR4:"Indústria",
+  GOAU3:"Indústria", GOAU4:"Indústria", CSNA3:"Indústria",
+  USIM3:"Indústria", USIM5:"Indústria", USIM6:"Indústria",
+  KLBN11:"Indústria", KLBN3:"Indústria", KLBN4:"Indústria",
   SUZB3:"Indústria", DXCO3:"Indústria", MYPK3:"Indústria",
   // Saneamento
-  SAPR4:"Saneamento", SBSP3:"Saneamento", CSMG3:"Saneamento",
+  SAPR3:"Saneamento", SAPR4:"Saneamento", SAPR11:"Saneamento", SBSP3:"Saneamento", CSMG3:"Saneamento",
   // Serviços
   GGPS3:"Serviços", RENT3:"Serviços", RAIL3:"Serviços", CCRO3:"Serviços",
   ECOR3:"Serviços", SIMH3:"Serviços", AZUL4:"Serviços", GOLL4:"Serviços",
@@ -1842,7 +1848,8 @@ const TICKER_SETOR_BR = {
   YDUQ3:"Serviços", JHSF3:"Serviços", MULT3:"Serviços", CYRE3:"Serviços",
   MRVE3:"Serviços", JBSS3:"Serviços", MRFG3:"Serviços", BEEF3:"Serviços",
   VIVT3:"Serviços", TIMS3:"Serviços", UGPA3:"Serviços", CSAN3:"Serviços",
-  BRFS3:"Serviços", SLCE3:"Serviços", SMFT3:"Serviços", BRAP4:"Indústria",
+  BRFS3:"Serviços", SLCE3:"Serviços", SMFT3:"Serviços",
+  BRAP3:"Indústria", BRAP4:"Indústria",
   RRRP3:"Energia", SBFG3:"Serviços", VALE3:"Indústria",
 };
 
@@ -1911,6 +1918,15 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v25.2",d:"Jun/2026",items:[
+    "CORRIGIDO BUG DA DATA QUEBRADA: a Brapi manda a data do provento com hora embutida (tipo '2026-11-03T03:00:00.000Z'), e o código fazia um split ingênuo que quebrava tudo, tipo '03T03:00…/11/2026'. Agora parseia certo, sempre mostra DD/MM/AAAA limpo",
+    "MUDANÇA GRANDE: proventos detectados automaticamente agora entram DIRETO no seu histórico real — sem precisar clicar em '+ Adicionar' um por um. Não existe função de editar/excluir provento no app hoje, então já ficam fixos por natureza",
+    "'Buscar proventos agora' agora avisa quantos proventos novos foram encontrados E JÁ adicionados, não é mais preciso confirmar nada depois",
+  ]},
+  {v:"v25.1",d:"Jun/2026",items:[
+    "Adicionados 22 tickers 'irmãos' que faltavam na lista de Ações BR — mesma empresa, sufixo diferente (ON=3, PN=4/5/6, Units=11), cotação genuinamente diferente: ITSA3, ITUB3, CMIG3, CPLE6, GGBR3, GOAU3, USIM3/6, BRAP3, KLBN3/4, SAPR3/11, TAEE3/4, ENGI3/4, BPAC3/5, IGTI3",
+    "Quase todos já vêm com setor associado (mesmo setor do par que já existia) — exceção: IGTI11/IGTI3 continuam sem setor mapeado, igual já era antes (não é regressão nova)",
+  ]},
   {v:"v25.0",d:"Jun/2026",items:[
     "Todos os 49 FIIs da lista agora têm segmento classificado — zero em 'Outros'",
     "FEXC11 removido (virou BTCI11, que já estava na lista) — ITLG11 renomeado pra INLG11 (ticker mudou)",
@@ -4395,32 +4411,32 @@ function renderProv(){
     ["FIIs acumulado (histórico)",brl(totFII,2),"var(--gold)"],
   ];
   pr.innerHTML=rows.map((r,i)=>`<div style="display:flex;justify-content:space-between;padding:8px 0;${i<rows.length-1?"border-bottom:1px solid var(--border)":""}"><span style="font-size:11px;color:var(--muted)">${r[0]}</span><span style="font-family:var(--mono);font-size:13px;font-weight:500;color:${r[2]}">${r[1]}</span></div>`).join("");
-  renderProvSugeridos();
 }
 
 async function buscarProventosManual(){
   const btn=g("btnBuscarProv");
   if(btn){ btn.disabled=true; btn.textContent="Buscando…"; }
-  const {sucesso,falhas} = await buscarProventosAutomaticos();
+  const {sucesso,falhas,novos} = await buscarProventosAutomaticos();
   renderProv();
   if(btn){
     btn.disabled=false; btn.textContent="🔄 Buscar proventos agora";
     if(sucesso===0 && falhas>0){
       alert(`Não foi possível buscar agora — problema de conexão com a fonte de dados (${falhas} de ${falhas} tentativas falharam). Tenta de novo em alguns minutos.`);
-    } else if(!window._provSugeridos.length){
+    } else if(novos>0){
+      alert(`${novos} provento${novos>1?"s":""} novo${novos>1?"s":""} encontrado${novos>1?"s":""} e já adicionado${novos>1?"s":""} automaticamente ao seu histórico.`);
+    } else {
       alert("Nenhum provento novo encontrado pra seus ativos no momento.");
     }
   }
 }
 
 /* ── Proventos detectados automaticamente (via Brapi/CVM) ─────────── */
-window._provSugeridos = window._provSugeridos || []; // {tk,tipo,pg,vc,cotas,total,dataCom}
-
 // Busca dividends=true SEPARADO da cotação, um ticker por vez — se um ticker
 // específico falhar ou vier com payload grande, não derruba a atualização de preço.
 async function buscarProventosAutomaticos(){
   const tks=[...D.acoes.map(a=>a.tk), ...D.fiis.map(f=>f.tk)];
   let sucesso=0, falhas=0;
+  window._proventosNovosNestaRodada = 0;
   await Promise.allSettled(tks.map(async tk=>{
     try{
       const url=`https://brapi.dev/api/quote/${tk}?dividends=true&token=${BRAPI_TOKEN}`;
@@ -4430,7 +4446,7 @@ async function buscarProventosAutomaticos(){
       if(q?.dividendsData?.cashDividends?.length) coletarProventosSugeridos(tk, q.dividendsData.cashDividends);
     }catch(e){ falhas++; console.warn(`Proventos: falhou pra ${tk}:`,e.message); }
   }));
-  return {sucesso,falhas};
+  return {sucesso, falhas, novos: window._proventosNovosNestaRodada};
 }
 
 function coletarProventosSugeridos(tk, cashDividends){
@@ -4444,64 +4460,45 @@ function coletarProventosSugeridos(tk, cashDividends){
   cashDividends.forEach(cd=>{
     if(!cd.paymentDate || !cd.rate) return; // sem data de pagamento definida ainda — não dá pra sugerir lançamento
     if(new Date(cd.paymentDate) < limiteAntigo) return; // provento antigo — fora do escopo
-    const pg = cd.paymentDate.split("-").reverse().join("/"); // YYYY-MM-DD → DD/MM/YYYY
+    const pg = formatarDataBR(cd.paymentDate); // parse de verdade — a Brapi manda timestamp completo, não só a data
     const vc = cd.rate;
-    // já foi lançado manualmente ou já está na lista de sugestões? não duplica
+    // já foi lançado (automática ou manualmente) antes? não duplica
     const jaLancado = D.provLog.some(l=>l.tk===tk && l.pg===pg && Math.abs(l.vc-vc)<0.0001);
-    const jaSugerido = window._provSugeridos.some(s=>s.tk===tk && s.pg===pg && Math.abs(s.vc-vc)<0.0001);
-    if(jaLancado || jaSugerido) return;
-    window._provSugeridos.push({
-      tk, tipo: cd.label==="JCP" ? "JSCP" : "Dividendos",
-      pg, vc, cotas, total:+(vc*cotas).toFixed(2),
-      dataCom: cd.lastDatePrior ? cd.lastDatePrior.split("-").reverse().join("/") : null,
-      futuro: new Date(cd.paymentDate) > new Date(),
-    });
+    if(jaLancado) return;
+    const tipo = cd.label==="JCP" ? "JSCP" : "Dividendos";
+    const total = +(vc*cotas).toFixed(2);
+    salvarProventoAuto({tk, tipo, pg, vc, cotas, total});
   });
-  renderProvSugeridos();
 }
 
-function renderProvSugeridos(){
-  const el=g("provSugeridos"); if(!el) return;
-  if(!window._provSugeridos.length){ el.style.display="none"; return; }
-  el.style.display="block";
-  const itens = window._provSugeridos.map((s,i)=>`
-    <div class="prov-sug-row">
-      <div class="prov-sug-info">
-        <strong>${s.tk}</strong> <span style="color:var(--muted);font-size:11px">${s.tipo} · ${s.cotas} cotas · ${brl(s.vc,4)}/cota</span>
-        <div style="font-size:10px;color:var(--muted)">${s.futuro?"A receber":"Recebido"} em ${s.pg}${s.dataCom?` · Data-com ${s.dataCom}`:""}</div>
-      </div>
-      <span style="font-family:var(--mono);font-weight:600;color:var(--gold)">${brl(s.total,2)}</span>
-      <button class="btn-sec" style="font-size:11px;padding:5px 10px" onclick="confirmarProvSugerido(${i})">+ Adicionar</button>
-    </div>`).join("");
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <span style="font-size:12px;font-weight:600">🔍 ${window._provSugeridos.length} provento${window._provSugeridos.length>1?"s":""} detectado${window._provSugeridos.length>1?"s":""} automaticamente</span>
-      <button class="btn-pri" style="font-size:11px;padding:6px 12px" onclick="confirmarTodosProvSugeridos()">Adicionar todos</button>
-    </div>
-    ${itens}`;
-}
-
-async function confirmarProvSugerido(idx){
-  const s = window._provSugeridos[idx];
-  if(!s) return;
-  const row={tk:s.tk, tipo:s.tipo, pg:s.pg, vc:s.vc, cotas:s.cotas, total:s.total};
+// Salva um provento detectado automaticamente DIRETO no registro real — sem passar por confirmação
+// manual do usuário. É a fonte de verdade (Brapi), então entra fixo, sem botão de editar/excluir.
+async function salvarProventoAuto(row){
   D.provLog.unshift(row);
+  window._proventosNovosNestaRodada = (window._proventosNovosNestaRodada||0) + 1;
   if(sbOK && currentUser){
     try{
-      const [dd,mm,yyyy]=s.pg.split("/");
+      const [dd,mm,yyyy]=row.pg.split("/");
       await SB.post('proventos',{
-        ticker:s.tk, tipo:s.tipo, data_pagamento:`${yyyy}-${mm}-${dd}`,
-        valor_por_cota:s.vc, quantidade_cotas:s.cotas, total:s.total, user_id: currentUser.id
+        ticker:row.tk, tipo:row.tipo, data_pagamento:`${yyyy}-${mm}-${dd}`,
+        valor_por_cota:row.vc, quantidade_cotas:row.cotas, total:row.total, user_id: currentUser.id
       });
-    }catch(e){ console.warn('Provento sugerido — erro ao salvar:',e); }
+    }catch(e){ console.warn('Provento automático — erro ao salvar:',e); }
   }
-  window._provSugeridos.splice(idx,1);
   atualizarProvBR();
   renderProv();
-  renderProvSugeridos();
 }
-async function confirmarTodosProvSugeridos(){
-  while(window._provSugeridos.length) await confirmarProvSugerido(0);
+
+// Parse seguro de data vinda da Brapi — às vezes vem só "2026-11-03", às vezes o timestamp
+// completo "2026-11-03T03:00:00.000Z". Sempre extrai ano/mês/dia direto do objeto Date (nunca
+// faz split de string ingênuo, que foi a causa do bug de data quebrada tipo "03T03:00…/11/2026").
+function formatarDataBR(dataStr){
+  const d = new Date(dataStr);
+  if(isNaN(d.getTime())) return dataStr; // não conseguiu parsear — devolve o original em vez de quebrar
+  const dia = String(d.getUTCDate()).padStart(2,"0");
+  const mes = String(d.getUTCMonth()+1).padStart(2,"0");
+  const ano = d.getUTCFullYear();
+  return `${dia}/${mes}/${ano}`;
 }
 
 /* Recalcula D.provBR (últimos meses) a partir do histórico real — nunca mais valor de exemplo fixo */
