@@ -2039,6 +2039,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v27.1",d:"Jun/2026",items:[
+    "CORRIGIDO BUG GRAVE: DY% nunca tinha cache persistente — vivia só na memória da sessão, então voltava pra '0.00% (aguardando)' toda vez que a página recarregava, mesmo já tendo sido confirmado antes. Agora salva em cache local igual a cotação já fazia — sobrevive a reload e nova sessão",
+  ]},
   {v:"v27.0",d:"Jun/2026",items:[
     "NOVA CLASSE DE ATIVO: BDRs — aba própria, do zero, seguindo o mesmo padrão de Ações BR (tudo em R$, cotação via Brapi). Cobertura inicial com ~25 códigos mais conhecidos/líquidos (AAPL34, MSFT34, GOGL34, etc) — códigos de BDR não seguem uma convenção 100% previsível, então alguns podem precisar de correção",
     "BDR entra em TUDO: home (rosca, card, Maiores Posições), Metas de Alocação, Teto por Setor, busca por nome, migração de dados, Supabase",
@@ -2742,6 +2745,32 @@ function loadPriceCache(){
   });
 }
 
+// Cache persistente de DY% — mesmo princípio do preço acima. Sem isso, o DY vivia só na memória
+// da sessão (window._dyBR/_dyUS) e sumia (voltava pra "0.00% aguardando") a cada recarregamento
+// ou sessão nova, mesmo tendo sido confirmado há pouco. Um cache só, usado tanto por Ações/FIIs/BDR
+// (_dyBR) quanto por Stocks/ETFs (_dyUS) — tickers dos dois mundos nunca colidem na prática.
+const DY_CACHE_KEY = 'dyCache_v1';
+function getDyCacheStore(){
+  try{ return JSON.parse(localStorage.getItem(DY_CACHE_KEY)||'{}'); }catch(e){ return {}; }
+}
+function saveDyCache(tk, dy){
+  try{
+    const store = getDyCacheStore();
+    store[tk] = {dy, ts: Date.now()};
+    localStorage.setItem(DY_CACHE_KEY, JSON.stringify(store));
+  }catch(e){}
+}
+function loadDyCache(){
+  const store = getDyCacheStore();
+  window._dyBR = window._dyBR || {};
+  window._dyUS = window._dyUS || {};
+  Object.keys(store).forEach(tk=>{
+    if(!store[tk] || typeof store[tk].dy !== 'number') return;
+    if(window._dyBR[tk]==null) window._dyBR[tk]=store[tk].dy;
+    if(window._dyUS[tk]==null) window._dyUS[tk]=store[tk].dy;
+  });
+}
+
 /* ── TOTALS ROW ─────────────────────── */
 function addTotals(tbodyId, cols){
   const tb=document.getElementById(tbodyId); if(!tb) return;
@@ -2999,7 +3028,7 @@ async function refreshPrices(manual=false){
           savePriceCache(q.symbol, q.regularMarketPrice);
           // dividendYield vem como fração (ex: 0.0843 = 8.43%) — guarda já em %
           const dy = q.defaultKeyStatistics?.dividendYield;
-          if(dy!=null && !isNaN(dy)) window._dyBR[q.symbol] = dy*100;
+          if(dy!=null && !isNaN(dy)){ window._dyBR[q.symbol] = dy*100; saveDyCache(q.symbol, dy*100); }
         }
       });
     }
@@ -3065,7 +3094,7 @@ async function refreshPrices(manual=false){
         const precoAtual = prices[tk] || result?.meta?.regularMarketPrice;
         if(divEvents && precoAtual>0){
           const totalDividendos = Object.values(divEvents).reduce((acc,d)=>acc+(d.amount||0),0);
-          if(totalDividendos>0){ window._dyBR[tk] = (totalDividendos/precoAtual)*100; dyOK++; }
+          if(totalDividendos>0){ window._dyBR[tk] = (totalDividendos/precoAtual)*100; saveDyCache(tk, window._dyBR[tk]); dyOK++; }
         }
       }catch(e){ /* Yahoo sem dado de dividendo pra esse ticker — fica "aguardando", sem problema */ }
     }));
@@ -3119,7 +3148,7 @@ async function refreshPrices(manual=false){
     try{
       const j = await corsGetJSON(`https://finnhub.io/api/v1/stock/metric?symbol=${s.tk}&metric=all&token=${FINNHUB_TOKEN}`);
       const dy = j?.metric?.dividendYieldIndicatedAnnual ?? j?.metric?.currentDividendYieldTTM;
-      if(dy!=null && !isNaN(dy)) window._dyUS[s.tk] = dy; // Finnhub já retorna em % (ex: 1.5 = 1.5%)
+      if(dy!=null && !isNaN(dy)){ window._dyUS[s.tk] = dy; saveDyCache(s.tk, dy); } // Finnhub já retorna em % (ex: 1.5 = 1.5%)
     }catch(e){}
   }));
 
@@ -5817,6 +5846,7 @@ async function startApp(){
   // Carrega cache local de mercado imediatamente — evita "—" enquanto a rede não responde
   loadMktCache();
   loadPriceCache();
+  loadDyCache();
   const fv=document.getElementById("footerVer");
   if(fv && CHANGELOG[0]) fv.textContent="📋 "+CHANGELOG[0].v;
   loadCriptoAtivos();
