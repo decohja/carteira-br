@@ -1966,6 +1966,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v25.9",d:"Jun/2026",items:[
+    "CORRIGIDO: ao adicionar Ação, Stock ou Cripto, o nome da empresa/moeda era preenchido com o próprio ticker repetido (ex: 'MSFT' embaixo de 'MSFT') — agora usa o nome real, aproveitando os mesmos mapas que já tínhamos pra busca",
+    "Migração automática corrige o que já estava salvo com esse problema — roda uma vez só, sozinha",
+  ]},
   {v:"v25.8",d:"Jun/2026",items:[
     "CORRIGIDO: espaço entre 'R$' pequeno e o número nos totais estava espremido (1px), principalmente feio quando tinha o sinal de + na frente. Aumentado pra respirar melhor",
     "NOVO: DY% de Stocks agora busca dado real da Finnhub (a Brapi não cobre bolsa americana, então esse número nunca tinha atualizado ao vivo antes — ficava parado no valor de quando você cadastrou o ativo)",
@@ -4763,6 +4767,14 @@ function hideTickerSearchResults(){
   if(el){ el.style.display='none'; el.innerHTML=''; }
 }
 
+// Nome de cada moeda — mesma lista do datalist de cripto, evita repetir o ticker como nome
+const CRIPTO_NOMES = {
+  BTC:"Bitcoin", ETH:"Ethereum", BNB:"BNB", SOL:"Solana", XRP:"XRP", ADA:"Cardano",
+  AVAX:"Avalanche", DOT:"Polkadot", LINK:"Chainlink", DOGE:"Dogecoin", MATIC:"Polygon",
+  LTC:"Litecoin", USDT:"Tether", USDC:"USD Coin", ENA:"Ethena", HBAR:"Hedera Hashgraph",
+  ATOM:"Cosmos", UNI:"Uniswap", NEAR:"NEAR Protocol", APT:"Aptos",
+};
+
 function openAddAtivo(tipo, presetTicker){
   addAtivoTipo=tipo;
   const titulos={acoes:"Adicionar Ação",fiis:"Adicionar FII",cripto:"Adicionar Cripto",etfs:"Adicionar ETF",stocks:"Adicionar Stock"};
@@ -5014,7 +5026,7 @@ async function confirmarAddAtivo(){
       existente.atual=+(existente.atual+pm*cotas).toFixed(2);
       mesclou=true;
     } else {
-      D.stocks.push({tk,co:tk,setor,cotas,inv:pm*cotas,atual:pm*cotas,lucro:0,dy:0,obj:"Manter"});
+      D.stocks.push({tk,co:TICKER_NOME_EUA[tk]||tk,setor,cotas,inv:pm*cotas,atual:pm*cotas,lucro:0,dy:0,obj:"Manter"});
     }
   } else if(addAtivoTipo==="etfs"){
     if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Qtd. cotas."); return; }
@@ -5037,7 +5049,7 @@ async function confirmarAddAtivo(){
       mesclou=true;
     } else {
       const teto={"Financeiro":35,"Energia":25,"Indústria":20,"Saneamento":15,"Serviços":5}[setor]||20;
-      D.acoes.push({tk,co:tk,st:setor,pm,cotas,dy:0,teto,obj:"Manter"});
+      D.acoes.push({tk,co:TICKER_NOME_BR[tk]||tk,st:setor,pm,cotas,dy:0,teto,obj:"Manter"});
     }
     prices[tk]=prices[tk]||pm; // não sobrescreve cotação ao vivo já existente
     if(!getPriceCacheStore()[tk]) savePriceCache(tk, prices[tk]); // grava no cache local — sem isso, um recarregamento de página perde o valor de vez
@@ -5065,7 +5077,7 @@ async function confirmarAddAtivo(){
     } else {
       const cCores=["#F7931A","#627EEA","#8247E5","#F3BA2F","#23292F","#345D9D"];
       const cor=cCores[D.cripto.length % cCores.length];
-      D.cripto.push({moeda:tk,nome:tk,qtd:cotas,pm,c:cor});
+      D.cripto.push({moeda:tk,nome:CRIPTO_NOMES[tk]||tk,qtd:cotas,pm,c:cor});
     }
     renderCripto();
     closeAddAtivo();
@@ -5416,6 +5428,21 @@ function migrarQuantidadeStocksAntigas(){
     if(mudou) salvarCarteiraNaNuvem(); // persiste a correção de volta no Supabase
   }catch(e){ console.warn("Migração de quantidade de stocks falhou:", e.message); }
 }
+
+// Migração pontual (jun/2026): ativos adicionados antes desse fix salvavam o TICKER como nome
+// da empresa/moeda (ex: co:"MSFT" em vez de co:"Microsoft"). Corrige o que já está gravado,
+// usando os mesmos mapas fixos da busca, e persiste de volta — roda uma vez só.
+function migrarNomesDuplicados(){
+  try{
+    if(localStorage.getItem("migrNomes_v1")) return;
+    let mudou = false;
+    D.acoes.forEach(a=>{ if(a.co===a.tk && TICKER_NOME_BR[a.tk]){ a.co=TICKER_NOME_BR[a.tk]; mudou=true; } });
+    D.stocks.forEach(s=>{ if(s.co===s.tk && TICKER_NOME_EUA[s.tk]){ s.co=TICKER_NOME_EUA[s.tk]; mudou=true; } });
+    D.cripto.forEach(c=>{ if(c.nome===c.moeda && CRIPTO_NOMES[c.moeda]){ c.nome=CRIPTO_NOMES[c.moeda]; mudou=true; } });
+    localStorage.setItem("migrNomes_v1", "1");
+    if(mudou) salvarCarteiraNaNuvem();
+  }catch(e){ console.warn("Migração de nomes falhou:", e.message); }
+}
 async function carregarCarteiraDaNuvem(){
   const rows = await SB.get('portfolio_data', {'user_id':'eq.'+currentUser.id, 'select':'*'});
   if(rows && rows.length){
@@ -5549,6 +5576,7 @@ async function startApp(){
     // carteira do usuário logado (Ações, FIIs, ETFs, Stocks, RF)
     await carregarCarteiraDaNuvem();
     migrarQuantidadeStocksAntigas();
+    migrarNomesDuplicados();
 
     // proventos — só os da conta logada
     // try isolado: se a coluna user_id ainda não existir no banco, não derruba o resto
