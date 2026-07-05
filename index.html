@@ -815,6 +815,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <nav class="side-nav">
       <button onclick="closeMenu();goHome()">🏠 Início</button>
       <button onclick="closeMenu();goTab('acoes')">📈 Ações BR</button>
+      <button onclick="closeMenu();goTab('bdrs')">🌐 BDRs</button>
       <button onclick="closeMenu();goTab('fiis')">🏢 FIIs</button>
       <button onclick="closeMenu();goTab('rf')">💰 Renda Fixa</button>
       <button onclick="closeMenu();goTab('etfs')">🌎 ETFs</button>
@@ -1024,7 +1025,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
             <th class="r sort" data-col="totb3" data-t="ac">Valor Atual <span class="info-ic" title="Quanto vale hoje na bolsa: preço atual de mercado × quantidade de cotas/ações.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="ac">Lucro</th>
             <th class="r sort" data-col="cotas" data-t="ac">Cotas</th>
-            <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos/JCP pagos nos últimos 12 meses, em relação ao preço atual da ação. Atualizado em tempo real via Brapi quando disponível.">?</span></th>
+            <th class="r">DY% <span class="info-ic" title="Dividend Yield: soma de todos os dividendos/JCP pagos nos últimos 12 meses, dividida pelo preço atual da ação. Busca primeiro na Brapi; se ela não confirmar, tenta pelo Yahoo Finance como plano B.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este ativo dentro da carteira de Ações BR. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração do setor inteiro deste ativo (ex: Financeiro, Energia) em relação ao teto que você definiu para o setor. Diferente do teto individual, este olha pro grupo todo. Clique no valor para editar.">?</span></th>
             <th></th>
@@ -1047,6 +1048,44 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   </div>
 </section>
 
+<!-- BDRS -->
+<section class="panel" id="p-bdrs">
+  <div class="two tbl-full">
+    <div>
+      <div class="st" style="display:flex;align-items:center;gap:8px">Posições — <span id="bd-src" style="color:var(--gold)">dados salvos</span><button class="add-btn" onclick="openAddAtivo('bdrs')">＋ Adicionar BDR</button><button class="refbtn" onclick="openColunasModal('bd')" style="font-size:11px">⚙ Colunas</button><button class="refbtn btn-refresh-cotacoes" onclick="refreshPrices(true)" style="font-size:11px;border-color:var(--gold);color:var(--gold)">📊 Atualizar cotações</button><span class="last-upd-text" style="font-size:10px;color:var(--muted)">—</span></div>
+      <div class="tw">
+        <table data-tbl="bd">
+          <thead><tr>
+            <th class="sort" data-col="tk" data-t="bd">Ativo</th>
+            <th class="r sort" data-col="price" data-t="bd">Cotação</th>
+            <th class="r sort" data-col="pm" data-t="bd">Preço Médio <span class="info-ic" title="Preço médio ponderado de compra — recalculado automaticamente sempre que você adiciona mais cotas do mesmo ativo.">?</span></th>
+            <th class="r sort" data-col="tot" data-t="bd">Investido <span class="info-ic" title="Quanto você efetivamente pagou: preço médio de compra × quantidade de cotas.">?</span></th>
+            <th class="r sort" data-col="totb3" data-t="bd">Valor Atual <span class="info-ic" title="Quanto vale hoje na bolsa: preço atual de mercado × quantidade de cotas.">?</span></th>
+            <th class="r sort" data-col="lucro" data-t="bd">Lucro</th>
+            <th class="r sort" data-col="cotas" data-t="bd">Cotas</th>
+            <th class="r">DY% <span class="info-ic" title="Dividend Yield: soma de todos os dividendos pagos pela empresa nos últimos 12 meses, dividida pelo preço atual do BDR. BDR não é a mesma cota que a ação original nos EUA, então o valor por unidade é diferente — o percentual de DY tende a ser próximo, mas pode variar um pouco.">?</span></th>
+            <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este ativo dentro da carteira de BDRs. Clique no valor na linha para editar.">?</span></th>
+            <th class="r">% Teto Setor <span class="info-ic" title="Concentração do setor inteiro deste ativo em relação ao teto que você definiu para o setor. Clique no valor para editar.">?</span></th>
+            <th></th>
+          </tr></thead>
+          <tbody id="bdTbl"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="chart-col">
+      <div class="cbox"><div class="c-ttl">% Carteira por empresa</div><div id="bd-hbars"></div></div>
+      <div class="cbox">
+        <div class="c-ttl" style="display:flex;align-items:center;gap:0">% Setores <span class="info-ic" title="Mostra quanto da sua carteira de BDRs está concentrado em cada setor, comparado ao teto máximo que você definiu para cada um.">?</span></div>
+        <div style="display:flex;justify-content:center"><svg id="bd-donut" width="130" height="130"></svg></div>
+        <div id="bd-donut-leg" style="margin-top:8px;display:flex;flex-direction:column;gap:3px"></div>
+      </div>
+      <div class="cbox"><div class="c-ttl">Dividend Yield %</div><div class="dy-row" id="bd-dy"></div></div>
+      <div class="st" style="margin-top:4px;display:flex;align-items:center;gap:0">Teto por setor <span class="info-ic" title="Limite máximo combinado para todos os ativos de um mesmo setor. Clique no valor para editar.">?</span></div>
+      <div id="bd-setores"></div>
+    </div>
+  </div>
+</section>
+
 <!-- FIIS -->
 <section class="panel" id="p-fiis">
   <div class="two tbl-full">
@@ -1062,7 +1101,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
             <th class="r sort" data-col="totb3" data-t="fi">Valor Atual <span class="info-ic" title="Quanto vale hoje na bolsa: preço atual de mercado × quantidade de cotas.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="fi">Lucro</th>
             <th class="r sort" data-col="cotas" data-t="fi">Cotas</th>
-            <th class="r sort" data-col="dy" data-t="fi">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em proventos pagos nos últimos 12 meses, em relação ao preço atual da cota. Quanto maior, mais o fundo está distribuindo proporcionalmente ao seu valor.">?</span></th>
+            <th class="r sort" data-col="dy" data-t="fi">DY% <span class="info-ic" title="Dividend Yield: soma de todos os proventos pagos nos últimos 12 meses, dividida pelo preço atual da cota. Busca primeiro na Brapi; se ela não confirmar, tenta pelo Yahoo Finance como plano B.">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para este FII dentro da carteira de FIIs. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração do segmento inteiro deste FII (ex: Logística, Papel HG) em relação ao teto que você definiu para o segmento. Clique no valor para editar.">?</span></th>
             <th></th>
@@ -1151,7 +1190,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
             <th class="r sort" data-col="atual" data-t="sk">Valor Atual <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
             <th class="r sort" data-col="lucro" data-t="sk">Lucro</th>
             <th class="r sort" data-col="cotas" data-t="sk">Quantidade</th>
-            <th class="r">DY% <span class="info-ic" title="Dividend Yield: percentual de rendimento em dividendos pagos pela empresa nos últimos 12 meses, em relação ao preço atual da ação.">?</span></th>
+            <th class="r">DY% <span class="info-ic" title="Dividend Yield: soma de todos os dividendos pagos pela empresa nos últimos 12 meses, dividida pelo preço atual da ação. Vem da Finnhub (a Brapi não cobre bolsa americana).">?</span></th>
             <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para esta Stock dentro da carteira de Stocks. Clique no valor na linha para editar.">?</span></th>
             <th class="r">% Teto Setor <span class="info-ic" title="Concentração do setor inteiro desta Stock (ex: Tecnologia, Financeiro) em relação ao teto que você definiu para o setor. Clique no valor para editar.">?</span></th>
             <th></th>
@@ -1257,8 +1296,8 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       <label class="flbl">Nome do item</label>
       <input class="finp" id="exName" placeholder="Ex: Viagem 2027, Fundo Faculdade…" style="margin-bottom:10px"/>
       <div class="frow2">
-        <div><label class="flbl">Valor atual (R$)</label><input class="finp" id="exVal" type="number" step="0.01" placeholder="0,00" style="font-family:var(--mono)"/></div>
-        <div><label class="flbl">Meta (R$) — opcional</label><input class="finp" id="exMeta" type="number" step="0.01" placeholder="0,00" style="font-family:var(--mono)"/></div>
+        <div><label class="flbl">Valor atual (R$)</label><input class="finp" id="exVal" type="number" step="0.01" min="0" placeholder="0,00" style="font-family:var(--mono)" oninput="if(this.value<0)this.value=Math.abs(this.value);"/></div>
+        <div><label class="flbl">Meta (R$) — opcional</label><input class="finp" id="exMeta" type="number" step="0.01" min="0" placeholder="0,00" style="font-family:var(--mono)" oninput="if(this.value<0)this.value=Math.abs(this.value);"/></div>
       </div>
       <label class="flbl" style="margin-top:8px">Cor</label>
       <div id="exColorPicker" style="display:flex;gap:6px;margin-bottom:14px"></div>
@@ -1349,12 +1388,13 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <div class="form-row" id="addFormFields" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div>
         <label class="flbl" id="addPMLabel">Valor atual (R$)</label>
-        <input class="finp" id="addPM" type="number" step="0.01" placeholder="0,00" style="font-family:var(--mono)"/>
+        <input class="finp" id="addPM" type="number" step="0.01" min="0" placeholder="0,00" style="font-family:var(--mono)"
+          oninput="if(this.value<0)this.value=Math.abs(this.value);"/>
       </div>
       <div>
         <label class="flbl" id="addCotasLabel">Qtd. cotas</label>
-        <input class="finp" id="addCotas" type="number" placeholder="0" style="font-family:var(--mono)"
-          oninput="if(this.value.includes('e')||this.value.includes('E')){this.value=parseFloat(this.value).toFixed(8).replace(/0+$/,'').replace(/\.$/,'');}"/>
+        <input class="finp" id="addCotas" type="number" min="0" placeholder="0" style="font-family:var(--mono)"
+          oninput="if(this.value<0)this.value=Math.abs(this.value); if(this.value.includes('e')||this.value.includes('E')){this.value=parseFloat(this.value).toFixed(8).replace(/0+$/,'').replace(/\.$/,'');}"/>
       </div>
     </div>
     <div id="addSetorRow" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
@@ -1415,11 +1455,13 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div>
         <label class="flbl">Valor investido (R$)</label>
-        <input class="finp" id="rfInv" type="number" step="0.01" placeholder="0,00" style="font-family:var(--mono)"/>
+        <input class="finp" id="rfInv" type="number" step="0.01" min="0" placeholder="0,00" style="font-family:var(--mono)"
+          oninput="if(this.value<0)this.value=Math.abs(this.value);"/>
       </div>
       <div>
         <label class="flbl">Valor bruto atual (R$) <span style="color:var(--faint);font-weight:400">(opcional)</span></label>
-        <input class="finp" id="rfBruto" type="number" step="0.01" placeholder="= investido" style="font-family:var(--mono)"/>
+        <input class="finp" id="rfBruto" type="number" step="0.01" min="0" placeholder="= investido" style="font-family:var(--mono)"
+          oninput="if(this.value<0)this.value=Math.abs(this.value);"/>
       </div>
     </div>
     <button class="btn-pri" style="width:100%" onclick="confirmarAddRF()">＋ Adicionar à carteira</button>
@@ -1820,6 +1862,16 @@ const TICKERS_STOCKS_US = [
   'NKE','MCD','LIN','ACN','TXN','QCOM','IBM','GE','CAT','BA','UPS','SBUX','NU',
 ];
 
+// BDR = recibo negociado na B3 representando ação estrangeira, sempre em R$. Cobertura inicial
+// com os códigos mais conhecidos/líquidos — a convenção de código do B3 não é só "ticker+34" de
+// forma previsível, então essa lista é mais conservadora que TICKERS_STOCKS_US. Cresce com o tempo
+// (via lista completa da Brapi) e com correções suas se algum código aqui estiver errado.
+const TICKERS_BDR_BR = [
+  'AAPL34','MSFT34','GOGL34','AMZO34','TSLA34','NVDC34','JPMC34','JNJB34','PGCO34',
+  'WALM34','COCA34','PEPB34','DISB34','NFLX34','IBMB34','BOAC34','MSCD34','VISA34',
+  'HOME34','ABBV34','MMMC34','CATP34','CSCO34','XOMB34','CVXX34','ORCL34',
+];
+
 // Mapa ticker → setor (combina com as categorias usadas em D.tetosBR) para auto-associar ao digitar
 // Nome da empresa por ticker — mapa FIXO, não depende de nenhuma API. É o que garante a busca
 // por nome (ex: "itau" encontrando ITUB3/ITUB4) funcionar sempre, mesmo se Brapi/Finnhub falharem.
@@ -1916,6 +1968,27 @@ const TICKER_SETOR_EUA = {
   LIN:"Industrial", GE:"Industrial", CAT:"Industrial", BA:"Industrial", UPS:"Industrial",
 };
 
+// BDR representa a MESMA empresa da Stock original — reaproveita setor e nome, só troca o código
+const TICKER_SETOR_BDR = {
+  AAPL34:"Tecnologia", MSFT34:"Tecnologia", GOGL34:"Tecnologia", NVDC34:"Tecnologia",
+  IBMB34:"Tecnologia", MSCD34:"Financeiro", ORCL34:"Tecnologia", CSCO34:"Tecnologia",
+  JPMC34:"Financeiro", VISA34:"Financeiro", BOAC34:"Financeiro",
+  JNJB34:"Saúde", ABBV34:"Saúde",
+  XOMB34:"Energia", CVXX34:"Energia",
+  AMZO34:"Consumo", TSLA34:"Consumo", PGCO34:"Consumo", WALM34:"Consumo",
+  COCA34:"Consumo", PEPB34:"Consumo", DISB34:"Consumo", HOME34:"Consumo", NFLX34:"Tecnologia",
+  MMMC34:"Industrial", CATP34:"Industrial",
+};
+const TICKER_NOME_BDR = {
+  AAPL34:"Apple", MSFT34:"Microsoft", GOGL34:"Alphabet (Google)", AMZO34:"Amazon",
+  TSLA34:"Tesla", NVDC34:"Nvidia", JPMC34:"JPMorgan Chase", JNJB34:"Johnson & Johnson",
+  PGCO34:"Procter & Gamble", WALM34:"Walmart", COCA34:"Coca-Cola", PEPB34:"PepsiCo",
+  DISB34:"Disney", NFLX34:"Netflix", IBMB34:"IBM", BOAC34:"Bank of America",
+  MSCD34:"Mastercard", VISA34:"Visa", HOME34:"Home Depot", ABBV34:"AbbVie",
+  MMMC34:"3M", CATP34:"Caterpillar", CSCO34:"Cisco", XOMB34:"ExxonMobil",
+  CVXX34:"Chevron", ORCL34:"Oracle",
+};
+
 // Setor de tickers dos EUA fora do mapa fixo acima: busca na Finnhub (finnhubIndustry) e cacheia
 // pra sempre no navegador — só faz a chamada de API na primeira vez que aquele ticker aparece.
 const SETOR_CACHE_KEY = "setorEuaCache_v1";
@@ -1966,6 +2039,18 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v27.0",d:"Jun/2026",items:[
+    "NOVA CLASSE DE ATIVO: BDRs — aba própria, do zero, seguindo o mesmo padrão de Ações BR (tudo em R$, cotação via Brapi). Cobertura inicial com ~25 códigos mais conhecidos/líquidos (AAPL34, MSFT34, GOGL34, etc) — códigos de BDR não seguem uma convenção 100% previsível, então alguns podem precisar de correção",
+    "BDR entra em TUDO: home (rosca, card, Maiores Posições), Metas de Alocação, Teto por Setor, busca por nome, migração de dados, Supabase",
+    "IMPORTANTE: precisa rodar um SQL no Supabase antes de usar (ALTER TABLE portfolio_data ADD COLUMN bdrs) — sem isso, o app funciona mas não salva BDR entre sessões. Salvamento blindado: se a coluna não existir ainda, não quebra o resto do salvamento",
+  ]},
+  {v:"v26.2",d:"Jun/2026",items:[
+    "CORRIGIDO: DY% de ETFs ficava sempre em 0 pra ativos novos — nunca tínhamos ligado a busca da Finnhub pra ETFs, só pra Stocks. Agora os dois usam a mesma fonte",
+    "Tooltips de DY% atualizados nas 4 tabelas, explicando a metodologia (últimos 12 meses) e de onde vem o dado em cada caso",
+  ]},
+  {v:"v26.1",d:"Jun/2026",items:[
+    "CORRIGIDO BUG GRAVE: era possível digitar valor/quantidade negativos em QUALQUER formulário de adicionar ativo (Ações, FIIs, ETFs, Stocks, Cripto, Renda Fixa, Reserva e Caixa) — corrige sozinho se digitar negativo, e trava de segurança final impede salvar caso passe por algum jeito",
+  ]},
   {v:"v26.0",d:"Jun/2026",items:[
     "NOVO: DY% de Ações/FIIs BR agora tem um segundo fallback via Yahoo Finance (soma dividendos pagos nos últimos 12 meses ÷ preço atual) — usa o mesmo endpoint que já usávamos pra cotação, sem token, sem proxy. Só entra em ação quando a Brapi não confirma o DY daquele ticker",
     "Isso não substitui a Brapi (continua sendo a fonte principal, mais completa) — só preenche a lacuna dela quando falha",
@@ -2528,12 +2613,14 @@ const D={
     {n:"Renda Fixa",v:0,m:15520,c:"#3B82F6",fonte:"calc"},
     {n:"Ações Brasil",   v:0,  m:16490,c:"#F59E0B",fonte:"calc"},
     {n:"FIIs",           v:0,  m:13580,c:"#A78BFA",fonte:"calc"},
+    {n:"BDRs",           v:0,  m:8000,  c:"#6366F1",fonte:"calc"},
     {n:"ETFs EUA",       v:0,  m:15520,c:"#14B8A6",fonte:"calc"},
     {n:"Stocks EUA",     v:0,  m:11640,c:"#EC4899",fonte:"calc"},
     {n:"Cripto",         v:0,  m:2910, c:"#EF4444",fonte:"manual"},
   ],
   extra:[], // preenchido dinamicamente por renderAllocExtra() (somente itens manuais do usuário)
   cripto:[], // moedas adicionadas manualmente: {moeda, nome, qtd, pm, c (cor)}
+  bdrs:[], // BDRs — recibo de empresa estrangeira negociado na B3, sempre em R$: {tk,co,st,pm,cotas,dy,teto,obj}
   acoes:[
     {tk:"WEGE3",co:"Weg",           st:"Indústria", pm:46.19,cotas:24, dy:4.7, teto:20,obj:"Manter"},
     {tk:"BBSE3",co:"BB Seguridade", st:"Financeiro",pm:33.71,cotas:26, dy:13.3,teto:35,obj:"Manter"},
@@ -2834,6 +2921,7 @@ function editTetoSetor(classe, setor, tetoAtual){
   // PESSOA de verdade tem na carteira dela, nunca uma lista fixa genérica (isso travava conta
   // nova: setores que nem existem pra aquele usuário "consumiam" % que não eram deles).
   const todosOsSetores = classe==="Ações BR" ? [...new Set(D.acoes.map(a=>a.st))]
+    : classe==="BDRs" ? [...new Set(D.bdrs.map(a=>a.st))]
     : classe==="FIIs" ? [...new Set(D.fiis.map(f=>f.seg))]
     : classe==="ETFs" ? [...new Set(D.etfs.map(e=>e.fun))]
     : classe==="Stocks" ? [...new Set(D.stocks.map(s=>s.setor))] : [];
@@ -2884,7 +2972,8 @@ async function refreshPrices(manual=false){
 
   const tksAcoes=D.acoes.map(a=>a.tk);
   const tksFiis =D.fiis.map(f=>f.tk);
-  const tksBR   =[...tksAcoes,...tksFiis,'^BVSP']; // inclui índice na mesma chamada
+  const tksBdrs =D.bdrs.map(a=>a.tk);
+  const tksBR   =[...tksAcoes,...tksFiis,...tksBdrs,'^BVSP']; // inclui índice na mesma chamada
   let brOK=0;
 
   /* 1. BR + IBOV via Brapi (token embutido — plano free, 15k req/mês, atualiza a cada 15min)
@@ -3023,10 +3112,10 @@ async function refreshPrices(manual=false){
     }catch(e){}
   }));
 
-  /* 3b. DY% de Stocks EUA via Finnhub — a Brapi não cobre bolsa americana, e esse dado nunca
+  /* 3b. DY% de Stocks/ETFs EUA via Finnhub — a Brapi não cobre bolsa americana, e esse dado nunca
         era atualizado ao vivo antes (ficava parado no valor de quando o ativo foi cadastrado) */
   window._dyUS = window._dyUS || {};
-  await Promise.allSettled(D.stocks.map(async s=>{
+  await Promise.allSettled([...D.stocks, ...D.etfs].map(async s=>{
     try{
       const j = await corsGetJSON(`https://finnhub.io/api/v1/stock/metric?symbol=${s.tk}&metric=all&token=${FINNHUB_TOKEN}`);
       const dy = j?.metric?.dividendYieldIndicatedAnnual ?? j?.metric?.currentDividendYieldTTM;
@@ -3036,7 +3125,7 @@ async function refreshPrices(manual=false){
 
   // Status
   const nowTs=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  const tksEsperadosBR = tksAcoes.length + tksFiis.length; // sem contar o índice
+  const tksEsperadosBR = tksAcoes.length + tksFiis.length + tksBdrs.length; // sem contar o índice
   const faltaram = tksEsperadosBR - brOK;
   if(brOK>0){
     pricesArelive=true;
@@ -3103,7 +3192,7 @@ function loadMktCache(){
 
 /* ─── METAS DE ALOCAÇÃO ─────────────────────────────────────────────── */
 const METAS_KEY = "aloc_metas";
-const METAS_DEFAULT = {acoes:0, fiis:0, etfs:0, stocks:0, rf:0, cripto:0};
+const METAS_DEFAULT = {acoes:0, bdrs:0, fiis:0, etfs:0, stocks:0, rf:0, cripto:0};
 
 function getMetasAloc(){
   try{ return {...METAS_DEFAULT,...JSON.parse(localStorage.getItem(METAS_KEY)||"{}")}; }
@@ -3134,6 +3223,7 @@ function computeMetasAlocData(){
   const classes = [
     {id:"fiis",   name:"FIIs",                val: D.fiis.reduce((s,f)=>s+posVal(f),0)},
     {id:"acoes",  name:"Ações Brasil",         val: D.acoes.reduce((s,a)=>s+posVal(a),0)},
+    {id:"bdrs",   name:"BDRs",                 val: D.bdrs.reduce((s,a)=>s+posVal(a),0)},
     {id:"stocks", name:"Stocks EUA",           val: stVal},
     {id:"etfs",   name:"ETFs Internacionais",  val: etfVal},
     {id:"rf",     name:"Renda Fixa",           val: rfVal},
@@ -3144,13 +3234,14 @@ function computeMetasAlocData(){
 }
 
 // Mesmas cores usadas nos cards da fileira — mantém a rosca visualmente conectada ao resto
-const CLASSE_COLORS = {acoes:"#F59E0B",fiis:"#A78BFA",rf:"#3B82F6",etfs:"#14B8A6",stocks:"#EC4899",cripto:"#EF4444"};
-const CLASSE_TABS = {fiis:"fiis",acoes:"acoes",stocks:"stocks",etfs:"etfs",rf:"rf",cripto:"cripto"};
+const CLASSE_COLORS = {acoes:"#F59E0B",fiis:"#A78BFA",rf:"#3B82F6",etfs:"#14B8A6",stocks:"#EC4899",cripto:"#EF4444",bdrs:"#6366F1"};
+const CLASSE_TABS = {fiis:"fiis",acoes:"acoes",bdrs:"bdrs",stocks:"stocks",etfs:"etfs",rf:"rf",cripto:"cripto"};
 
 // Junta posições de todas as classes num só ranking, pra "Maiores Posições"
 function getTodasPosicoes(){
   const list=[];
   D.acoes.forEach(a=>{ if(a.cotas>0) list.push({tk:a.tk, val:posVal(a), tab:'acoes', color:CLASSE_COLORS.acoes}); });
+  D.bdrs.forEach(a=>{ if(a.cotas>0) list.push({tk:a.tk, val:posVal(a), tab:'bdrs', color:CLASSE_COLORS.bdrs}); });
   D.fiis.forEach(f=>{ if(f.cotas>0) list.push({tk:f.tk, val:posVal(f), tab:'fiis', color:CLASSE_COLORS.fiis}); });
   D.etfs.forEach(e=>{
     const v=(e.cotas&&e.priceUSD)?e.cotas*e.priceUSD*usdBRL:e.atual*usdBRL;
@@ -3230,7 +3321,7 @@ function renderAtivosCarteira(){
   }
   const R=94,cx=118,cy=118,sw=46,circ=2*Math.PI*R;
   const ordenado=[...ativos].sort((a,b)=>b.val-a.val);
-  const NOME_CURTO = {acoes:"Ações",fiis:"FIIs",rf:"Renda Fixa",etfs:"ETFs",stocks:"Stocks",cripto:"Cripto"};
+  const NOME_CURTO = {acoes:"Ações",bdrs:"BDRs",fiis:"FIIs",rf:"Renda Fixa",etfs:"ETFs",stocks:"Stocks",cripto:"Cripto"};
 
   // Monta os arcos uma vez, reaproveitados nas duas camadas (parede escura embaixo + topo colorido)
   function buildArcs(darkWall){
@@ -3396,9 +3487,11 @@ function render(){
   // usa preço ao vivo se disponível, senão PM (mostra valor investido)
   const totAcoes=D.acoes.reduce((s,a)=>s+posVal(a),0);
   const totFiis= D.fiis.reduce((s,f)=>s+posVal(f),0);
+  const totBdrs= D.bdrs.reduce((s,a)=>s+posVal(a),0);
   // lucro só faz sentido com preço ao vivo — 0 quando sem dados
   const lucroAcoes=D.acoes.reduce((s,a)=>s+(prices[a.tk]?(prices[a.tk]-a.pm)*a.cotas:0),0);
   const lucroFiis= D.fiis.reduce((s,f)=>s+(prices[f.tk]?(prices[f.tk]-f.pm)*f.cotas:0),0);
+  const lucroBdrs= D.bdrs.reduce((s,a)=>s+(prices[a.tk]?(prices[a.tk]-a.pm)*a.cotas:0),0);
   const totETF=D.etfs.reduce((s,e)=>s+e.atual,0)*usdBRL;
   const totSTK=D.stocks.reduce((s,s2)=>s+s2.atual,0)*usdBRL;
   const lucroETF=D.etfs.reduce((s,e)=>s+e.lucro,0)*usdBRL;
@@ -3410,6 +3503,8 @@ function render(){
   D.invest.find(c=>c.n==="Ações Brasil").lucro=lucroAcoes;
   D.invest.find(c=>c.n==="FIIs").v=totFiis;
   D.invest.find(c=>c.n==="FIIs").lucro=lucroFiis;
+  D.invest.find(c=>c.n==="BDRs").v=totBdrs;
+  D.invest.find(c=>c.n==="BDRs").lucro=lucroBdrs;
   D.invest.find(c=>c.n==="ETFs EUA").v=totETF;
   D.invest.find(c=>c.n==="ETFs EUA").lucro=lucroETF;
   D.invest.find(c=>c.n==="Stocks EUA").v=totSTK;
@@ -3425,13 +3520,14 @@ function render(){
   /* Variação real da carteira: ganho/perda sobre o custo investido (sem dividendos) */
   const custoAcoes = D.acoes.reduce((s,a)=>s+a.pm*a.cotas,0);
   const custoFiis  = D.fiis.reduce((s,f)=>s+f.pm*f.cotas,0);
+  const custoBdrs  = D.bdrs.reduce((s,a)=>s+a.pm*a.cotas,0);
   const custoETF   = D.etfs.reduce((s,e)=>s+e.inv,0)*usdBRL;
   const custoSTK   = D.stocks.reduce((s,s2)=>s+s2.inv,0)*usdBRL;
   const custoCripto = D.cripto.reduce((s,c)=>s+c.pm*c.qtd,0);
   const custoRF = D.rf.reduce((s,r)=>s+(r.inv||0),0);
-  const custoTotal = custoAcoes+custoFiis+custoETF+custoSTK+custoCripto+custoRF;
+  const custoTotal = custoAcoes+custoFiis+custoBdrs+custoETF+custoSTK+custoCripto+custoRF;
   const lucroCriptoCalc = getCriptoTotal()-custoCripto;
-  const lucroTotalPortfolio = lucroAcoes+lucroFiis+lucroETF+lucroSTK+lucroCriptoCalc+lucroRF;
+  const lucroTotalPortfolio = lucroAcoes+lucroFiis+lucroBdrs+lucroETF+lucroSTK+lucroCriptoCalc+lucroRF;
   const variacaoPct = custoTotal>0 ? (lucroTotalPortfolio/custoTotal*100) : 0;
   const hVar = document.getElementById("hVariacao");
   if(hVar){
@@ -3470,7 +3566,7 @@ function render(){
   const fill=document.createElement("div"); fill.className="mfill"+(metaAtingida?" complete":""); fill.style.width=fillPct.toFixed(1)+"%";
   bar.appendChild(fill);
 
-  renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis,lucroTotalPortfolio);
+  renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis,lucroTotalPortfolio,totBdrs,lucroBdrs);
   renderCripto();
   renderAlloc();
   renderAtivosCarteira();
@@ -3478,6 +3574,7 @@ function render(){
   renderEvolucaoPatrimonio();
   renderMetasAloc();
   renderAcoes(totAcoes);
+  renderBDRs(totBdrs);
   renderFiis(totFiis);
   renderRF();
   renderETFs();
@@ -3490,7 +3587,7 @@ function g(id){return document.getElementById(id)}
 function setHS(id,v,dec2){const el=g(id);if(el){el.textContent=sgn(v)+brl(Math.abs(v),dec2?2:0);el.className="hs "+(v>=0?"pos":"neg")}}
 
 /* donuts strip */
-function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis,lucroTotalPortfolio){
+function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis,lucroTotalPortfolio,totBdrs,lucroBdrs){
   const strip=g("dstrip"); strip.innerHTML="";
   const lucroETF2=D.etfs.reduce((s,e)=>s+e.lucro,0)*usdBRL;
   const lucroSTK2=D.stocks.reduce((s,s2)=>s+s2.lucro,0)*usdBRL;
@@ -3516,6 +3613,9 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
     {name:"Ações BR",val:brl(totAcoes,2),
       sub2:sgn(lucroAcoes)+brl(Math.abs(lucroAcoes),2),sub2cls:lucroAcoes>=0?"pos":"neg",
       pct:pctOf(totAcoes),c:"#F59E0B",tab:"acoes"},
+    {name:"BDRs",val:brl(totBdrs,2),
+      sub2:sgn(lucroBdrs)+brl(Math.abs(lucroBdrs),2),sub2cls:lucroBdrs>=0?"pos":"neg",
+      pct:pctOf(totBdrs),c:"#6366F1",tab:"bdrs"},
     {name:"FIIs",val:brl(totFiis,2),
       sub2:sgn(lucroFiis)+brl(Math.abs(lucroFiis),2),sub2cls:lucroFiis>=0?"pos":"neg",
       pct:pctOf(totFiis),c:"#A78BFA",tab:"fiis"},
@@ -3638,6 +3738,7 @@ function deleteCripto(idx){
 function deleteAtivo(classe, tk){
   if(!confirm(`Remover ${tk} da sua carteira?`)) return;
   if(classe==="acoes") D.acoes = D.acoes.filter(a=>a.tk!==tk);
+  else if(classe==="bdrs") D.bdrs = D.bdrs.filter(a=>a.tk!==tk);
   else if(classe==="fiis") D.fiis = D.fiis.filter(f=>f.tk!==tk);
   else if(classe==="etfs") D.etfs = D.etfs.filter(e=>e.tk!==tk);
   else if(classe==="stocks") D.stocks = D.stocks.filter(s=>s.tk!==tk);
@@ -3687,6 +3788,19 @@ const COLS_KEY = "colunasVisiveis";
 // Registro de colunas por tabela: nome amigável + índice (1-based, igual nth-child)
 const COLUNAS_REGISTRO = {
   ac: [
+    {idx:1, label:"Ativo", obrigatoria:true},
+    {idx:2, label:"Cotação"},
+    {idx:3, label:"Preço Médio"},
+    {idx:4, label:"Investido"},
+    {idx:5, label:"Valor Atual"},
+    {idx:6, label:"Lucro"},
+    {idx:7, label:"Cotas"},
+    {idx:8, label:"DY%"},
+    {idx:9, label:"% Teto Individual"},
+    {idx:10, label:"% Teto Setor"},
+    {idx:11, label:"Excluir", obrigatoria:true},
+  ],
+  bd: [
     {idx:1, label:"Ativo", obrigatoria:true},
     {idx:2, label:"Cotação"},
     {idx:3, label:"Preço Médio"},
@@ -3750,8 +3864,8 @@ const COLUNAS_REGISTRO = {
     {idx:9, label:"Excluir", obrigatoria:true},
   ],
 };
-const TABELA_NOMES = {ac:"Ações BR", fi:"FIIs", et:"ETFs", sk:"Stocks", cr:"Cripto"};
-const TABELA_IDS = {ac:"acTbl", fi:"fiTbl", et:"etTbl", sk:"skTbl", cr:"cryptoTbl"};
+const TABELA_NOMES = {ac:"Ações BR", bd:"BDRs", fi:"FIIs", et:"ETFs", sk:"Stocks", cr:"Cripto"};
+const TABELA_IDS = {ac:"acTbl", bd:"bdTbl", fi:"fiTbl", et:"etTbl", sk:"skTbl", cr:"cryptoTbl"};
 
 // Padrão de fábrica: DY% e % Teto Individual começam ocultas em Ações/FIIs (deixa a tabela mais arejada).
 // Só se aplica na primeira vez — se o usuário já mexeu em Colunas antes, respeita a escolha dele.
@@ -3952,7 +4066,7 @@ function renderAlloc(){
 }
 function renderAllocSec(gid,arr){
   const g2=g(gid); g2.innerHTML="";
-  const tabMap={"Ações Brasil":"acoes","FIIs":"fiis","Renda Fixa":"rf","ETFs EUA":"etfs","Stocks EUA":"stocks","Cripto":"cripto"};
+  const tabMap={"Ações Brasil":"acoes","BDRs":"bdrs","FIIs":"fiis","Renda Fixa":"rf","ETFs EUA":"etfs","Stocks EUA":"stocks","Cripto":"cripto"};
   const custoMap = window._custoPorClasse||{};
   arr.forEach(c=>{
     const pct = c.m>0 ? Math.min(100,c.v/c.m*100) : 0;
@@ -4074,6 +4188,7 @@ function saveExtraItem(){
   const meta = parseFloat(document.getElementById("exMeta").value)||0;
   const color = document.getElementById("exColorPicker").dataset.selected||EXTRA_COLORS[0];
   if(!name){ alert("Digite um nome para o item"); return; }
+  if(val<0 || meta<0){ alert("Valores não podem ser negativos. Corrija antes de continuar."); return; }
 
   const custom = getCustomExtra();
   const item = {n:name, v:val, m:meta||val||1, c:color, fonte:"manual"};
@@ -4154,6 +4269,59 @@ function renderAcoes(totAcoes,sc,sd){
   mkDonut(Object.entries(mapSt).map(([k,v])=>({label:k,v,c:SC[k]||"#888"})),"ac-donut","ac-donut-leg");
   mkDY(D.acoes.map(a=>({label:a.tk,v:getDY(a.tk,a.dy),setor:a.st})),"ac-dy");
   mkSetores(D.tetosBR,"ac-setores",mapSt,"Ações BR",rows.length);
+}
+
+/* bdrs — recibo de empresa estrangeira negociado na B3, tudo em R$ (igual Ações BR) */
+function renderBDRs(totBdrs,sc,sd){
+  const objs=["Comprar","Manter","Vender"];
+  let rows=D.bdrs.map(a=>{
+    const p=prices[a.tk]||0;
+    const tot=+(a.pm*a.cotas).toFixed(2);
+    const totb3=p>0 ? +(p*a.cotas).toFixed(2) : tot;
+    const lucro=p>0 ? +(totb3-tot).toFixed(2) : 0;
+    return{...a,price:p,tot,totb3,lucro,pctCart:totBdrs>0?totb3/totBdrs*100:0};
+  });
+  if(sc) rows.sort((x,y)=>{let a=x[sc],b=y[sc];if(typeof a==="string"){a=a.toLowerCase();b=b.toLowerCase();}return sd==="asc"?(a>b?1:-1):(a<b?1:-1)});
+  const tb=g("bdTbl"); tb.innerHTML="";
+  if(!rows.length){
+    tb.innerHTML=`<tr><td colspan="11" style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">
+      Nenhuma posição em BDRs ainda. Clique em "+ Adicionar BDR" para começar.
+    </td></tr>`;
+  }
+  const mapSetorBD={}; rows.forEach(a=>{mapSetorBD[a.st]=(mapSetorBD[a.st]||0)+a.totb3;});
+  rows.forEach(a=>{
+    const tetoAtual = getTetoTicker(a.tk, a.teto);
+    const pctSetor = totBdrs>0 ? (mapSetorBD[a.st]||0)/totBdrs*100 : 0;
+    const tetoSetorAtual = getTetoSetor("BDRs", a.st, null);
+    const opts=objs.map(o=>`<option${o===a.obj?" selected":""}>${o}</option>`).join("");
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><div class="ativo-cell">${logoImg(a.tk)}<div><div class="tk">${a.tk}</div><div class="co">${a.co}</div></div></div></td>
+      <td class="r" style="${hasPrice(a.tk)?(isPriceStale(a.tk)?"color:var(--muted)":""):"color:var(--muted)"};white-space:nowrap" title="${hasPrice(a.tk)&&isPriceStale(a.tk)?"Cotação desatualizada — a fonte não confirmou um preço novo nas últimas tentativas":""}">
+        ${!hasPrice(a.tk)?"aguard.":isPriceStale(a.tk)?brl(a.price,2)+' <svg class="stale-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" title="Buscando cotação mais recente…"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg>':`<span class="cot-live ${window._priceDirection[a.tk]||''}"><span class="live-dot"></span>${brl(a.price,2)}</span>`}</td>
+      <td class="r" style="font-family:var(--mono);color:var(--muted);white-space:nowrap">${brl(a.pm,2)}</td>
+      <td class="r" style="white-space:nowrap">${brl(a.tot,2)}</td>
+      <td class="r" style="white-space:nowrap">${brl(a.totb3,2)}</td>
+      <td class="r" style="color:${a.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">${sgn(a.lucro)}${brl(Math.abs(a.lucro),2)}</td>
+      <td class="r">${a.cotas}</td>
+      <td class="r" style="color:var(--muted)">${getDY(a.tk,a.dy).toFixed(2)}%${window._dyBR&&window._dyBR[a.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
+      <td>${tetoCell(a.tk, a.pctCart, tetoAtual, rows.length===1)}</td>
+      <td>${tetoSetorCell("BDRs", a.st, pctSetor, tetoSetorAtual, rows.length===1)}</td>
+      <td class="r" style="white-space:nowrap;padding-left:4px;padding-right:8px"><button class="refbtn" onclick="openAddAtivo('bdrs','${a.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 6px;font-size:11px;margin-right:3px" title="Comprar mais ${a.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('bdrs','${a.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Remover este ativo">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+  const totI=rows.reduce((s,a)=>s+a.tot,0), totB=rows.reduce((s,a)=>s+a.totb3,0), totL=rows.reduce((s,a)=>s+a.lucro,0);
+  addTotals("bdTbl",[
+    {label:"TOTAL"},{val:"",r:true},{val:"",r:true},{val:brlTotal(totI,2),r:true},{val:brlTotal(totB,2),r:true},
+    {val:`<span style="color:${totL>=0?"var(--pos)":"var(--neg)"}">${sgn(totL)}${brlTotal(Math.abs(totL),2)}</span>`,r:true},
+    {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
+  ]);
+  const mapSt={};rows.forEach(a=>{mapSt[a.st]=(mapSt[a.st]||0)+a.totb3});
+  const tot=rows.reduce((s,a)=>s+a.totb3,0);
+  mkHBars(rows.map(a=>({label:a.tk,v:a.totb3,pct:tot>0?a.totb3/tot*100:0})),"bd-hbars","#6366F1");
+  const BD_COL={"Tecnologia":"#6366F1","Financeiro":"#3B82F6","Saúde":"#16A34A","Consumo":"#F59E0B","Energia":"#EF4444","Industrial":"#14B8A6"};
+  mkDonut(Object.entries(mapSt).map(([k,v])=>({label:k,v,c:BD_COL[k]||"#888"})),"bd-donut","bd-donut-leg");
+  mkDY(D.bdrs.map(a=>({label:a.tk,v:getDY(a.tk,a.dy),setor:a.st})),"bd-dy");
+  mkSetores([],"bd-setores",mapSt,"BDRs",rows.length);
 }
 
 /* fiis */
@@ -4335,6 +4503,7 @@ async function confirmarAddRF(){
   const inv=parseFloat(document.getElementById("rfInv").value)||0;
   let bruto=parseFloat(document.getElementById("rfBruto").value)||0;
   if(!inv){ alert("Preencha o valor investido."); return; }
+  if(inv<0 || bruto<0){ alert("Valores não podem ser negativos. Corrija antes de continuar."); return; }
   if(!bruto) bruto=inv;
   let titulo=tipo;
   if(venc) titulo+=" "+venc;
@@ -4387,7 +4556,7 @@ function renderETFs(sc,sd){
       <td class="r" style="color:${e.lucro>=0?"var(--pos)":"var(--neg)"};font-weight:600;white-space:nowrap">
         ${sgn(e.lucro)}${usd(Math.abs(e.lucro))}<div class="usd2">${sgn(e.lucro)}${brl(Math.abs(e.lucro*usdBRL),2)}</div></td>
       <td class="r">${e.cotas>0?e.cotas.toLocaleString("pt-BR",{maximumFractionDigits:6}):"—"}</td>
-      <td class="r">${e.dy.toFixed(2)}%</td>
+      <td class="r">${(window._dyUS&&window._dyUS[e.tk]!=null?window._dyUS[e.tk]:e.dy).toFixed(2)}%${window._dyUS&&window._dyUS[e.tk]!=null?'':' <span style="font-size:9px">(aguardando)</span>'}</td>
       <td>${tetoCell(e.tk, pctCart, tetoAtual, rows.length===1)}</td>
       <td>${tetoSetorCell("ETFs", e.fun, pctSetor, tetoSetorAtual, rows.length===1)}</td>
       <td class="r" style="white-space:nowrap;padding-left:4px;padding-right:8px"><button class="refbtn" onclick="openAddAtivo('etfs','${e.tk}')" style="color:var(--pos);border-color:var(--pos);padding:3px 6px;font-size:11px;margin-right:3px" title="Comprar mais ${e.tk}">＋</button><button class="refbtn" onclick="deleteAtivo('etfs','${e.tk}')" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Remover este ativo">✕</button></td>`;
@@ -4748,12 +4917,14 @@ let _tickerSearchLista = []; // [{tk, nome}] — montada conforme o tipo de ativ
 function setTickerSearchLista(tipo){
   const cache = getListaTickersCache();
   const curada = tipo==="acoes" ? TICKERS_ACOES_BR
+    : tipo==="bdrs" ? TICKERS_BDR_BR
     : tipo==="fiis" ? TICKERS_FIIS_BR
     : tipo==="etfs" ? TICKERS_ETFS_US
     : tipo==="stocks" ? TICKERS_STOCKS_US : [];
   // Mapa fixo (confiável, não depende de API) tem prioridade — só usa o nome vindo da
   // Brapi/Finnhub como complemento pros tickers que não estão no nosso mapa curado.
   const nomeFixo = tipo==="acoes" ? TICKER_NOME_BR
+    : tipo==="bdrs" ? TICKER_NOME_BDR
     : tipo==="stocks" ? TICKER_NOME_EUA : {};
   const completaComNome = tipo==="acoes" ? (cache?.acoesBR_nomes||{})
     : tipo==="fiis" ? (cache?.fiisBR_nomes||{})
@@ -4806,7 +4977,7 @@ const CRIPTO_NOMES = {
 
 function openAddAtivo(tipo, presetTicker){
   addAtivoTipo=tipo;
-  const titulos={acoes:"Adicionar Ação",fiis:"Adicionar FII",cripto:"Adicionar Cripto",etfs:"Adicionar ETF",stocks:"Adicionar Stock"};
+  const titulos={acoes:"Adicionar Ação",bdrs:"Adicionar BDR",fiis:"Adicionar FII",cripto:"Adicionar Cripto",etfs:"Adicionar ETF",stocks:"Adicionar Stock"};
   document.getElementById("addModalTitle").textContent = presetTicker
     ? `Comprar mais ${presetTicker}`
     : (titulos[tipo] || "Adicionar Ativo");
@@ -4849,6 +5020,17 @@ function openAddAtivo(tipo, presetTicker){
     col2.style.display="none";
     col1Label.textContent="Setor";
     populateSelect("addSetor", SETORES_ACOES);
+    pmLabel.textContent="Valor atual (R$)";
+    cotasLabel.textContent="Qtd. cotas";
+  } else if(tipo==="bdrs"){
+    cotasInput.step="1"; cotasInput.placeholder="10";
+    tickerInput.placeholder="Ex: AAPL34, MSFT34…";
+    tickerInput.setAttribute("list","tickerListBDR");
+    setTickerSearchLista("bdrs");
+    setorRow.style.display="grid";
+    col2.style.display="none";
+    col1Label.textContent="Setor";
+    populateSelect("addSetor", SETORES_EUA); // BDR usa as mesmas categorias de setor da empresa original nos EUA
     pmLabel.textContent="Valor atual (R$)";
     cotasLabel.textContent="Qtd. cotas";
   } else if(tipo==="fiis"){
@@ -4951,13 +5133,19 @@ document.getElementById("addTicker")?.addEventListener("blur", async function(){
     return;
   }
 
-  // Ações BR e FIIs: busca preço atual via Brapi + auto-associa setor
-  if(addAtivoTipo==="acoes" || addAtivoTipo==="fiis"){
-    // Auto-associa setor (Ações) ou segmento (FIIs) — cada um com sua própria lista de opções
+  // Ações BR, BDRs e FIIs: busca preço atual via Brapi + auto-associa setor
+  if(addAtivoTipo==="acoes" || addAtivoTipo==="bdrs" || addAtivoTipo==="fiis"){
+    // Auto-associa setor (Ações/BDR) ou segmento (FIIs) — cada um com sua própria lista de opções
     if(addAtivoTipo==="acoes"){
       const setorField=document.getElementById("addSetor");
       if(setorField && TICKER_SETOR_BR[tk]){
         setorField.value=TICKER_SETOR_BR[tk];
+        setorField.title=`Setor de ${tk} — associado automaticamente, não editável.`;
+      }
+    } else if(addAtivoTipo==="bdrs"){
+      const setorField=document.getElementById("addSetor");
+      if(setorField && TICKER_SETOR_BDR[tk]){
+        setorField.value=TICKER_SETOR_BDR[tk];
         setorField.title=`Setor de ${tk} — associado automaticamente, não editável.`;
       }
     } else if(addAtivoTipo==="fiis"){
@@ -5046,6 +5234,13 @@ async function confirmarAddAtivo(){
   const setor=document.getElementById("addSetor").value;
   let mesclou=false; // true = a compra foi somada numa posição já existente (não criou linha nova)
 
+  // Trava de segurança: preço e quantidade nunca podem ser negativos, pra nenhum tipo de ativo.
+  // Fica antes de qualquer lógica específica, então nada escapa dessa checagem.
+  if(pm<0 || cotas<0){
+    alert("Preço e quantidade não podem ser negativos. Corrija os valores antes de continuar.");
+    return;
+  }
+
   if(addAtivoTipo==="stocks"){
     if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Qtd. ações."); return; }
     const existente=D.stocks.find(x=>x.tk===tk);
@@ -5082,6 +5277,20 @@ async function confirmarAddAtivo(){
     }
     prices[tk]=prices[tk]||pm; // não sobrescreve cotação ao vivo já existente
     if(!getPriceCacheStore()[tk]) savePriceCache(tk, prices[tk]); // grava no cache local — sem isso, um recarregamento de página perde o valor de vez
+  } else if(addAtivoTipo==="bdrs"){
+    if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Cotas."); return; }
+    const existente=D.bdrs.find(x=>x.tk===tk);
+    if(existente){
+      const novasCotas=existente.cotas+cotas;
+      existente.pm=+(((existente.pm*existente.cotas)+(pm*cotas))/novasCotas).toFixed(4);
+      existente.cotas=novasCotas;
+      mesclou=true;
+    } else {
+      const teto={"Financeiro":35,"Energia":25,"Indústria":20,"Saúde":20,"Consumo":25,"Tecnologia":30}[setor]||20;
+      D.bdrs.push({tk,co:TICKER_NOME_BDR[tk]||tk,st:setor,pm,cotas,dy:0,teto,obj:"Manter"});
+    }
+    prices[tk]=prices[tk]||pm;
+    if(!getPriceCacheStore()[tk]) savePriceCache(tk, prices[tk]);
   } else if(addAtivoTipo==="fiis"){
     if(!tk||!pm||!cotas){ alert("Preencha Ticker, Valor atual e Cotas."); return; }
     const existente=D.fiis.find(x=>x.tk===tk);
@@ -5147,7 +5356,9 @@ document.querySelectorAll("th.sort").forEach(th=>{
     const sc=sortSt[key]?col:null, sd=sortSt[key]||"desc";
     const tA=D.acoes.reduce((s,a)=>s+posVal(a),0);
     const tF=D.fiis.reduce((s,f)=>s+posVal(f),0);
+    const tB=D.bdrs.reduce((s,a)=>s+posVal(a),0);
     if(t==="ac") renderAcoes(tA,sc,sd);
+    if(t==="bd") renderBDRs(tB,sc,sd);
     if(t==="fi") renderFiis(tF,sc,sd);
     if(t==="et") renderETFs(sc,sd);
     if(t==="sk") renderStocks(sc,sd);
@@ -5466,6 +5677,7 @@ function migrarNomesDuplicados(){
     if(localStorage.getItem("migrNomes_v1")) return;
     let mudou = false;
     D.acoes.forEach(a=>{ if(a.co===a.tk && TICKER_NOME_BR[a.tk]){ a.co=TICKER_NOME_BR[a.tk]; mudou=true; } });
+    D.bdrs.forEach(a=>{ if(a.co===a.tk && TICKER_NOME_BDR[a.tk]){ a.co=TICKER_NOME_BDR[a.tk]; mudou=true; } });
     D.stocks.forEach(s=>{ if(s.co===s.tk && TICKER_NOME_EUA[s.tk]){ s.co=TICKER_NOME_EUA[s.tk]; mudou=true; } });
     D.cripto.forEach(c=>{ if(c.nome===c.moeda && CRIPTO_NOMES[c.moeda]){ c.nome=CRIPTO_NOMES[c.moeda]; mudou=true; } });
     localStorage.setItem("migrNomes_v1", "1");
@@ -5481,6 +5693,7 @@ async function carregarCarteiraDaNuvem(){
     D.etfs   = pd.etfs   && pd.etfs.length   ? pd.etfs   : [];
     D.stocks = pd.stocks && pd.stocks.length ? pd.stocks : [];
     D.rf     = pd.rf     && pd.rf.length     ? pd.rf     : [];
+    D.bdrs   = pd.bdrs   && pd.bdrs.length   ? pd.bdrs   : [];
     D.cripto = pd.cripto || []; // a nuvem passa a ser a fonte da verdade — sobrescreve o cache local
     saveCriptoAtivos();
     saveCustomExtra(pd.extra || []);
@@ -5493,12 +5706,13 @@ async function carregarCarteiraDaNuvem(){
     D.etfs = JSON.parse(JSON.stringify(SEED_PORTFOLIO.etfs));
     D.stocks = JSON.parse(JSON.stringify(SEED_PORTFOLIO.stocks));
     D.rf = JSON.parse(JSON.stringify(SEED_PORTFOLIO.rf));
+    D.bdrs = []; // BDR é recurso novo — sem semente, começa vazio até o dono adicionar manualmente
     // Cripto e itens extras do dono: o que já estiver no cache local (loadCriptoAtivos já rodou) vira a semente
     carteiraEhSemente = true;
   } else {
     // primeiro acesso de QUALQUER OUTRA conta — carteira 100% zerada, sem herdar nada
     // (inclui Cripto e Extras, que antes viviam só no navegador e podiam vazar entre contas do mesmo PC)
-    D.acoes = []; D.fiis = []; D.etfs = []; D.stocks = []; D.rf = []; D.cripto = [];
+    D.acoes = []; D.fiis = []; D.etfs = []; D.stocks = []; D.rf = []; D.cripto = []; D.bdrs = [];
     saveCriptoAtivos();
     saveCustomExtra([]);
     carteiraEhSemente = false;
@@ -5508,12 +5722,21 @@ async function carregarCarteiraDaNuvem(){
 }
 async function salvarCarteiraNaNuvem(){
   if(!currentUser) return;
-  await SB.upsert('portfolio_data', {
+  const payload = {
     user_id: currentUser.id,
     acoes: D.acoes, fiis: D.fiis, etfs: D.etfs, stocks: D.stocks, rf: D.rf,
-    cripto: D.cripto, extra: getCustomExtra(),
+    cripto: D.cripto, extra: getCustomExtra(), bdrs: D.bdrs,
     updated_at: new Date().toISOString()
-  });
+  };
+  try{
+    await SB.upsert('portfolio_data', payload);
+  }catch(e){
+    // Coluna "bdrs" pode não existir ainda no Supabase (SQL de migração não rodado) — tenta de
+    // novo sem ela, pra não perder o salvamento do resto da carteira por causa disso.
+    console.warn("Salvamento com 'bdrs' falhou, tentando sem — rode o ALTER TABLE no Supabase:", e.message);
+    const { bdrs, ...payloadSemBdrs } = payload;
+    await SB.upsert('portfolio_data', payloadSemBdrs);
+  }
   carteiraEhSemente = false;
   atualizaBannerMigracao();
 }
