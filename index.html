@@ -1821,6 +1821,35 @@ const TICKERS_STOCKS_US = [
 ];
 
 // Mapa ticker → setor (combina com as categorias usadas em D.tetosBR) para auto-associar ao digitar
+// Nome da empresa por ticker — mapa FIXO, não depende de nenhuma API. É o que garante a busca
+// por nome (ex: "itau" encontrando ITUB3/ITUB4) funcionar sempre, mesmo se Brapi/Finnhub falharem.
+const TICKER_NOME_BR = {
+  ABEV3:"Ambev", ALSO3:"Allos", ARZZ3:"Arezzo", ASAI3:"Assaí", AZUL4:"Azul",
+  B3SA3:"B3", BBAS3:"Banco do Brasil", BBDC3:"Bradesco", BBDC4:"Bradesco", BBSE3:"BB Seguridade",
+  BEEF3:"Minerva", BPAC11:"BTG Pactual", BPAC3:"BTG Pactual", BPAC5:"BTG Pactual",
+  BRAP3:"Bradespar", BRAP4:"Bradespar", BRFS3:"BRF", BRKM5:"Braskem", BRML3:"BR Malls",
+  CCRO3:"CCR", CIEL3:"Cielo", CMIG3:"Cemig", CMIG4:"Cemig", COGN3:"Cogna",
+  CPFE3:"CPFL Energia", CPLE3:"Copel", CPLE6:"Copel", CSAN3:"Cosan", CSMG3:"Copasa",
+  CSNA3:"CSN", CXSE3:"Caixa Seguridade", CYRE3:"Cyrela", DXCO3:"Dexco", ECOR3:"EcoRodovias",
+  EGIE3:"Engie Brasil", ELET3:"Eletrobras", ELET6:"Eletrobras", EMBR3:"Embraer", ENEV3:"Eneva",
+  ENGI11:"Energisa", ENGI3:"Energisa", ENGI4:"Energisa", EQTL3:"Equatorial Energia",
+  ESPA3:"Espaçolaser", FLRY3:"Fleury", GGBR3:"Gerdau", GGBR4:"Gerdau", GGPS3:"Grupo GPS",
+  GOAU3:"Metalúrgica Gerdau", GOAU4:"Metalúrgica Gerdau", GOLL4:"Gol", HAPV3:"Hapvida",
+  HYPE3:"Hypera", IGTI11:"Iguatemi", IGTI3:"Iguatemi", IRBR3:"IRB Brasil RE",
+  ITSA3:"Itaúsa", ITSA4:"Itaúsa", ITUB3:"Itaú Unibanco", ITUB4:"Itaú Unibanco",
+  JBSS3:"JBS", JHSF3:"JHSF", KLBN11:"Klabin", KLBN3:"Klabin", KLBN4:"Klabin",
+  LREN3:"Lojas Renner", LWSA3:"Locaweb", MGLU3:"Magazine Luiza", MRFG3:"Marfrig", MRVE3:"MRV",
+  MULT3:"Multiplan", MYPK3:"Iochpe-Maxion", NTCO3:"Natura&Co", PCAR3:"Grupo Pão de Açúcar (GPA)",
+  PETR3:"Petrobras", PETR4:"Petrobras", PETZ3:"Petz", POSI3:"Positivo", PRIO3:"PRIO (PetroRio)",
+  QUAL3:"Qualicorp", RADL3:"Raia Drogasil", RAIL3:"Rumo", RDOR3:"Rede D'Or", RENT3:"Localiza",
+  RRRP3:"3R Petroleum", SAPR3:"Sanepar", SAPR4:"Sanepar", SAPR11:"Sanepar",
+  SBFG3:"Grupo SBF (Centauro)", SBSP3:"Sabesp", SIMH3:"Simpar", SLCE3:"SLC Agrícola",
+  SMFT3:"Smart Fit", SOMA3:"Grupo Soma", SUZB3:"Suzano", TAEE11:"Taesa", TAEE3:"Taesa", TAEE4:"Taesa",
+  TIMS3:"TIM", TOTS3:"Totvs", UGPA3:"Ultrapar", USIM3:"Usiminas", USIM5:"Usiminas", USIM6:"Usiminas",
+  VALE3:"Vale", VBBR3:"Vibra Energia", VIVT3:"Telefônica Brasil (Vivo)", WEGE3:"Weg",
+  WIZC3:"Wiz Soluções", YDUQ3:"Yduqs",
+};
+
 const TICKER_SETOR_BR = {
   // Financeiro
   BBAS3:"Financeiro", BBDC3:"Financeiro", BBDC4:"Financeiro", BBSE3:"Financeiro",
@@ -1856,6 +1885,20 @@ const TICKER_SETOR_BR = {
   BRFS3:"Serviços", SLCE3:"Serviços", SMFT3:"Serviços",
   BRAP3:"Indústria", BRAP4:"Indústria",
   RRRP3:"Energia", SBFG3:"Serviços", VALE3:"Indústria",
+};
+
+// Mesma ideia — nome fixo por ticker, garante busca por nome sem depender da Finnhub
+const TICKER_NOME_EUA = {
+  AAPL:"Apple", MSFT:"Microsoft", GOOGL:"Alphabet (Google)", GOOG:"Alphabet (Google)",
+  AMZN:"Amazon", NVDA:"Nvidia", META:"Meta (Facebook)", TSLA:"Tesla", "BRK.B":"Berkshire Hathaway",
+  AVGO:"Broadcom", JPM:"JPMorgan Chase", V:"Visa", MA:"Mastercard", UNH:"UnitedHealth",
+  JNJ:"Johnson & Johnson", XOM:"ExxonMobil", PG:"Procter & Gamble", HD:"Home Depot",
+  KO:"Coca-Cola", PEP:"PepsiCo", COST:"Costco", MRK:"Merck", ABBV:"AbbVie", CVX:"Chevron",
+  BAC:"Bank of America", WMT:"Walmart", DIS:"Disney", NFLX:"Netflix", CRM:"Salesforce",
+  ADBE:"Adobe", AMD:"AMD", INTC:"Intel", ORCL:"Oracle", CSCO:"Cisco", PFE:"Pfizer",
+  TMO:"Thermo Fisher Scientific", ABT:"Abbott", NKE:"Nike", MCD:"McDonald's", LIN:"Linde",
+  ACN:"Accenture", TXN:"Texas Instruments", QCOM:"Qualcomm", IBM:"IBM", GE:"General Electric",
+  CAT:"Caterpillar", BA:"Boeing", UPS:"UPS", SBUX:"Starbucks", NU:"Nubank",
 };
 
 const TICKER_SETOR_EUA = {
@@ -1923,6 +1966,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v25.6",d:"Jun/2026",items:[
+    "CORRIGIDO: busca por nome da empresa (ex: 'Itaú', 'Coca-Cola') não achava nada, porque dependia só da Brapi/Finnhub confirmarem o nome — mesma instabilidade de sempre. Agora tem um mapa fixo com o nome das ~110 Ações BR e ~50 Stocks EUA já cadastrados, que não depende de nenhuma API",
+  ]},
   {v:"v25.5",d:"Jun/2026",items:[
     "NOVA busca de ativos: datalist nativo substituído por um campo de busca de verdade — só mostra resultados a partir de 2 caracteres digitados, e busca por TICKER OU NOME DA EMPRESA (ex: digitar 'coca' encontra KO). Vale pra Ações, FIIs, ETFs e Stocks",
     "Mais leve: em vez de carregar milhares de opções de uma vez, só filtra e mostra até 20 resultados por vez, conforme você digita",
@@ -4643,6 +4689,10 @@ function setTickerSearchLista(tipo){
     : tipo==="fiis" ? TICKERS_FIIS_BR
     : tipo==="etfs" ? TICKERS_ETFS_US
     : tipo==="stocks" ? TICKERS_STOCKS_US : [];
+  // Mapa fixo (confiável, não depende de API) tem prioridade — só usa o nome vindo da
+  // Brapi/Finnhub como complemento pros tickers que não estão no nosso mapa curado.
+  const nomeFixo = tipo==="acoes" ? TICKER_NOME_BR
+    : tipo==="stocks" ? TICKER_NOME_EUA : {};
   const completaComNome = tipo==="acoes" ? (cache?.acoesBR_nomes||{})
     : tipo==="fiis" ? (cache?.fiisBR_nomes||{})
     : tipo==="etfs" ? (cache?.etfsUS_nomes||{})
@@ -4652,8 +4702,8 @@ function setTickerSearchLista(tipo){
     : tipo==="etfs" ? (cache?.etfsUS||[])
     : tipo==="stocks" ? (cache?.stocksUS||[]) : [];
   const set = new Map();
-  curada.forEach(tk=>set.set(tk, {tk, nome: completaComNome[tk]||null}));
-  completaLista.forEach(tk=>{ if(!set.has(tk)) set.set(tk, {tk, nome: completaComNome[tk]||null}); });
+  curada.forEach(tk=>set.set(tk, {tk, nome: nomeFixo[tk] || completaComNome[tk] || null}));
+  completaLista.forEach(tk=>{ if(!set.has(tk)) set.set(tk, {tk, nome: nomeFixo[tk] || completaComNome[tk] || null}); });
   _tickerSearchLista = [...set.values()];
 }
 
