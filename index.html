@@ -1424,8 +1424,8 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       </div>
     </div>
     <div id="addDataCompraRow" style="margin-bottom:10px;display:none">
-      <label class="flbl">Data de compra <span class="info-ic" title="Usada pra não mostrar proventos de antes de você ter esse ativo. Se já tinha comprado antes e só está cadastrando agora, coloca a data real da compra — não a de hoje.">?</span></label>
-      <input class="finp" id="addDataCompra" type="date" style="font-family:var(--mono)"/>
+      <label class="flbl">Data de compra <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span> <span class="info-ic" title="Deixe em branco pra buscar proventos automaticamente sem restrição de data. Só preencha se quiser que a busca ignore dividendos pagos antes dessa data específica.">?</span></label>
+      <input class="finp" id="addDataCompra" type="date" placeholder="Deixe em branco" style="font-family:var(--mono)"/>
     </div>
     <div id="addPreview" style="display:none;padding:10px;background:var(--bg3);border-radius:var(--rm);margin-bottom:10px;font-size:12px">
       <div style="display:flex;justify-content:space-between">
@@ -2059,6 +2059,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v27.5",d:"Jun/2026",items:[
+    "CORRIGIDO: campo 'Data de compra' vinha preenchido com a data de HOJE por padrão, o que bloqueava a busca automática de proventos pra qualquer ativo recém-adicionado (só mostrava proventos futuros a partir de hoje). Agora fica em branco por padrão — sem preencher nada, a busca volta a puxar tudo automaticamente, sem exigir ação manual nenhuma",
+    "O campo continua existindo, mas 100% opcional — só filtra por data se você preencher de propósito",
+  ]},
   {v:"v27.4",d:"Jun/2026",items:[
     "NOVO: campo 'Data de compra' ao adicionar Ação, FII ou BDR — usado pra filtrar Proventos de verdade (só mostra proventos de depois que você teve o ativo, não uma janela fixa de dias)",
     "Ao comprar mais de um ativo que já existe, guarda sempre a data MAIS ANTIGA das compras — não sobrescreve com a data de hoje",
@@ -5122,7 +5126,9 @@ function openAddAtivo(tipo, presetTicker){
   const dataCompraInput=document.getElementById("addDataCompra");
   const usaDataCompra = ["acoes","fiis","bdrs"].includes(tipo) && !presetTicker;
   dataCompraRow.style.display = usaDataCompra ? "block" : "none";
-  if(usaDataCompra) dataCompraInput.value = new Date().toISOString().slice(0,10);
+  dataCompraInput.value = ""; // em branco por padrão — NÃO preenche com hoje. Sem data, a busca de
+  // proventos usa o corte de 60 dias (puxa tudo automaticamente, sem exigir nada da pessoa).
+  // Só filtra pela data de compra se a pessoa preencher isso de propósito.
 
   if(tipo==="cripto"){
     cotasInput.step="0.0001"; // evita notação científica nas setinhas (8 casas era exagero pro spinner)
