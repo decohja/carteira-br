@@ -1918,6 +1918,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v25.4",d:"Jun/2026",items:[
+    "VARREDURA DE DADOS FIXOS concluída — chequei todos os outros pontos que poderiam vazar dado do dono pra conta nova (proventos mensais, indicadores macro, metas de alocação). Só achamos o bug do teto por setor mesmo, já corrigido",
+    "NOVO: lista completa de tickers B3 (Brapi) + EUA (Finnhub) — busca uma vez, cacheia por 30 dias, e complementa a lista curada de sempre. Cobre Ações, FIIs, Stocks e ETFs de uma vez. Atualiza sozinho em segundo plano, sem travar o carregamento",
+  ]},
   {v:"v25.3",d:"Jun/2026",items:[
     "Coluna 'Data-com' de volta na tabela de Proventos — tinha se perdido quando o fluxo virou automático",
     "Lista de Proventos agora sempre ordena da data mais recente pra mais antiga, não importa a ordem que foram detectados/inseridos",
@@ -5320,6 +5324,67 @@ function atualizaBannerMigracao(){
   if(wel) wel.style.display = primeiroAcessoVazio ? 'flex' : 'none';
 }
 
+// ── Lista completa de tickers (B3 via Brapi + EUA via Finnhub) ──────────────────
+// Complementa as listas curadas: busca uma vez, cacheia por 30 dias (não precisa ser
+// frequente — é raro entrar ticker novo na bolsa), e só refaz a chamada quando vence.
+const TICKER_LIST_CACHE_KEY = "listaCompletaTickers_v1";
+const TICKER_LIST_MAX_DIAS = 30;
+
+function getListaTickersCache(){
+  try{ return JSON.parse(localStorage.getItem(TICKER_LIST_CACHE_KEY)||"null"); }
+  catch(e){ return null; }
+}
+
+async function atualizarListaCompletaTickers(){
+  const cache = getListaTickersCache();
+  const idadeDias = cache ? (Date.now()-cache.ts)/86400000 : Infinity;
+  if(cache && idadeDias < TICKER_LIST_MAX_DIAS) return cache; // cache ainda fresco — nem busca
+
+  const novo = {acoesBR:[], fiisBR:[], stocksUS:[], etfsUS:[], ts:Date.now()};
+
+  // B3 — Brapi (endpoint de lista completa)
+  try{
+    const j = await corsGetJSON(`https://brapi.dev/api/quote/list?token=${BRAPI_TOKEN}`);
+    if(j?.stocks?.length){
+      j.stocks.forEach(item=>{
+        const tk = item.stock || item.symbol;
+        if(!tk) return;
+        if(item.type==="fund" || /11$/.test(tk)) novo.fiisBR.push(tk);
+        else novo.acoesBR.push(tk);
+      });
+    }
+  }catch(e){ console.warn("Lista completa B3 falhou:", e.message); }
+
+  // EUA — Finnhub (todos os símbolos da bolsa americana, Stocks + ETFs juntos)
+  try{
+    const j = await corsGetJSON(`https://finnhub.io/api/v1/stock/symbol?exchange=US&token=${FINNHUB_TOKEN}`);
+    if(Array.isArray(j)){
+      j.forEach(item=>{
+        if(!item.symbol || /[.^]/.test(item.symbol)) return; // ignora classes especiais/índices
+        if(item.type==="ETP" || item.type==="ETF") novo.etfsUS.push(item.symbol);
+        else if(item.type==="Common Stock") novo.stocksUS.push(item.symbol);
+      });
+    }
+  }catch(e){ console.warn("Lista completa EUA falhou:", e.message); }
+
+  // Só substitui o cache se pelo menos uma fonte funcionou — evita gravar lista vazia
+  // por causa de uma falha pontual de rede e perder o que já tínhamos.
+  if(novo.acoesBR.length || novo.stocksUS.length){
+    try{ localStorage.setItem(TICKER_LIST_CACHE_KEY, JSON.stringify(novo)); }catch(e){}
+    return novo;
+  }
+  return cache;
+}
+
+// Une a lista curada (sempre presente, garante os mais comuns mesmo se a busca completa nunca rodou)
+// com a lista completa cacheada, sem duplicar. Limita o tamanho pra não travar o navegador com
+// dezenas de milhares de opções na caixa de busca.
+function montarListaTickers(curada, completa, limite){
+  const set = new Set(curada);
+  if(completa) completa.forEach(t=>set.add(t));
+  return [...set].slice(0, limite);
+}
+
 async function startApp(){
   // Garante que o loading some SEMPRE, mesmo com erro
   const hideLoading = () => {
@@ -5404,17 +5469,30 @@ async function startApp(){
     loadAvatar_SB();
     loadSettings();
     updateProfileUI();
-    // popula datalist de tickers
+    // popula datalist de tickers — usa o cache de lista completa (se existir) + a lista curada,
+    // sem duplicar. Isso já roda com o que tiver disponível AGORA (rápido, não trava o carregamento).
     const dl = document.getElementById('tickerList');
     if(dl) TICKERS_BR.forEach(t=>{ const o=document.createElement('option'); o.value=t; dl.appendChild(o); });
-    const dlAc = document.getElementById('tickerListAcoes');
-    if(dlAc) TICKERS_ACOES_BR.forEach(t=>{ const o=document.createElement('option'); o.value=t; dlAc.appendChild(o); });
-    const dlFi = document.getElementById('tickerListFiis');
-    if(dlFi) TICKERS_FIIS_BR.forEach(t=>{ const o=document.createElement('option'); o.value=t; dlFi.appendChild(o); });
-    const dlEt = document.getElementById('tickerListETFs');
-    if(dlEt) TICKERS_ETFS_US.forEach(t=>{ const o=document.createElement('option'); o.value=t; dlEt.appendChild(o); });
-    const dlSk = document.getElementById('tickerListStocks');
-    if(dlSk) TICKERS_STOCKS_US.forEach(t=>{ const o=document.createElement('option'); o.value=t; dlSk.appendChild(o); });
+    const listaCacheInicial = getListaTickersCache();
+    function popularDatalist(id, lista){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.innerHTML = "";
+      lista.forEach(t=>{ const o=document.createElement('option'); o.value=t; el.appendChild(o); });
+    }
+    popularDatalist('tickerListAcoes', montarListaTickers(TICKERS_ACOES_BR, listaCacheInicial?.acoesBR, 2000));
+    popularDatalist('tickerListFiis', montarListaTickers(TICKERS_FIIS_BR, listaCacheInicial?.fiisBR, 500));
+    popularDatalist('tickerListETFs', montarListaTickers(TICKERS_ETFS_US, listaCacheInicial?.etfsUS, 2000));
+    popularDatalist('tickerListStocks', montarListaTickers(TICKERS_STOCKS_US, listaCacheInicial?.stocksUS, 3000));
+    // Atualiza a lista completa em segundo plano (só busca de verdade se o cache tiver vencido —
+    // 30 dias) e repopula os datalists se vier algo novo, sem precisar recarregar a página.
+    atualizarListaCompletaTickers().then(lista=>{
+      if(!lista) return;
+      popularDatalist('tickerListAcoes', montarListaTickers(TICKERS_ACOES_BR, lista.acoesBR, 2000));
+      popularDatalist('tickerListFiis', montarListaTickers(TICKERS_FIIS_BR, lista.fiisBR, 500));
+      popularDatalist('tickerListETFs', montarListaTickers(TICKERS_ETFS_US, lista.etfsUS, 2000));
+      popularDatalist('tickerListStocks', montarListaTickers(TICKERS_STOCKS_US, lista.stocksUS, 3000));
+    }).catch(()=>{});
     render(); // re-renderiza com dados do banco
     atualizarIndicadoresMacroRF().catch(()=>{}); // best-effort, não bloqueia o carregamento
     buscarProventosAutomaticos().then(()=>renderProv()).catch(()=>{}); // idem — roda em paralelo, não trava nada se falhar
