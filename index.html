@@ -2067,6 +2067,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v28.5",d:"Jun/2026",items:[
+    "ACHEI O CICLO VICIOSO que travava o DY em 'aguardando': minha própria correção anterior (pra não retentar infinitamente) foi longe demais — quando a busca falhava, eu marcava 'já tentei, não tenta por 7 dias', então o ativo ficava preso em 'aguardando' por uma semana inteira. Agora: se JÁ tenho o valor, só reconfiro em 7 dias; se falhou, tento de novo em 2h",
+    "DY de ETF ganhou uma segunda fonte de reforço (campo pronto do Yahoo quote), caso o cálculo manual pelo histórico não pegue",
+  ]},
   {v:"v28.4",d:"Jun/2026",items:[
     "ACHEI POR QUE SÓ O ETF FICAVA PRESO: o gráfico 'Dividend Yield %' do ETF usava o valor VELHO salvo (e.dy) direto, enquanto Ações/FIIs/BDR passavam por uma função que lê o valor AO VIVO. Era a única classe fazendo isso — por isso só ela travava. Criei a versão da função pro lado americano (getDYUS) e apliquei no ETF",
   ]},
@@ -2854,8 +2858,13 @@ function dyPrecisaTentar(tk){
   const store = getDyCacheStore();
   const entry = store[tk];
   if(!entry) return true; // nunca tentamos — precisa
-  const idadeDias = (Date.now()-entry.ts)/86400000;
-  return idadeDias >= DY_REFRESH_DIAS;
+  const idadeHoras = (Date.now()-entry.ts)/3600000;
+  // Se JÁ TEMOS um valor real, só reconfere depois de 7 dias (DY muda pouco).
+  // Se a última tentativa falhou (dy null / sem valor), NÃO espera 7 dias — senão o ativo ficava
+  // preso em "aguardando" por uma semana. Tenta de novo depois de um respiro curto (2h), pra dar
+  // chance da fonte responder, sem martelar a cada refresh.
+  if(typeof entry.dy === 'number') return idadeHoras >= DY_REFRESH_DIAS*24;
+  return idadeHoras >= 2;
 }
 
 /* ── TOTALS ROW ─────────────────────── */
@@ -3277,20 +3286,30 @@ async function refreshPrices(manual=false){
         12 meses ÷ preço atual. */
   const etfsPrecisamDY = D.etfs.filter(e=> dyPrecisaTentar(e.tk));
   await Promise.allSettled(etfsPrecisamDY.map(async e=>{
+    let dyValido = null;
+    // Tentativa 1: cálculo manual pelo histórico de dividendos (soma 12 meses ÷ preço)
     try{
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/${e.tk}?range=1y&interval=1d&events=div`;
       const j = await corsGetJSON(url);
       const result = j?.chart?.result?.[0];
       const divEvents = result?.events?.dividends;
       const precoAtual = e.priceUSD || result?.meta?.regularMarketPrice;
-      let dyValido = null;
       if(divEvents && precoAtual>0){
         const totalDividendos = Object.values(divEvents).reduce((acc,d)=>acc+(d.amount||0),0);
         if(totalDividendos>0) dyValido = (totalDividendos/precoAtual)*100;
       }
-      if(dyValido!=null) window._dyUS[e.tk] = dyValido;
-      saveDyCache(e.tk, dyValido);
-    }catch(err){ saveDyCache(e.tk, null); }
+    }catch(err){}
+    // Tentativa 2 (reforço): campo pronto do Yahoo quote, caso o cálculo manual não tenha pego
+    if(dyValido==null){
+      try{
+        const jq = await corsGetJSON(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${e.tk}`);
+        const q = jq?.quoteResponse?.result?.[0];
+        const dyPronto = q?.trailingAnnualDividendYield;
+        if(dyPronto!=null && !isNaN(dyPronto)) dyValido = dyPronto*100; // vem como fração (0.013 = 1,3%)
+      }catch(err){}
+    }
+    if(dyValido!=null) window._dyUS[e.tk] = dyValido;
+    saveDyCache(e.tk, dyValido);
   }));
 
   // Status
