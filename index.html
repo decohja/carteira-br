@@ -975,7 +975,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </div>
   </div>
   <div class="st-hl gold" style="margin-top:18px">Atual vs. Meta por classe</div>
-  <div class="bx" id="metaBarChartHome" style="margin-top:8px"></div>
+  <div class="bx" id="metaBarChartHome" style="margin-top:8px;max-width:480px;width:fit-content"></div>
 </section>
 
 <!-- METAS DE ALOCAÇÃO (painel próprio, igual Ações/FIIs) -->
@@ -1011,7 +1011,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <span><span class="meta-gap-dot" style="background:var(--gold);margin:0 5px 0 0"></span>Acima da meta</span>
   </div>
   <div class="st-hl gold" style="margin-top:18px">Atual vs. Meta por classe</div>
-  <div class="bx" id="metaBarChartMetas" style="margin-top:8px"></div>
+  <div id="metaBarChartMetas" style="margin-top:8px"></div>
 </section>
 
 <!-- RESERVA E CAIXA (painel próprio, igual Ações/FIIs) -->
@@ -2104,6 +2104,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v29.4",d:"Jul/2026",items:[
+    "Corrigido alinhamento da legenda do gráfico Atual/Meta: trocado flex (que desalinhava quando o nome da classe era mais longo) por CSS Grid de verdade — colunas retas garantidas, nome de qualquer tamanho não empurra mais os valores. Valor Atual agora usa a cor do tier (vermelho/dourado/neutro) igual à coluna Diferença da tabela, com a bolinha de status ao lado (sem emoji). Home: caixa do gráfico não estica mais a página inteira — voltou a ser uma caixa compacta do tamanho do conteúdo, como as outras. Metas de Alocação: removido o fundo branco do gráfico e alinhado à esquerda",
+  ]},
   {v:"v29.3",d:"Jul/2026",items:[
     "Ajustado o gráfico 'Atual vs. Meta por classe': voltou a ser UMA rosca só (composição Atual), com a legenda ao lado mostrando 'Atual% / Meta%' por classe e um ⚠ quando a classe está fora da tolerância de ±3 pontos. As duas roscas lado a lado da v29.2 ficaram poluídas — este layout é mais limpo, no estilo indicado",
   ]},
@@ -3486,18 +3489,20 @@ function gapTier(pctAtual, pctMeta){
   return               {color:'var(--muted)', dot:'var(--muted)',label:'OK — dentro da tolerância (±3 pontos)'};
 }
 
-// Uma rosca só — composição Atual por classe — com legenda ao lado mostrando Atual/Meta e um
-// alerta (⚠) quando a classe está fora da tolerância. Reaproveitada na home e em Metas de
-// Alocação (mesmo componente nos dois lugares, só muda o container onde desenha).
+// Uma rosca só — composição Atual por classe — com legenda ao lado em GRID (colunas retas de
+// verdade, não flex com min-width — nomes de tamanhos diferentes não empurram as colunas
+// seguintes). Cor do valor Atual segue o mesmo tier (abaixo/OK/acima da meta) usado na tabela de
+// Metas de Alocação (var(--neg)/var(--muted)/var(--gold)) — mesmo padrão, sem emoji. Reaproveitada
+// na home e em Metas de Alocação (mesmo componente nos dois lugares, só muda o container).
 function mkMetaBarChart(containerId){
   const el = document.getElementById(containerId);
   if(!el) return;
   const {metas, classes, total} = computeMetasAlocData();
   const svgId = containerId+'-svg', legId = containerId+'-leg';
   el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap;justify-content:center">
+    <div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap;justify-content:flex-start">
       <svg id="${svgId}" width="150" height="150" style="flex-shrink:0"></svg>
-      <div id="${legId}" style="display:flex;flex-direction:column;gap:9px"></div>
+      <div id="${legId}" style="display:grid;grid-template-columns:11px auto 54px 10px 54px 14px;align-items:center;column-gap:8px;row-gap:9px"></div>
     </div>`;
   mkDonut(classes.map(c=>({label:c.name, v:c.val, c:CLASSE_COLORS[c.id]||"var(--gold)"})), svgId, null);
   const leg = document.getElementById(legId);
@@ -3506,15 +3511,13 @@ function mkMetaBarChart(containerId){
     const meta = metas[c.id]||0;
     const color = CLASSE_COLORS[c.id]||"var(--gold)";
     const tier = gapTier(atual, meta);
-    const alerta = tier.label.startsWith('OK') ? '' : `<span title="${tier.label}" style="font-size:12px">⚠️</span>`;
-    return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;white-space:nowrap">
-      <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span>
-      <span style="color:${color};font-weight:600;min-width:110px">${c.name}</span>
-      <span style="font-family:var(--mono);font-weight:700;color:${color}">${atual.toFixed(1)}%</span>
-      <span style="color:var(--muted)">/</span>
-      <span style="font-family:var(--mono);color:var(--muted)">${meta.toFixed(1)}%</span>
-      ${alerta}
-    </div>`;
+    return `
+    <span style="width:10px;height:10px;border-radius:50%;background:${color}"></span>
+    <span style="color:var(--text);font-size:13px;font-weight:500;white-space:nowrap">${c.name}</span>
+    <span style="font-family:var(--mono);font-weight:700;text-align:right;color:${tier.color}">${atual.toFixed(1)}%</span>
+    <span style="color:var(--muted);text-align:center;font-size:12px">/</span>
+    <span style="font-family:var(--mono);color:var(--muted);text-align:right;font-size:12px">${meta.toFixed(1)}%</span>
+    <span style="width:7px;height:7px;border-radius:50%;background:${tier.dot};justify-self:center" title="${tier.label}"></span>`;
   }).join("");
 }
 
