@@ -2067,6 +2067,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v28.4",d:"Jun/2026",items:[
+    "ACHEI POR QUE SÓ O ETF FICAVA PRESO: o gráfico 'Dividend Yield %' do ETF usava o valor VELHO salvo (e.dy) direto, enquanto Ações/FIIs/BDR passavam por uma função que lê o valor AO VIVO. Era a única classe fazendo isso — por isso só ela travava. Criei a versão da função pro lado americano (getDYUS) e apliquei no ETF",
+  ]},
   {v:"v28.3",d:"Jun/2026",items:[
     "DY de ETF trocado de vez pro Yahoo — parei de tentar adivinhar o campo certo da Finnhub sem conseguir testar ao vivo. Yahoo é a MESMA fonte que já usamos com sucesso pro preço de ETF e pro DY de Ações BR — calcula manualmente (soma dividendos 12 meses ÷ preço atual), sem depender de nome de campo nenhum de API que eu não consigo verificar",
   ]},
@@ -4187,6 +4190,12 @@ function getDY(tk, padrao){
   const real = window._dyBR && window._dyBR[tk];
   return (real!=null) ? real : (padrao||0);
 }
+// Versão pro lado americano (ETF/Stock) — lê window._dyUS (ao vivo), com o valor salvo como reserva.
+// Sem isso, o ETF usava e.dy puro (valor velho), por isso ficava "preso" enquanto Ações/FIIs não.
+function getDYUS(tk, padrao){
+  const real = window._dyUS && window._dyUS[tk];
+  return (real!=null) ? real : (padrao||0);
+}
 
 /* Renderiza célula de teto editável com barra de progresso + clique para editar */
 function tetoCell(tk, pctCart, tetoAtual, unica){
@@ -4780,7 +4789,7 @@ function renderETFs(sc,sd){
     {val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true},{val:"",r:true}
   ]);
   mkHBars(rows.map(e=>({label:e.tk,v:e.atual,pct:tot>0?e.atual/tot*100:0})),"et-hbars","#38BDF8");
-  mkDY(rows.map(e=>({label:e.tk,v:e.dy})),"et-dy"); // ETFs sem mapa de cor por categoria — usa dourado padrão
+  mkDY(rows.map(e=>({label:e.tk,v:getDYUS(e.tk,e.dy)})),"et-dy"); // usa DY ao vivo (window._dyUS), não o valor velho e.dy
   const mapFun={};rows.forEach(e=>{mapFun[e.fun]=(mapFun[e.fun]||0)+e.atual});
   mkSetores(D.tetosETF,"et-setores",mapFun,"ETFs",rows.length);
 }
