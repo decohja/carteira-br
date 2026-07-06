@@ -2059,6 +2059,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v27.6",d:"Jun/2026",items:[
+    "NOVO: o último preço e DY% confirmados agora ficam salvos DENTRO de cada posição, no Supabase — não só no navegador. Aba anônima nova, outro navegador, outro aparelho: já chega vendo o último valor real, sem 'zerar e ficar buscando' igual antes. Não é uma chamada extra ao banco — viaja junto no mesmo salvamento que já existia",
+    "Variação e Lucro Total também se beneficiam disso — não devem mais zerar por alguns segundos numa sessão nova, já que os preços chegam prontos antes da primeira tela desenhar",
+  ]},
   {v:"v27.5",d:"Jun/2026",items:[
     "CORRIGIDO: campo 'Data de compra' vinha preenchido com a data de HOJE por padrão, o que bloqueava a busca automática de proventos pra qualquer ativo recém-adicionado (só mostrava proventos futuros a partir de hoje). Agora fica em branco por padrão — sem preencher nada, a busca volta a puxar tudo automaticamente, sem exigir ação manual nenhuma",
     "O campo continua existindo, mas 100% opcional — só filtra por data se você preencher de propósito",
@@ -3043,6 +3047,33 @@ function hideRefreshToast(){
   });
 }
 
+// Copia o último preço/DY confirmado ao vivo pra DENTRO de cada posição (ultimoPreco/ultimoDY) —
+// esses campos viajam junto no mesmo salvamento que já fazemos no Supabase. Diferente do cache
+// em localStorage (que só existe NAQUELE navegador), isso fica no banco: uma aba anônima nova,
+// ou o mesmo usuário em outro aparelho, já chega vendo o último valor real, sem começar do zero
+// esperando a busca ao vivo confirmar de novo. Não consome uma chamada extra — é um campo a mais
+// dentro do salvamento que já acontece.
+function sincronizarUltimosValoresConhecidos(){
+  let mudou = false;
+  const syncBR = (list)=>{
+    list.forEach(a=>{
+      if(prices[a.tk]!=null && a.ultimoPreco!==prices[a.tk]){ a.ultimoPreco=prices[a.tk]; mudou=true; }
+      const dy = window._dyBR[a.tk];
+      if(dy!=null && a.ultimoDY!==dy){ a.ultimoDY=dy; mudou=true; }
+    });
+  };
+  const syncUS = (list)=>{
+    list.forEach(s=>{
+      if(s.priceUSD!=null && s.ultimoPreco!==s.priceUSD){ s.ultimoPreco=s.priceUSD; mudou=true; }
+      const dy = window._dyUS[s.tk];
+      if(dy!=null && s.ultimoDY!==dy){ s.ultimoDY=dy; mudou=true; }
+    });
+  };
+  syncBR(D.acoes); syncBR(D.fiis); syncBR(D.bdrs);
+  syncUS(D.etfs); syncUS(D.stocks);
+  if(mudou && currentUser) salvarCarteiraNaNuvem().catch(e=>console.warn("Sync últimos valores:",e));
+}
+
 async function refreshPrices(manual=false){
   if(_refreshing) return;
   _refreshing = true;
@@ -3228,6 +3259,7 @@ async function refreshPrices(manual=false){
       : 'Sem conexão — usando snapshot');
   }
   render();
+  sincronizarUltimosValoresConhecidos();
   } catch(fatalErr) {
     console.error('refreshPrices erro inesperado:', fatalErr);
     setLastUpdText('Erro ao atualizar: ' + fatalErr.message);
@@ -5816,6 +5848,28 @@ function migrarNomesDuplicados(){
     if(mudou) salvarCarteiraNaNuvem();
   }catch(e){ console.warn("Migração de nomes falhou:", e.message); }
 }
+// Preenche prices/_dyBR/_dyUS a partir do "ultimoPreco"/"ultimoDY" salvo em cada posição —
+// funciona mesmo numa sessão 100% nova (aba anônima, outro navegador), porque vem do banco,
+// não do cache do navegador. Roda ANTES de qualquer busca ao vivo, no carregamento inicial.
+function seedPricesDoUltimoConhecido(){
+  window._dyBR = window._dyBR || {};
+  window._dyUS = window._dyUS || {};
+  const seedBR = (list)=>{
+    list.forEach(a=>{
+      if(a.ultimoPreco!=null && prices[a.tk]==null) prices[a.tk]=a.ultimoPreco;
+      if(a.ultimoDY!=null && window._dyBR[a.tk]==null) window._dyBR[a.tk]=a.ultimoDY;
+    });
+  };
+  const seedUS = (list)=>{
+    list.forEach(s=>{
+      if(s.ultimoPreco!=null && !s.priceUSD){ s.priceUSD=s.ultimoPreco; s.prevClose=s.ultimoPreco; }
+      if(s.ultimoDY!=null && window._dyUS[s.tk]==null) window._dyUS[s.tk]=s.ultimoDY;
+    });
+  };
+  seedBR(D.acoes); seedBR(D.fiis); seedBR(D.bdrs);
+  seedUS(D.etfs); seedUS(D.stocks);
+}
+
 async function carregarCarteiraDaNuvem(){
   const rows = await SB.get('portfolio_data', {'user_id':'eq.'+currentUser.id, 'select':'*'});
   if(rows && rows.length){
@@ -5830,6 +5884,7 @@ async function carregarCarteiraDaNuvem(){
     saveCriptoAtivos();
     saveCustomExtra(pd.extra || []);
     carteiraEhSemente = false;
+    seedPricesDoUltimoConhecido(); // usa o último preço/DY salvo no banco — funciona mesmo numa sessão nova, sem cache local nenhum
   } else if(currentUser.email === OWNER_EMAIL){
     // primeiro acesso do DONO — mantém os valores atuais (semente) em memória
     // e oferece um botão para salvar definitivamente na nuvem
