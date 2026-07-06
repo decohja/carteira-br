@@ -2067,6 +2067,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v28.2",d:"Jun/2026",items:[
+    "ACHADO O BUG DE VERDADE do DY de ETF nunca funcionar: eu estava usando o endpoint da Finnhub feito pra AÇÕES (/stock/metric), que não tem esse dado pra ETF de jeito nenhum — não importava quanto tempo esperasse, a fonte estava errada. Troquei pro endpoint certo de ETF (/etf/profile). Não tenho 100% de certeza do nome exato do campo ainda (documentação pública é vaga nisso) — pode precisar de ajuste fino depois de testar",
+  ]},
+  {v:"v28.1",d:"Jun/2026",items:[
+    "SUSPEITA FORTE ENCONTRADA: o carregamento da carteira não pedia a linha mais recente — se existir mais de uma linha salva pro mesmo usuário (upsert duplicando em vez de atualizar), a gente podia estar sempre lendo uma linha antiga. Corrigido: agora sempre pega a mais recente por 'updated_at'. Falta confirmar/limpar no banco (SQL abaixo)",
+  ]},
   {v:"v28.0",d:"Jun/2026",items:[
     "NOVO: se o salvamento da carteira falhar de vez (as duas tentativas), aparece um aviso vermelho na tela mostrando o erro exato — sem precisar abrir console do navegador. Isso vai finalmente mostrar POR QUE alguns saves não estão pegando",
   ]},
@@ -3245,11 +3251,10 @@ async function refreshPrices(manual=false){
     }catch(e){}
   }));
 
-  /* 3b. DY% de Stocks/ETFs EUA via Finnhub — a Brapi não cobre bolsa americana, e esse dado nunca
-        era atualizado ao vivo antes (ficava parado no valor de quando o ativo foi cadastrado) */
+  /* 3b. DY% de Stocks EUA via Finnhub (/stock/metric — feito pra ações individuais) */
   window._dyUS = window._dyUS || {};
-  const stocksEEtfsPrecisamDY = [...D.stocks, ...D.etfs].filter(s=> dyPrecisaTentar(s.tk));
-  await Promise.allSettled(stocksEEtfsPrecisamDY.map(async s=>{
+  const stocksPrecisamDY = D.stocks.filter(s=> dyPrecisaTentar(s.tk));
+  await Promise.allSettled(stocksPrecisamDY.map(async s=>{
     try{
       const j = await corsGetJSON(`https://finnhub.io/api/v1/stock/metric?symbol=${s.tk}&metric=all&token=${FINNHUB_TOKEN}`);
       const dy = j?.metric?.dividendYieldIndicatedAnnual ?? j?.metric?.currentDividendYieldTTM;
@@ -3257,6 +3262,20 @@ async function refreshPrices(manual=false){
       if(dyValido!=null) window._dyUS[s.tk] = dyValido; // Finnhub já retorna em % (ex: 1.5 = 1.5%)
       saveDyCache(s.tk, dyValido); // registra mesmo se null — não retenta antes de 7 dias
     }catch(e){ saveDyCache(s.tk, null); }
+  }));
+
+  /* 3c. DY% de ETFs via Finnhub — endpoint DIFERENTE (/etf/profile). O endpoint de ações
+        (/stock/metric) não tem esse dado pra ETF — por isso nunca funcionava antes, não importa
+        quanto tempo esperasse: era a fonte errada pro tipo de ativo errado. */
+  const etfsPrecisamDY = D.etfs.filter(e=> dyPrecisaTentar(e.tk));
+  await Promise.allSettled(etfsPrecisamDY.map(async e=>{
+    try{
+      const j = await corsGetJSON(`https://finnhub.io/api/v1/etf/profile?symbol=${e.tk}&token=${FINNHUB_TOKEN}`);
+      const dy = j?.profile?.dividendYield ?? j?.dividendYield ?? j?.profile?.yield;
+      const dyValido = (dy!=null && !isNaN(dy)) ? dy : null;
+      if(dyValido!=null) window._dyUS[e.tk] = dyValido;
+      saveDyCache(e.tk, dyValido);
+    }catch(err){ saveDyCache(e.tk, null); }
   }));
 
   // Status
@@ -5898,7 +5917,10 @@ function seedPricesDoUltimoConhecido(){
 }
 
 async function carregarCarteiraDaNuvem(){
-  const rows = await SB.get('portfolio_data', {'user_id':'eq.'+currentUser.id, 'select':'*'});
+  // "order" + "limit" garantem que pegamos a linha MAIS RECENTE — se por algum motivo existir
+  // mais de uma linha pra esse usuário (upsert que duplicou em vez de atualizar), sem isso a
+  // gente podia estar sempre lendo uma linha antiga/errada, ignorando tudo que foi salvo depois.
+  const rows = await SB.get('portfolio_data', {'user_id':'eq.'+currentUser.id, 'select':'*', 'order':'updated_at.desc', 'limit':'1'});
   if(rows && rows.length){
     const pd = rows[0];
     D.acoes  = pd.acoes  && pd.acoes.length  ? pd.acoes  : [];
