@@ -961,7 +961,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <div class="home-grid">
     <div>
       <div class="st-hl st-hl-big gold">Ativos na carteira</div>
-      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;max-width:620px;width:fit-content"></div>
+      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;max-width:700px;width:fit-content"></div>
     </div>
     <div class="home-side">
       <div>
@@ -975,7 +975,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </div>
   </div>
   <div class="st-hl gold" style="margin-top:18px">Atual vs. Meta por classe</div>
-  <div class="bx" id="metaBarChartHome" style="margin-top:8px;max-width:620px;width:fit-content"></div>
+  <div class="bx" id="metaBarChartHome" style="margin-top:8px;max-width:700px;width:fit-content"></div>
 </section>
 
 <!-- METAS DE ALOCAÇÃO (painel próprio, igual Ações/FIIs) -->
@@ -1011,7 +1011,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <span><span class="meta-gap-dot" style="background:var(--gold);margin:0 5px 0 0"></span>Acima da meta</span>
   </div>
   <div class="st-hl gold" style="margin-top:18px">Atual vs. Meta por classe</div>
-  <div id="metaBarChartMetas" style="margin-top:8px;max-width:620px;width:fit-content"></div>
+  <div id="metaBarChartMetas" style="margin-top:8px;max-width:700px;width:fit-content"></div>
 </section>
 
 <!-- RESERVA E CAIXA (painel próprio, igual Ações/FIIs) -->
@@ -2104,6 +2104,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v29.6",d:"Jul/2026",items:[
+    "CORRIGIDO: gráfico 'Atual vs. Meta por classe' mostrava classes zeradas (BDRs 0%, Cripto 0%) que não fazem sentido ali — agora só entram classes com algo investido, igual o gráfico 'Ativos na Carteira' já fazia",
+    "CORRIGIDO o vazamento da legenda pra fora da caixa branca: o código escrevia a rosca e a legenda em duas etapas separadas (rosca primeiro, legenda populada depois) — isso fazia a caixa calcular a largura antes da legenda existir, e ela aparecia fora do card, sem fundo. Agora escreve tudo de uma vez só. Caixa também alargada (620px → 700px) pra rosca+legenda caberem lado a lado sem quebrar linha",
+  ]},
   {v:"v29.5",d:"Jul/2026",items:[
     "Rosca redesenhada do zero — mais grossa, mais 'de lado' (rotateX de 48° pra 64°), sombra mais forte pra dar profundidade de verdade. Virou um componente único (`buildDonut3D`) reaproveitado nos dois lugares que mostram composição por classe: 'Ativos na Carteira' (home) e 'Atual vs. Meta por classe' — antes eram dois desenhos de rosca diferentes (um grosso 3D, outro fino e chapado), agora é a mesma marca visual nos dois. Sem cantos arredondados dentro do desenho (as fatias sempre se encontraram com corte reto — nunca foi round, mas a versão anterior do gráfico Atual/Meta usava round e por isso aparecia aquela bolinha sobrando quando uma classe tinha valor muito pequeno). Caixas de 'Ativos na Carteira' e 'Atual vs. Meta' com a mesma régua de largura nos dois lugares onde aparecem",
   ]},
@@ -3540,21 +3544,26 @@ function gapTier(pctAtual, pctMeta){
 // não empurram as colunas seguintes). Cor do valor Atual segue o mesmo tier (abaixo/OK/acima da
 // meta) usado na tabela de Metas de Alocação (var(--neg)/var(--muted)/var(--gold)) — mesmo padrão,
 // sem emoji. Reaproveitada na home e em Metas de Alocação (mesmo componente, só muda o container).
+// Rosca 3D (mesmo componente de "Ativos na Carteira") — composição Atual por classe — com legenda
+// ao lado em GRID (colunas retas de verdade). Classes com valor zero (nada investido ainda) são
+// excluídas do gráfico e da legenda — não fazem sentido aparecer com "0.0%". Cor do valor Atual
+// segue o mesmo tier (abaixo/OK/acima da meta) usado na tabela de Metas de Alocação. Escreve o
+// HTML inteiro (rosca + legenda) numa única atribuição — escrever em duas etapas (rosca primeiro,
+// legenda depois) fazia a caixa branca calcular a largura ANTES da legenda existir, jogando ela
+// pra fora do card. Reaproveitada na home e em Metas de Alocação (mesmo componente).
 function mkMetaBarChart(containerId){
   const el = document.getElementById(containerId);
   if(!el) return;
   const {metas, classes, total} = computeMetasAlocData();
-  const legId = containerId+'-leg';
-  const donutHTML = buildDonut3D(classes.map(c=>({
+  const comAtivo = classes.filter(c=>c.val>0);
+  if(!comAtivo.length){
+    el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">Adicione ativos pra ver Atual vs. Meta aqui.</div>`;
+    return;
+  }
+  const donutHTML = buildDonut3D(comAtivo.map(c=>({
     label:c.name, v:c.val, c:CLASSE_COLORS[c.id]||"var(--gold)", onclick:`goTab('${CLASSE_TABS[c.id]||'visao'}')`
   })), {showLabels:false});
-  el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;justify-content:flex-start">
-      ${donutHTML}
-      <div id="${legId}" style="display:grid;grid-template-columns:11px auto 54px 10px 54px 14px;align-items:center;column-gap:8px;row-gap:9px"></div>
-    </div>`;
-  const leg = document.getElementById(legId);
-  leg.innerHTML = classes.map(c=>{
+  const legendaHTML = comAtivo.map(c=>{
     const atual = total>0 ? c.val/total*100 : 0;
     const meta = metas[c.id]||0;
     const color = CLASSE_COLORS[c.id]||"var(--gold)";
@@ -3567,6 +3576,11 @@ function mkMetaBarChart(containerId){
     <span style="font-family:var(--mono);color:var(--muted);text-align:right;font-size:12px">${meta.toFixed(1)}%</span>
     <span style="width:7px;height:7px;border-radius:50%;background:${tier.dot};justify-self:center" title="${tier.label}"></span>`;
   }).join("");
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;justify-content:flex-start">
+      ${donutHTML}
+      <div style="display:grid;grid-template-columns:11px auto 54px 10px 54px 14px;align-items:center;column-gap:8px;row-gap:9px">${legendaHTML}</div>
+    </div>`;
 }
 
 function computeMetasAlocData(){
