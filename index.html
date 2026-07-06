@@ -1467,36 +1467,65 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
 <!-- Modal: Adicionar Renda Fixa -->
 <div class="mbg" id="modAddRF" onclick="if(event.target===this)closeAddRF()">
-  <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:440px">
     <div class="m-title">
       <span>Adicionar Renda Fixa</span>
       <button class="m-close" onclick="closeAddRF()">×</button>
     </div>
     <div class="form-group" style="margin-bottom:10px">
-      <label class="flbl">Tipo de título</label>
-      <select class="fsel" id="rfTipo" onchange="onRfTipoChange()">
-        <option>Tesouro IPCA+</option>
-        <option>Tesouro Selic</option>
-        <option>Tesouro Prefixado</option>
-        <option>CDB</option>
-        <option>LCI/LCA</option>
-        <option>Outro</option>
+      <label class="flbl">Categoria</label>
+      <select class="fsel" id="rfCategoria" onchange="onRfCategoriaChange()">
+        <option value="tesouro">Tesouro Direto</option>
+        <option value="cdb">CDB</option>
+        <option value="lci_lca">LCI / LCA</option>
+        <option value="outro">Outro</option>
       </select>
     </div>
-    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div id="rfBancoRow">
-        <label class="flbl">Banco/Corretora</label>
+
+    <div class="form-group" id="rfTituloTesouroRow" style="margin-bottom:10px">
+      <label class="flbl">Título do Tesouro</label>
+      <select class="fsel" id="rfTituloTesouro" onchange="onRfTituloTesouroChange()"></select>
+    </div>
+
+    <div class="form-row" id="rfEmissorRow" style="display:none;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <label class="flbl">Emissor / Banco</label>
         <input class="finp" id="rfBanco" placeholder="Ex: XP, Nubank…"/>
       </div>
       <div>
-        <label class="flbl">Vencimento <span style="color:var(--faint);font-weight:400">(opcional)</span></label>
-        <input class="finp" id="rfVenc" placeholder="Ex: 2029"/>
+        <label class="flbl">Indexador</label>
+        <select class="fsel" id="rfIndexador">
+          <option value="IPCA+">IPCA+</option>
+          <option value="CDI">% do CDI</option>
+          <option value="Prefixado">Prefixado</option>
+        </select>
       </div>
     </div>
-    <div class="form-group" style="margin-bottom:10px">
-      <label class="flbl">Taxa contratada</label>
-      <input class="finp" id="rfTaxa" placeholder="Ex: IPCA+7,06% a.a. ou 118% CDI"/>
+
+    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <label class="flbl" id="rfTaxaLabel">Taxa contratada</label>
+        <input class="finp" id="rfTaxa" placeholder="Ex: IPCA+7,06%"/>
+      </div>
+      <div>
+        <label class="flbl">Vencimento</label>
+        <input class="finp" id="rfVenc" type="date"/>
+      </div>
     </div>
+
+    <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <label class="flbl">Data da compra <span style="color:var(--faint);font-weight:400">(opcional)</span></label>
+        <input class="finp" id="rfDataCompra" type="date"/>
+      </div>
+      <div style="display:flex;align-items:flex-end;padding-bottom:2px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text);cursor:pointer">
+          <input type="checkbox" id="rfLiquidezDiaria" style="width:16px;height:16px;cursor:pointer"/>
+          Liquidez diária
+        </label>
+      </div>
+    </div>
+
     <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div>
         <label class="flbl">Valor investido (R$)</label>
@@ -2128,6 +2157,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v30.1",d:"Jul/2026",items:[
+    "Formulário de Renda Fixa reformulado (sem depender de API): agora começa por Categoria (Tesouro Direto / CDB / LCI-LCA / Outro). Escolhendo Tesouro Direto, aparece uma lista curada com ~20 títulos reais (Selic, IPCA+, IPCA+ com juros, Prefixado, Prefixado com juros, RendA+, Educa+) — ao escolher um, o vencimento já vem preenchido e o campo de taxa mostra um exemplo do indexador certo. Para CDB/LCI/LCA, aparecem campos de Emissor/Banco e Indexador (IPCA+/CDI/Prefixado). Novos campos em todos: vencimento (data), data da compra (opcional) e liquidez diária (marcador). Na tabela, cada título agora mostra taxa + vencimento formatado e um selo 'liquidez diária' quando marcado",
+    "Compatível com o que já existe: a estrutura salva (titulo, tipo, cotas, inv, bruto, taxa) continua igual — os campos novos (indexador, venc, dataCompra, liquidezDiaria) são adicionais, então títulos antigos seguem funcionando sem migração. A taxa continua preenchida por você (muda todo dia e depende do momento da sua compra — não dá pra chutar automaticamente)",
+  ]},
   {v:"v30.0",d:"Jul/2026",items:[
     "CORRIGIDO o menu do botão '+' que aparecia cortado/escondido: a barra de cards tem rolagem horizontal (overflow), que recortava o menu ao descer pra fora dela. Agora o menu é desenhado por cima de tudo (preso à tela, não à barra), então aparece inteiro. Se estiver perto da borda direita, ele se alinha pela direita pra não sair da tela",
     "Classes que já estão na carteira não aparecem mais na lista do '+' — antes mostravam 'já na carteira' como aviso; agora simplesmente não entram na lista (não faz sentido 'adicionar classe' que já existe; pra comprar mais, use o botão + dentro da própria aba). Se todas já estiverem na carteira, o menu avisa que não há mais o que adicionar",
@@ -4880,7 +4913,10 @@ function renderRF(){
   D.rf.forEach((r,i)=>{
     const ganho=r.bruto-r.inv;
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td><div class="tk" style="font-size:12px">${r.titulo}</div><div class="co">${r.taxa||"—"}</div></td>
+    const vencFmt = r.venc ? (()=>{ const [a,m,d]=r.venc.split("-"); return d&&m&&a?`venc. ${d}/${m}/${a}`:""; })() : "";
+    const subInfo = [r.taxa&&r.taxa!=="—"?r.taxa:"", vencFmt].filter(Boolean).join(" · ") || "—";
+    const liqSelo = r.liquidezDiaria ? ` <span style="font-size:8.5px;color:var(--pos);border:1px solid var(--pos);border-radius:3px;padding:0 3px;vertical-align:middle">liquidez diária</span>` : "";
+    tr.innerHTML=`<td><div class="tk" style="font-size:12px">${r.titulo}${liqSelo}</div><div class="co">${subInfo}</div></td>
       <td class="r">${r.cotas}</td><td class="r">${brl(r.inv,2)}</td>
       <td class="r">${brl(r.bruto,2)}</td>
       <td class="r" style="color:${ganho>=0?"var(--pos)":"var(--neg)"}">${sgn(ganho)}${brl(Math.abs(ganho),2)}</td>
@@ -4966,39 +5002,97 @@ async function atualizarIndicadoresMacroRF(){
 }
 
 /* ── Adicionar Renda Fixa ─────────────────── */
-function onRfTipoChange(){
-  const tipo=document.getElementById("rfTipo").value;
-  const bancoRow=document.getElementById("rfBancoRow");
-  const vencDiv=document.getElementById("rfVenc").parentElement;
-  const ehTesouro=tipo.startsWith("Tesouro");
-  bancoRow.style.display=ehTesouro?"none":"block";
-  vencDiv.style.gridColumn=ehTesouro?"1/-1":"auto";
+// Lista curada de títulos do Tesouro Direto (sem API — atualizar manualmente conforme o Tesouro
+// lança/retira papéis). Cada título já traz o tipo, o indexador e um vencimento sugerido. A taxa
+// NÃO entra aqui de propósito: ela muda todo dia e depende do momento da compra do usuário — quem
+// preenche é ele, com a taxa que contratou. Estrutura salva em D.rf continua a mesma
+// ({titulo, tipo, cotas, inv, bruto, taxa, ...}), então nada quebra no que já existe.
+const TESOURO_TITULOS = [
+  {label:"Tesouro Selic 2027",        tipo:"Tesouro Selic",     idx:"Selic",     venc:"2027-03-01"},
+  {label:"Tesouro Selic 2029",        tipo:"Tesouro Selic",     idx:"Selic",     venc:"2029-03-01"},
+  {label:"Tesouro Selic 2031",        tipo:"Tesouro Selic",     idx:"Selic",     venc:"2031-03-01"},
+  {label:"Tesouro IPCA+ 2029",        tipo:"Tesouro IPCA+",     idx:"IPCA+",     venc:"2029-05-15"},
+  {label:"Tesouro IPCA+ 2035",        tipo:"Tesouro IPCA+",     idx:"IPCA+",     venc:"2035-05-15"},
+  {label:"Tesouro IPCA+ 2045",        tipo:"Tesouro IPCA+",     idx:"IPCA+",     venc:"2045-05-15"},
+  {label:"Tesouro IPCA+ 2050",        tipo:"Tesouro IPCA+",     idx:"IPCA+",     venc:"2050-05-15"},
+  {label:"Tesouro IPCA+ c/ Juros 2032",tipo:"Tesouro IPCA+",    idx:"IPCA+",     venc:"2032-08-15"},
+  {label:"Tesouro IPCA+ c/ Juros 2040",tipo:"Tesouro IPCA+",    idx:"IPCA+",     venc:"2040-08-15"},
+  {label:"Tesouro IPCA+ c/ Juros 2055",tipo:"Tesouro IPCA+",    idx:"IPCA+",     venc:"2055-05-15"},
+  {label:"Tesouro Prefixado 2027",    tipo:"Tesouro Prefixado", idx:"Prefixado", venc:"2027-01-01"},
+  {label:"Tesouro Prefixado 2029",    tipo:"Tesouro Prefixado", idx:"Prefixado", venc:"2029-01-01"},
+  {label:"Tesouro Prefixado 2031",    tipo:"Tesouro Prefixado", idx:"Prefixado", venc:"2031-01-01"},
+  {label:"Tesouro Prefixado c/ Juros 2033",tipo:"Tesouro Prefixado",idx:"Prefixado",venc:"2033-01-01"},
+  {label:"Tesouro Prefixado c/ Juros 2035",tipo:"Tesouro Prefixado",idx:"Prefixado",venc:"2035-01-01"},
+  {label:"Tesouro RendA+ 2030",       tipo:"Tesouro RendA+",    idx:"IPCA+",     venc:"2030-12-15"},
+  {label:"Tesouro RendA+ 2040",       tipo:"Tesouro RendA+",    idx:"IPCA+",     venc:"2040-12-15"},
+  {label:"Tesouro RendA+ 2065",       tipo:"Tesouro RendA+",    idx:"IPCA+",     venc:"2065-12-15"},
+  {label:"Tesouro Educa+ 2030",       tipo:"Tesouro Educa+",    idx:"IPCA+",     venc:"2030-12-15"},
+  {label:"Tesouro Educa+ 2042",       tipo:"Tesouro Educa+",    idx:"IPCA+",     venc:"2042-12-15"},
+];
+
+function onRfCategoriaChange(){
+  const cat=document.getElementById("rfCategoria").value;
+  const ehTesouro = cat==="tesouro";
+  document.getElementById("rfTituloTesouroRow").style.display = ehTesouro?"block":"none";
+  document.getElementById("rfEmissorRow").style.display = ehTesouro?"none":"grid";
+  if(ehTesouro) onRfTituloTesouroChange();
+}
+function onRfTituloTesouroChange(){
+  const sel=document.getElementById("rfTituloTesouro");
+  const t=TESOURO_TITULOS[sel.selectedIndex];
+  if(!t) return;
+  // Preenche o vencimento sugerido e o rótulo da taxa conforme o indexador do papel escolhido
+  document.getElementById("rfVenc").value=t.venc;
+  const taxaInp=document.getElementById("rfTaxa");
+  taxaInp.placeholder = t.idx==="Selic" ? "Ex: Selic + 0,10%" : t.idx==="IPCA+" ? "Ex: IPCA+ 6,50%" : "Ex: 12,80% a.a.";
 }
 function openAddRF(){
-  document.getElementById("rfTipo").value="Tesouro IPCA+";
+  document.getElementById("rfCategoria").value="tesouro";
+  const sel=document.getElementById("rfTituloTesouro");
+  sel.innerHTML=TESOURO_TITULOS.map(t=>`<option>${t.label}</option>`).join("");
+  sel.selectedIndex=0;
   document.getElementById("rfBanco").value="";
+  document.getElementById("rfIndexador").value="IPCA+";
   document.getElementById("rfVenc").value="";
   document.getElementById("rfTaxa").value="";
+  document.getElementById("rfDataCompra").value="";
+  document.getElementById("rfLiquidezDiaria").checked=false;
   document.getElementById("rfInv").value="";
   document.getElementById("rfBruto").value="";
-  onRfTipoChange();
+  onRfCategoriaChange();
   document.getElementById("modAddRF").classList.add("open");
 }
 function closeAddRF(){ document.getElementById("modAddRF").classList.remove("open"); }
 async function confirmarAddRF(){
-  const tipo=document.getElementById("rfTipo").value;
-  const banco=document.getElementById("rfBanco").value.trim();
-  const venc=document.getElementById("rfVenc").value.trim();
-  const taxa=document.getElementById("rfTaxa").value.trim()||"—";
+  const cat=document.getElementById("rfCategoria").value;
+  const ehTesouro = cat==="tesouro";
   const inv=parseFloat(document.getElementById("rfInv").value)||0;
   let bruto=parseFloat(document.getElementById("rfBruto").value)||0;
   if(!inv){ alert("Preencha o valor investido."); return; }
   if(inv<0 || bruto<0){ alert("Valores não podem ser negativos. Corrija antes de continuar."); return; }
   if(!bruto) bruto=inv;
-  let titulo=tipo;
-  if(venc) titulo+=" "+venc;
-  if(banco && !tipo.startsWith("Tesouro")) titulo+=" — "+banco;
-  D.rf.push({titulo,tipo,cotas:1,inv,bruto,taxa});
+
+  const taxa=document.getElementById("rfTaxa").value.trim()||"—";
+  const venc=document.getElementById("rfVenc").value.trim(); // yyyy-mm-dd
+  const dataCompra=document.getElementById("rfDataCompra").value.trim();
+  const liquidezDiaria=document.getElementById("rfLiquidezDiaria").checked;
+  const vencAno = venc ? venc.slice(0,4) : "";
+
+  let titulo, tipo, indexador;
+  if(ehTesouro){
+    const t=TESOURO_TITULOS[document.getElementById("rfTituloTesouro").selectedIndex];
+    titulo=t.label; tipo=t.tipo; indexador=t.idx;
+  } else {
+    const banco=document.getElementById("rfBanco").value.trim();
+    indexador=document.getElementById("rfIndexador").value;
+    tipo = cat==="cdb" ? "CDB" : cat==="lci_lca" ? "LCI/LCA" : "Outro";
+    titulo=tipo;
+    if(vencAno) titulo+=" "+vencAno;
+    if(banco) titulo+=" — "+banco;
+  }
+  // Mantém os campos históricos (titulo, tipo, cotas, inv, bruto, taxa) + novos campos opcionais.
+  // Campos novos são aditivos: versões antigas de leitura simplesmente ignoram o que não conhecem.
+  D.rf.push({titulo,tipo,cotas:1,inv,bruto,taxa,indexador,venc,dataCompra,liquidezDiaria});
   closeAddRF();
   render();
   if(currentUser){
