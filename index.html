@@ -335,6 +335,26 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 @keyframes staleSpin{to{transform:rotate(360deg)}}
 @keyframes liveDotPulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.45)}50%{opacity:.65;box-shadow:0 0 0 4px rgba(34,197,94,0)}}
 .dcard-info .dn-sub+.dn-sub{margin-top:1px}
+/* Botão "+" compacto na esquerda da barra de cards + menu de classes */
+.dcard-add{flex-shrink:0;position:relative;width:44px;min-width:44px;align-self:stretch;
+  background:var(--bg3);border:1px dashed var(--border2);border-radius:var(--r);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:border-color .15s,background .15s,transform .15s;scroll-snap-align:start;padding:0}
+.dcard-add:hover{border-color:var(--gold);background:var(--gold-bg);transform:translateY(-1px)}
+.dcard-add-plus{font-size:22px;font-weight:400;color:var(--muted);line-height:1}
+.dcard-add:hover .dcard-add-plus{color:var(--gold)}
+.dcard-add-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:50;
+  background:var(--card);border:1px solid var(--border2);border-radius:var(--r);
+  box-shadow:0 8px 24px rgba(0,0,0,.18);padding:5px;min-width:180px;
+  display:flex;flex-direction:column;gap:1px;cursor:default}
+.dcard-add-menu-hd{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);padding:5px 8px 6px}
+.dcard-add-opt{display:flex;align-items:center;gap:8px;width:100%;text-align:left;
+  background:none;border:none;border-radius:6px;padding:8px 8px;cursor:pointer;
+  font-size:13px;color:var(--text);transition:background .12s}
+.dcard-add-opt:hover{background:var(--bg3)}
+.dcard-add-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.dcard-add-ja{margin-left:auto;font-size:9.5px;color:var(--muted);font-style:italic}
 
 /* ─── CONTENT ────────────────────────── */
 .content{max-width:1300px;margin:0 auto;padding:16px 18px 80px}
@@ -2109,6 +2129,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v29.9",d:"Jul/2026",items:[
+    "NOVO na barra de cards do topo: agora só aparecem cards das classes que você realmente tem (com valor cadastrado) — classes zeradas não poluem mais a barra. Na esquerda tem um botão '+' compacto que, ao clicar, vira a lista das classes disponíveis pra adicionar (Ações BR, BDRs, FIIs, Renda Fixa, ETFs, Stocks, Cripto) ali mesmo na barra; escolhendo uma, abre o fluxo de adicionar daquela classe, e ela vira card quando você salvar algum valor. 'Metas de Alocação' e 'Reserva e Caixa' continuam fixos, sempre visíveis no fim da barra. Numa conta nova, a barra mostra só o '+' e esses dois cards fixos",
+    "De passagem, corrigido o resumo 'X/Y classes na meta' do card Metas de Alocação, que sempre mostrava 0 (comparava com um rótulo de status que não existia mais)",
+  ]},
   {v:"v29.8",d:"Jul/2026",items:[
     "Home reorganizada num grid de 2 colunas de largura IGUAL (50/50), e cada caixa agora preenche 100% da largura da sua coluna — antes cada caixa usava 'width:fit-content', então cada uma tinha um tamanho diferente conforme o conteúdo e nada fechava alinhado. Agora as bordas das caixas casam: 'Ativos na carteira' + 'Atual vs. Meta' empilhados na esquerda; 'Maiores posições' + 'Evolução' na direita, tudo com a mesma largura por coluna e topos alinhados. Conteúdo interno (rosca + legenda) centralizado, sem mais o vão branco vazio à direita",
   ]},
@@ -3964,6 +3988,62 @@ function g(id){return document.getElementById(id)}
 function setHS(id,v,dec2){const el=g(id);if(el){el.textContent=sgn(v)+brl(Math.abs(v),dec2?2:0);el.className="hs "+(v>=0?"pos":"neg")}}
 
 /* donuts strip */
+// Botão "+" compacto na esquerda da barra de cards. Ao clicar, o próprio botão vira uma lista das
+// classes que dá pra adicionar (as 7 classes de ativo). Escolhendo uma, abre o fluxo de adicionar
+// daquela classe — Renda Fixa tem fluxo próprio (openAddRF), as demais usam openAddAtivo(tipo). A
+// classe só vira card fixo na barra depois que o usuário salva algum valor nela (renderDonuts filtra
+// por valor > 0). Clicar fora fecha a lista.
+const ADD_CLASS_OPCOES=[
+  {tab:"acoes", name:"Ações BR", c:"#F59E0B"},
+  {tab:"bdrs",  name:"BDRs",     c:"#6366F1"},
+  {tab:"fiis",  name:"FIIs",     c:"#A78BFA"},
+  {tab:"rf",    name:"Renda Fixa",c:"#3B82F6"},
+  {tab:"etfs",  name:"ETFs",     c:"#14B8A6"},
+  {tab:"stocks",name:"Stocks",   c:"#EC4899"},
+  {tab:"cripto",name:"Cripto",   c:"#EF4444"},
+];
+function abrirAddClasse(tab){
+  fecharAddClasseMenu();
+  if(tab==="rf"){ goTab("rf"); openAddRF(); }
+  else { goTab(tab); openAddAtivo(tab); }
+}
+function fecharAddClasseMenu(){
+  const m=document.getElementById("addClassMenu");
+  if(m) m.remove();
+  document.removeEventListener("click", _addClasseOutside, true);
+}
+function _addClasseOutside(e){
+  const m=document.getElementById("addClassMenu");
+  if(m && !m.contains(e.target)) fecharAddClasseMenu();
+}
+function makeAddClassBtn(classItems){
+  const btn=document.createElement("button");
+  btn.className="dcard-add";
+  btn.type="button";
+  btn.title="Adicionar classe de ativo";
+  btn.setAttribute("aria-label","Adicionar classe de ativo");
+  btn.innerHTML=`<span class="dcard-add-plus">＋</span>`;
+  btn.onclick=(e)=>{
+    e.stopPropagation();
+    if(document.getElementById("addClassMenu")){ fecharAddClasseMenu(); return; }
+    const menu=document.createElement("div");
+    menu.id="addClassMenu";
+    menu.className="dcard-add-menu";
+    menu.innerHTML=`<div class="dcard-add-menu-hd">Adicionar classe</div>`+
+      ADD_CLASS_OPCOES.map(o=>{
+        const jaTem = classItems.find(ci=>ci.tab===o.tab && ci.tot>0);
+        return `<button type="button" class="dcard-add-opt" onclick="abrirAddClasse('${o.tab}')">
+          <span class="dcard-add-dot" style="background:${o.c}"></span>
+          <span>${o.name}</span>
+          ${jaTem?'<span class="dcard-add-ja">já na carteira</span>':''}
+        </button>`;
+      }).join("");
+    btn.appendChild(menu);
+    setTimeout(()=>document.addEventListener("click", _addClasseOutside, true),0);
+  };
+  return btn;
+}
+
 function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFiis,lucroTotalPortfolio,totBdrs,lucroBdrs){
   const strip=g("dstrip"); strip.innerHTML="";
   const lucroETF2=D.etfs.reduce((s,e)=>s+e.lucro,0)*usdBRL;
@@ -3983,36 +4063,47 @@ function renderDonuts(totAcoes,totFiis,pct,meta,totETF,totSTK,lucroAcoes,lucroFi
   classesResumo.forEach(c=>{
     const pctC = totalResumo>0 ? c.val/totalResumo*100 : 0;
     const tier = gapTier(pctC, metasResumo[c.id]||0);
-    if(tier.label==="Na meta") classesNaMeta++;
+    if(tier.label.startsWith("OK")) classesNaMeta++;
   });
   const totalReservaCaixa = getAllExtra().reduce((s,c)=>s+c.v,0);
-  const items=[
-    {name:"Ações BR",val:brl(totAcoes,2),
+  // Cards de CLASSE DE ATIVO — só entram na barra quando têm valor cadastrado. Classe zerada não
+  // vira card; o usuário adiciona pelo botão "+" (que lista as classes disponíveis). Metas de
+  // Alocação e Reserva e Caixa NÃO estão aqui: são fixos e sempre aparecem no fim da barra.
+  const classItems=[
+    {name:"Ações BR",val:brl(totAcoes,2),tot:totAcoes,
       sub2:sgn(lucroAcoes)+brl(Math.abs(lucroAcoes),2),sub2cls:lucroAcoes>=0?"pos":"neg",
       pct:pctOf(totAcoes),c:"#F59E0B",tab:"acoes"},
-    {name:"BDRs",val:brl(totBdrs,2),
+    {name:"BDRs",val:brl(totBdrs,2),tot:totBdrs,
       sub2:sgn(lucroBdrs)+brl(Math.abs(lucroBdrs),2),sub2cls:lucroBdrs>=0?"pos":"neg",
       pct:pctOf(totBdrs),c:"#6366F1",tab:"bdrs"},
-    {name:"FIIs",val:brl(totFiis,2),
+    {name:"FIIs",val:brl(totFiis,2),tot:totFiis,
       sub2:sgn(lucroFiis)+brl(Math.abs(lucroFiis),2),sub2cls:lucroFiis>=0?"pos":"neg",
       pct:pctOf(totFiis),c:"#A78BFA",tab:"fiis"},
-    {name:"Renda Fixa",val:brl(totRF,2),
+    {name:"Renda Fixa",val:brl(totRF,2),tot:totRF,
       sub2:sgn(lucroRF)+brl(Math.abs(lucroRF),2),sub2cls:lucroRF>=0?"pos":"neg",pct:pctOf(totRF),c:"#3B82F6",tab:"rf"},
-    {name:"ETFs",val:usd(D.etfs.reduce((s,e)=>s+e.atual,0)),
+    {name:"ETFs",val:usd(D.etfs.reduce((s,e)=>s+e.atual,0)),tot:totETF,
       sub:brl(totETF,2),sub2:sgn(lucroETF2)+brl(Math.abs(lucroETF2),2),sub2cls:lucroETF2>=0?"pos":"neg",
       pct:pctOf(totETF),c:"#14B8A6",tab:"etfs"},
-    {name:"Stocks",val:usd(D.stocks.reduce((s,s2)=>s+s2.atual,0)),
+    {name:"Stocks",val:usd(D.stocks.reduce((s,s2)=>s+s2.atual,0)),tot:totSTK,
       sub:brl(totSTK,2),sub2:sgn(lucroSTK2)+brl(Math.abs(lucroSTK2),2),sub2cls:lucroSTK2>=0?"pos":"neg",
       pct:pctOf(totSTK),c:"#EC4899",tab:"stocks"},
-    {name:"Cripto",val:brl(totCripto,2),
+    {name:"Cripto",val:brl(totCripto,2),tot:totCripto,
       sub2:sgn(lucroCripto2)+brl(Math.abs(lucroCripto2),2),sub2cls:lucroCripto2>=0?"pos":"neg",
       pct:Math.min(100,pctOf(totCripto)),c:"#EF4444",tab:"cripto"},
+  ];
+  // Cards fixos — sempre presentes, independente de ter valor
+  const fixedItems=[
     {name:"Metas de Alocação",val:totalResumo>0?brl(totalResumo,2):"—",
       sub:totalMetaConfigResumo===0?"não configurada":`${classesNaMeta}/${classesResumo.length} classes na meta`,sub2cls:"gold",
       pct:classesResumo.length>0?(classesNaMeta/classesResumo.length*100):0,c:"var(--gold)",tab:"metasaloc"},
     {name:"Reserva e Caixa",val:brl(totalReservaCaixa,2),
       sub:"fora do patrimônio investido",pct:totalReservaCaixa>0?100:0,c:"#22C55E",tab:"reserva"},
   ];
+  const items=[...classItems.filter(it=>it.tot>0), ...fixedItems];
+
+  // Botão "+" compacto na esquerda — vira a lista de classes disponíveis ali mesmo na barra
+  strip.appendChild(makeAddClassBtn(classItems));
+
   items.forEach(it=>{
     const p=Math.min(100,it.pct), R=22, circ=2*Math.PI*R, dash=circ*p/100, gap=circ-dash, sz=R*2+8, cxy=R+4;
     const svg=`<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" style="flex-shrink:0">
