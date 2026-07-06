@@ -2067,6 +2067,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v28.3",d:"Jun/2026",items:[
+    "DY de ETF trocado de vez pro Yahoo — parei de tentar adivinhar o campo certo da Finnhub sem conseguir testar ao vivo. Yahoo é a MESMA fonte que já usamos com sucesso pro preço de ETF e pro DY de Ações BR — calcula manualmente (soma dividendos 12 meses ÷ preço atual), sem depender de nome de campo nenhum de API que eu não consigo verificar",
+  ]},
   {v:"v28.2",d:"Jun/2026",items:[
     "ACHADO O BUG DE VERDADE do DY de ETF nunca funcionar: eu estava usando o endpoint da Finnhub feito pra AÇÕES (/stock/metric), que não tem esse dado pra ETF de jeito nenhum — não importava quanto tempo esperasse, a fonte estava errada. Troquei pro endpoint certo de ETF (/etf/profile). Não tenho 100% de certeza do nome exato do campo ainda (documentação pública é vaga nisso) — pode precisar de ajuste fino depois de testar",
   ]},
@@ -3264,15 +3267,24 @@ async function refreshPrices(manual=false){
     }catch(e){ saveDyCache(s.tk, null); }
   }));
 
-  /* 3c. DY% de ETFs via Finnhub — endpoint DIFERENTE (/etf/profile). O endpoint de ações
-        (/stock/metric) não tem esse dado pra ETF — por isso nunca funcionava antes, não importa
-        quanto tempo esperasse: era a fonte errada pro tipo de ativo errado. */
+  /* 3c. DY% de ETFs via YAHOO — não Finnhub. Não consigo testar ao vivo a resposta exata da
+        Finnhub pra ETF (endpoint /etf/profile), e já apanhamos demais tentando adivinhar o nome
+        do campo. Troquei pra fonte que JÁ SABEMOS que funciona (mesmo endpoint usado com sucesso
+        pro preço de ETF e pro DY de Ações BR): calcula manualmente, soma dividendos dos últimos
+        12 meses ÷ preço atual. */
   const etfsPrecisamDY = D.etfs.filter(e=> dyPrecisaTentar(e.tk));
   await Promise.allSettled(etfsPrecisamDY.map(async e=>{
     try{
-      const j = await corsGetJSON(`https://finnhub.io/api/v1/etf/profile?symbol=${e.tk}&token=${FINNHUB_TOKEN}`);
-      const dy = j?.profile?.dividendYield ?? j?.dividendYield ?? j?.profile?.yield;
-      const dyValido = (dy!=null && !isNaN(dy)) ? dy : null;
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${e.tk}?range=1y&interval=1d&events=div`;
+      const j = await corsGetJSON(url);
+      const result = j?.chart?.result?.[0];
+      const divEvents = result?.events?.dividends;
+      const precoAtual = e.priceUSD || result?.meta?.regularMarketPrice;
+      let dyValido = null;
+      if(divEvents && precoAtual>0){
+        const totalDividendos = Object.values(divEvents).reduce((acc,d)=>acc+(d.amount||0),0);
+        if(totalDividendos>0) dyValido = (totalDividendos/precoAtual)*100;
+      }
       if(dyValido!=null) window._dyUS[e.tk] = dyValido;
       saveDyCache(e.tk, dyValido);
     }catch(err){ saveDyCache(e.tk, null); }
