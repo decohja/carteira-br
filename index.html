@@ -2104,6 +2104,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v29.3",d:"Jul/2026",items:[
+    "Ajustado o gráfico 'Atual vs. Meta por classe': voltou a ser UMA rosca só (composição Atual), com a legenda ao lado mostrando 'Atual% / Meta%' por classe e um ⚠ quando a classe está fora da tolerância de ±3 pontos. As duas roscas lado a lado da v29.2 ficaram poluídas — este layout é mais limpo, no estilo indicado",
+  ]},
   {v:"v29.2",d:"Jul/2026",items:[
     "Gráfico 'Atual vs. Meta por classe' trocado de barras pareadas para roscas — duas roscas lado a lado (Atual e Meta), no mesmo padrão visual de rosca usado no resto do app (Ações, FIIs, Stocks, Renda Fixa), com legenda combinada mostrando % Atual, % Meta e um ponto colorido indicando se está abaixo/dentro/acima da tolerância. Também movido para a parte de baixo em ambos os lugares: na Home, agora fica embaixo do grid (largura cheia), abaixo de Maiores Posições e Evolução; em Metas de Alocação, agora fica abaixo da tabela em vez de acima",
   ]},
@@ -3483,41 +3486,34 @@ function gapTier(pctAtual, pctMeta){
   return               {color:'var(--muted)', dot:'var(--muted)',label:'OK — dentro da tolerância (±3 pontos)'};
 }
 
-// Duas roscas lado a lado — Atual e Meta, por classe — reaproveitando o mesmo desenho de rosca
-// (mkDonut) usado no resto do app. Substituiu as barras pareadas antigas (v29.2): mesmo dado,
-// mas no padrão visual já usado em todo o app. Reaproveitada na home e em Metas de Alocação
-// (mesmo componente nos dois lugares, só muda o container onde desenha).
+// Uma rosca só — composição Atual por classe — com legenda ao lado mostrando Atual/Meta e um
+// alerta (⚠) quando a classe está fora da tolerância. Reaproveitada na home e em Metas de
+// Alocação (mesmo componente nos dois lugares, só muda o container onde desenha).
 function mkMetaBarChart(containerId){
   const el = document.getElementById(containerId);
   if(!el) return;
   const {metas, classes, total} = computeMetasAlocData();
-  const svgAtualId = containerId+'-atual-svg', svgMetaId = containerId+'-meta-svg', legId = containerId+'-leg';
+  const svgId = containerId+'-svg', legId = containerId+'-leg';
   el.innerHTML = `
-    <div style="display:flex;flex-wrap:wrap;gap:24px;justify-content:center;align-items:flex-start;margin-bottom:14px">
-      <div style="text-align:center">
-        <svg id="${svgAtualId}" width="130" height="130"></svg>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:600">ATUAL</div>
-      </div>
-      <div style="text-align:center">
-        <svg id="${svgMetaId}" width="130" height="130"></svg>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:600">META</div>
-      </div>
-    </div>
-    <div id="${legId}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:5px 14px"></div>`;
-  mkDonut(classes.map(c=>({label:c.name, v:c.val, c:CLASSE_COLORS[c.id]||"var(--gold)"})), svgAtualId, null);
-  mkDonut(classes.map(c=>({label:c.name, v:metas[c.id]||0, c:CLASSE_COLORS[c.id]||"var(--gold)"})), svgMetaId, null);
+    <div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap;justify-content:center">
+      <svg id="${svgId}" width="150" height="150" style="flex-shrink:0"></svg>
+      <div id="${legId}" style="display:flex;flex-direction:column;gap:9px"></div>
+    </div>`;
+  mkDonut(classes.map(c=>({label:c.name, v:c.val, c:CLASSE_COLORS[c.id]||"var(--gold)"})), svgId, null);
   const leg = document.getElementById(legId);
   leg.innerHTML = classes.map(c=>{
     const atual = total>0 ? c.val/total*100 : 0;
     const meta = metas[c.id]||0;
     const color = CLASSE_COLORS[c.id]||"var(--gold)";
     const tier = gapTier(atual, meta);
-    return `<div style="display:flex;align-items:center;gap:6px;font-size:11px">
-      <span style="width:8px;height:8px;border-radius:2px;background:${color};flex-shrink:0"></span>
-      <span style="color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</span>
-      <span style="font-family:var(--mono);font-weight:600;color:${color}">${atual.toFixed(1)}%</span>
-      <span style="font-family:var(--mono);color:var(--muted);opacity:.65">/ ${meta.toFixed(1)}%</span>
-      <span style="width:6px;height:6px;border-radius:50%;background:${tier.dot};flex-shrink:0" title="${tier.label}"></span>
+    const alerta = tier.label.startsWith('OK') ? '' : `<span title="${tier.label}" style="font-size:12px">⚠️</span>`;
+    return `<div style="display:flex;align-items:center;gap:8px;font-size:13px;white-space:nowrap">
+      <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span>
+      <span style="color:${color};font-weight:600;min-width:110px">${c.name}</span>
+      <span style="font-family:var(--mono);font-weight:700;color:${color}">${atual.toFixed(1)}%</span>
+      <span style="color:var(--muted)">/</span>
+      <span style="font-family:var(--mono);color:var(--muted)">${meta.toFixed(1)}%</span>
+      ${alerta}
     </div>`;
   }).join("");
 }
