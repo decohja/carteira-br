@@ -962,8 +962,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <div>
       <div class="st-hl st-hl-big gold">Ativos na carteira</div>
       <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;max-width:560px;width:fit-content"></div>
-      <div class="st-hl gold">Atual vs. Meta por classe</div>
-      <div class="bx" id="metaBarChartHome" style="margin-bottom:16px;max-width:560px"></div>
     </div>
     <div class="home-side">
       <div>
@@ -976,6 +974,8 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       </div>
     </div>
   </div>
+  <div class="st-hl gold" style="margin-top:18px">Atual vs. Meta por classe</div>
+  <div class="bx" id="metaBarChartHome" style="margin-top:8px"></div>
 </section>
 
 <!-- METAS DE ALOCAÇÃO (painel próprio, igual Ações/FIIs) -->
@@ -990,7 +990,6 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <div id="metasAlocHint" style="display:none;font-size:11px;color:var(--muted);margin-bottom:8px">
     💡 Defina quanto % da carteira você quer em cada classe na coluna <strong>% Meta</strong> — salva sozinho automaticamente, sem precisar clicar em nada.
   </div>
-  <div class="bx" id="metaBarChartMetas" style="margin-bottom:16px"></div>
   <div style="overflow-x:auto;margin-top:6px">
     <table class="atab" style="width:100%">
       <thead>
@@ -1011,6 +1010,8 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <span><span class="meta-gap-dot" style="background:var(--muted);margin:0 5px 0 0"></span>OK — dentro da tolerância</span>
     <span><span class="meta-gap-dot" style="background:var(--gold);margin:0 5px 0 0"></span>Acima da meta</span>
   </div>
+  <div class="st-hl gold" style="margin-top:18px">Atual vs. Meta por classe</div>
+  <div class="bx" id="metaBarChartMetas" style="margin-top:8px"></div>
 </section>
 
 <!-- RESERVA E CAIXA (painel próprio, igual Ações/FIIs) -->
@@ -2103,6 +2104,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v29.2",d:"Jul/2026",items:[
+    "Gráfico 'Atual vs. Meta por classe' trocado de barras pareadas para roscas — duas roscas lado a lado (Atual e Meta), no mesmo padrão visual de rosca usado no resto do app (Ações, FIIs, Stocks, Renda Fixa), com legenda combinada mostrando % Atual, % Meta e um ponto colorido indicando se está abaixo/dentro/acima da tolerância. Também movido para a parte de baixo em ambos os lugares: na Home, agora fica embaixo do grid (largura cheia), abaixo de Maiores Posições e Evolução; em Metas de Alocação, agora fica abaixo da tabela em vez de acima",
+  ]},
   {v:"v29.1",d:"Jul/2026",items:[
     "Invertido: Cripto agora segue exatamente o mesmo padrão de ETFs e Stocks EUA — dólar (US$) como valor principal, com o equivalente em real logo abaixo em fonte menor. Antes (v29.0) tinha ficado ao contrário (real principal, dólar embaixo). Ajustado em Preço Médio, Total Investido, Total Corretora, Preço e Lucro, e nos tooltips (?) de cada coluna",
   ]},
@@ -2946,12 +2950,17 @@ function addTotals(tbodyId, cols){
 
 /* ── DONUT ──────────────────────────── */
 function mkDonut(data,svgId,legId){
-  const svg=document.getElementById(svgId), leg=document.getElementById(legId);
-  if(!svg||!leg) return;
-  const tot=data.reduce((s,d)=>s+d.v,0); if(!tot) return;
+  const svg=document.getElementById(svgId), leg=legId?document.getElementById(legId):null;
+  if(!svg||(legId&&!leg)) return;
+  const tot=data.reduce((s,d)=>s+d.v,0);
   const R=52,cx=65,cy=65,sw=12,circ=2*Math.PI*R;
+  if(!tot){
+    svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="${sw}"/>`;
+    if(leg) leg.innerHTML="";
+    return;
+  }
   svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--bg4)" stroke-width="${sw}"/>`;
-  leg.innerHTML=""; let off=circ/4;
+  if(leg) leg.innerHTML=""; let off=circ/4;
   data.forEach(d=>{
     const arc=d.v/tot*circ, gap=circ-arc;
     const el=document.createElementNS("http://www.w3.org/2000/svg","circle");
@@ -2960,10 +2969,12 @@ function mkDonut(data,svgId,legId){
     el.setAttribute("stroke-dasharray",`${arc.toFixed(2)} ${gap.toFixed(2)}`);
     el.setAttribute("stroke-dashoffset",off);el.setAttribute("stroke-linecap","round");
     svg.appendChild(el); off-=arc;
-    const row=document.createElement("div");
-    row.style.cssText="display:flex;align-items:center;gap:5px;font-size:10px";
-    row.innerHTML=`<span style="width:8px;height:8px;border-radius:2px;background:${d.c};flex-shrink:0;display:inline-block"></span><span style="color:var(--muted)">${d.label}</span><span style="margin-left:auto;font-family:var(--mono)">${(d.v/tot*100).toFixed(1)}%</span>`;
-    leg.appendChild(row);
+    if(leg){
+      const row=document.createElement("div");
+      row.style.cssText="display:flex;align-items:center;gap:5px;font-size:10px";
+      row.innerHTML=`<span style="width:8px;height:8px;border-radius:2px;background:${d.c};flex-shrink:0;display:inline-block"></span><span style="color:var(--muted)">${d.label}</span><span style="margin-left:auto;font-family:var(--mono)">${(d.v/tot*100).toFixed(1)}%</span>`;
+      leg.appendChild(row);
+    }
   });
 }
 
@@ -3472,35 +3483,43 @@ function gapTier(pctAtual, pctMeta){
   return               {color:'var(--muted)', dot:'var(--muted)',label:'OK — dentro da tolerância (±3 pontos)'};
 }
 
-// Barras pareadas — % Atual vs % Meta, por classe. Reaproveitada na home e em Metas de Alocação
+// Duas roscas lado a lado — Atual e Meta, por classe — reaproveitando o mesmo desenho de rosca
+// (mkDonut) usado no resto do app. Substituiu as barras pareadas antigas (v29.2): mesmo dado,
+// mas no padrão visual já usado em todo o app. Reaproveitada na home e em Metas de Alocação
 // (mesmo componente nos dois lugares, só muda o container onde desenha).
 function mkMetaBarChart(containerId){
   const el = document.getElementById(containerId);
   if(!el) return;
   const {metas, classes, total} = computeMetasAlocData();
-  const maxPct = Math.max(...classes.map(c=>{
-    const atual = total>0 ? c.val/total*100 : 0;
-    return Math.max(atual, metas[c.id]||0);
-  }), 10); // piso de 10% pra escala não ficar esmagada quando tudo é pequeno
-  const rows = classes.map(c=>{
+  const svgAtualId = containerId+'-atual-svg', svgMetaId = containerId+'-meta-svg', legId = containerId+'-leg';
+  el.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:24px;justify-content:center;align-items:flex-start;margin-bottom:14px">
+      <div style="text-align:center">
+        <svg id="${svgAtualId}" width="130" height="130"></svg>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:600">ATUAL</div>
+      </div>
+      <div style="text-align:center">
+        <svg id="${svgMetaId}" width="130" height="130"></svg>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:600">META</div>
+      </div>
+    </div>
+    <div id="${legId}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:5px 14px"></div>`;
+  mkDonut(classes.map(c=>({label:c.name, v:c.val, c:CLASSE_COLORS[c.id]||"var(--gold)"})), svgAtualId, null);
+  mkDonut(classes.map(c=>({label:c.name, v:metas[c.id]||0, c:CLASSE_COLORS[c.id]||"var(--gold)"})), svgMetaId, null);
+  const leg = document.getElementById(legId);
+  leg.innerHTML = classes.map(c=>{
     const atual = total>0 ? c.val/total*100 : 0;
     const meta = metas[c.id]||0;
-    const wAtual = Math.min(100, atual/maxPct*100);
-    const wMeta = Math.min(100, meta/maxPct*100);
     const color = CLASSE_COLORS[c.id]||"var(--gold)";
-    return `<div class="mbc-row">
-      <div class="mbc-label" title="${c.name}">${c.name}</div>
-      <div class="mbc-bars">
-        <div class="mbc-track"><div class="mbc-fill" style="width:${wAtual.toFixed(1)}%;background:${color}"></div></div>
-        <div class="mbc-track"><div class="mbc-fill meta" style="width:${wMeta.toFixed(1)}%"></div></div>
-      </div>
-      <div class="mbc-vals"><span style="color:${color};font-weight:600">${atual.toFixed(1)}%</span><span class="meta">${meta.toFixed(1)}%</span></div>
+    const tier = gapTier(atual, meta);
+    return `<div style="display:flex;align-items:center;gap:6px;font-size:11px">
+      <span style="width:8px;height:8px;border-radius:2px;background:${color};flex-shrink:0"></span>
+      <span style="color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.name}">${c.name}</span>
+      <span style="font-family:var(--mono);font-weight:600;color:${color}">${atual.toFixed(1)}%</span>
+      <span style="font-family:var(--mono);color:var(--muted);opacity:.65">/ ${meta.toFixed(1)}%</span>
+      <span style="width:6px;height:6px;border-radius:50%;background:${tier.dot};flex-shrink:0" title="${tier.label}"></span>
     </div>`;
   }).join("");
-  el.innerHTML = rows + `<div class="mbc-legend">
-    <span><span class="mbc-legend-dot" style="background:var(--gold)"></span>Atual</span>
-    <span><span class="mbc-legend-dot" style="background:var(--muted);opacity:.5"></span>Meta</span>
-  </div>`;
 }
 
 function computeMetasAlocData(){
