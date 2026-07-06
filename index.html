@@ -2059,6 +2059,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v27.7",d:"Jun/2026",items:[
+    "CORRIGIDO O BUG DE VERDADE do 'Variação e Lucro Total zeram e demoram pra atualizar': era um problema de ORDEM dentro do código, não de cache. O header calculava o lucro de ETFs/Stocks usando um campo que só era recalculado DEPOIS, na função que desenha a tabela — rodando mais tarde na mesma passada. Resultado: primeiro desenho da tela sempre mostrava valor velho, só corrigia no desenho seguinte",
+    "Agora o recálculo acontece bem no início, antes do header somar os valores — corrige de vez, não é mais uma questão de esperar",
+  ]},
   {v:"v27.6",d:"Jun/2026",items:[
     "NOVO: o último preço e DY% confirmados agora ficam salvos DENTRO de cada posição, no Supabase — não só no navegador. Aba anônima nova, outro navegador, outro aparelho: já chega vendo o último valor real, sem 'zerar e ficar buscando' igual antes. Não é uma chamada extra ao banco — viaja junto no mesmo salvamento que já existia",
     "Variação e Lucro Total também se beneficiam disso — não devem mais zerar por alguns segundos numa sessão nova, já que os preços chegam prontos antes da primeira tela desenhar",
@@ -3633,6 +3637,12 @@ function posVal(ativo){
 }
 
 function render(){
+  // Recalcula atual/lucro de ETFs/Stocks JÁ AQUI NO INÍCIO — antes eram recalculados só dentro de
+  // renderETFs()/renderStocks(), que rodam bem mais tarde nesta mesma função. Isso fazia o header
+  // (Variação, Lucro Total) usar o valor ANTIGO de e.lucro/s.lucro no primeiro desenho da tela,
+  // só corrigindo no desenho seguinte — parecia "zerar e demorar pra atualizar".
+  D.etfs.forEach(e=>{ if(e.priceUSD && e.cotas>0){ e.atual=+(e.priceUSD*e.cotas).toFixed(2); e.lucro=+(e.atual-e.inv).toFixed(2); } });
+  D.stocks.forEach(s=>{ if(s.priceUSD && s.cotas>0){ s.atual=+(s.priceUSD*s.cotas).toFixed(2); s.lucro=+(s.atual-s.inv).toFixed(2); } });
   // usa preço ao vivo se disponível, senão PM (mostra valor investido)
   const totAcoes=D.acoes.reduce((s,a)=>s+posVal(a),0);
   const totFiis= D.fiis.reduce((s,f)=>s+posVal(f),0);
