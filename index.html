@@ -2067,6 +2067,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v27.9",d:"Jun/2026",items:[
+    "ACHADO O BUG DE VERDADE do Lucro/Variação zerando: o cache de preço rodava ANTES dos dados reais do usuário chegarem do Supabase — nesse momento, D.etfs/D.stocks ainda estavam vazios, então o cache nunca conseguia conectar o preço salvo às posições reais. Agora roda de novo depois que os dados chegam",
+  ]},
   {v:"v27.8",d:"Jun/2026",items:[
     "CORRIGIDO: buscas de cotação/DY sem limite de tempo — uma fonte lenta ou travada podia segurar cada tentativa por 20-30s+, e com 4 tentativas em sequência (direto → 3 proxies), passava perto de 1 minuto pra desistir. Agora cada tentativa tem 6s de limite — se travar, já parte pra próxima fonte rápido",
   ]},
@@ -6036,6 +6039,11 @@ async function startApp(){
   try{
     // carteira do usuário logado (Ações, FIIs, ETFs, Stocks, RF)
     await carregarCarteiraDaNuvem();
+    // BUG REAL ENCONTRADO: loadPriceCache() já tinha rodado lá em cima, mas D.etfs/D.stocks
+    // ainda estavam vazios/com dado de exemplo naquele momento — o cache nunca conseguia
+    // "grudar" o preço salvo nas posições reais do usuário, que só existem a partir daqui.
+    // Roda de novo agora, com os dados de verdade já carregados.
+    loadPriceCache();
     migrarQuantidadeStocksAntigas();
     migrarNomesDuplicados();
 
