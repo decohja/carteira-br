@@ -1570,6 +1570,27 @@ let currentUser = null;     // { id, email, user_metadata:{name,avatar_url} }
 const BRAPI_TOKEN = 'cAycArQLxF2iZbAuzqJyta';
 const FINNHUB_TOKEN = 'd94mkb1r01qgvhqpjfmgd94mkb1r01qgvhqpjfn0';
 
+// Renova a sessão do Supabase Auth manualmente. Existe porque o autoRefreshToken do cliente
+// depende de um timer agendado — e navegadores atrasam/pausam timers de abas em segundo
+// plano. Resultado real observado: usuário fica um tempo em outra aba, o token expira, o
+// timer de renovação não disparou a tempo, e a primeira ação ao voltar (ex.: salvar a
+// carteira) falha com "JWT expired" antes do cliente conseguir se recuperar sozinho.
+let _refreshSessionPromise = null;
+async function garantirTokenValido(){
+  if(_refreshSessionPromise) return _refreshSessionPromise; // evita duas renovações em paralelo
+  _refreshSessionPromise = sbAuth.auth.refreshSession()
+    .then(({data,error})=>{
+      if(error) throw error;
+      if(data?.session){ userAccessToken = data.session.access_token; currentUser = data.session.user; }
+      return data?.session || null;
+    })
+    .finally(()=>{ _refreshSessionPromise = null; });
+  return _refreshSessionPromise;
+}
+function _ehErroTokenExpirado(msg){
+  return /jwt expired|pgrst303|invalid jwt|jwserror/i.test(msg||'');
+}
+
 const SB = {
   headers(extra){
     return {
@@ -1579,44 +1600,48 @@ const SB = {
       ...extra
     };
   },
+  // Chama o endpoint; se a resposta indicar token expirado, renova a sessão e tenta
+  // DE NOVO uma única vez com o token novo — só desiste e propaga o erro se a renovação
+  // também falhar (ex.: sessão realmente encerrada, precisa logar de novo).
+  async _fetch(url, method, extraHeaders, body){
+    const doFetch = () => fetch(url, {
+      method, headers: this.headers(extraHeaders),
+      ...(body!==undefined ? {body: JSON.stringify(body)} : {})
+    });
+    let r = await doFetch();
+    if(!r.ok){
+      const txt = await r.text();
+      if(_ehErroTokenExpirado(txt)){
+        await garantirTokenValido(); // se isso lançar erro, sobe direto — sessão não é recuperável
+        r = await doFetch();
+        if(!r.ok) throw new Error(await r.text());
+        return r;
+      }
+      throw new Error(txt);
+    }
+    return r;
+  },
   async get(table, params){
     const qs = params ? '?' + new URLSearchParams(params) : '';
-    const r = await fetch(SB_URL+'/rest/v1/'+table+qs, {headers: this.headers()});
-    if(!r.ok) throw new Error(await r.text());
+    const r = await this._fetch(SB_URL+'/rest/v1/'+table+qs, 'GET');
     return r.json();
   },
   async post(table, body){
-    const r = await fetch(SB_URL+'/rest/v1/'+table, {
-      method:'POST', headers: this.headers({'Prefer':'return=representation'}),
-      body: JSON.stringify(body)
-    });
-    if(!r.ok) throw new Error(await r.text());
+    const r = await this._fetch(SB_URL+'/rest/v1/'+table, 'POST', {'Prefer':'return=representation'}, body);
     return r.json();
   },
   async upsert(table, body){
-    const r = await fetch(SB_URL+'/rest/v1/'+table, {
-      method:'POST',
-      headers: this.headers({'Prefer':'return=representation,resolution=merge-duplicates'}),
-      body: JSON.stringify(body)
-    });
-    if(!r.ok) throw new Error(await r.text());
+    const r = await this._fetch(SB_URL+'/rest/v1/'+table, 'POST', {'Prefer':'return=representation,resolution=merge-duplicates'}, body);
     return r.json();
   },
   async patch(table, match, body){
     const qs = '?' + new URLSearchParams(match);
-    const r = await fetch(SB_URL+'/rest/v1/'+table+qs, {
-      method:'PATCH', headers: this.headers({'Prefer':'return=representation'}),
-      body: JSON.stringify(body)
-    });
-    if(!r.ok) throw new Error(await r.text());
+    const r = await this._fetch(SB_URL+'/rest/v1/'+table+qs, 'PATCH', {'Prefer':'return=representation'}, body);
     return r.json();
   },
   async del(table, match){
     const qs = '?' + new URLSearchParams(match);
-    const r = await fetch(SB_URL+'/rest/v1/'+table+qs, {
-      method:'DELETE', headers: this.headers()
-    });
-    if(!r.ok) throw new Error(await r.text());
+    await this._fetch(SB_URL+'/rest/v1/'+table+qs, 'DELETE');
   }
 };
 
@@ -1712,6 +1737,17 @@ sbAuth.auth.onAuthStateChange((event, session) => {
     window.__appStarted = false;
     const ld = document.getElementById('loading'); if(ld) ld.classList.add('out');
     showLoginScreen();
+  }
+});
+
+// Reforço pro bug do "JWT expired" ao voltar de outra aba: o autoRefreshToken do cliente
+// depende de timer, e timers de aba em segundo plano são atrasados pelo navegador — então o
+// token pode vencer antes do refresh automático rodar. Ao voltar a ficar visível, força uma
+// checagem de sessão (getSession já renova sozinha se estiver vencida) antes que qualquer
+// salvamento aconteça, evitando a corrida que mostrava o aviso vermelho por alguns segundos.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && currentUser){
+    sbAuth.auth.getSession().catch(()=>{});
   }
 });
 
@@ -2067,6 +2103,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v28.9",d:"Jul/2026",items:[
+    "CORRIGIDO: aviso vermelho \"Não consegui salvar sua carteira — JWT expired\" ao voltar pra aba depois de um tempo em outras. Causa real: o token de sessão vence enquanto a aba está em segundo plano (o navegador atrasa o timer de renovação automática nesse estado), e a primeira tentativa de salvar ao voltar usava o token já vencido. Agora: (1) o cliente SB detecta esse erro específico, renova a sessão e tenta salvar de novo automaticamente antes de desistir; (2) ao voltar a ficar visível, a aba já força uma checagem/renovação de sessão de forma proativa, então na prática o aviso não deve mais aparecer",
+  ]},
   {v:"v28.8",d:"Jul/2026",items:[
     "CORRIGIDO: conta nova/vazia mostrava 'Sem conexão — Todos os proxies falharam' embaixo, mesmo sem ter nenhum ativo cadastrado. O motivo: sem Ações/FIIs/BDR na carteira, o contador de preços confirmados fica em 0 (correto — não tinha nada pra buscar), mas o código tratava isso como falha de conexão. Agora carteira vazia mostra 'Nenhum ativo cadastrado ainda' em vez do aviso de erro. Ibovespa/Dólar continuam com indicador próprio, à parte",
   ]},
