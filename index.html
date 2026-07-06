@@ -2067,6 +2067,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v28.8",d:"Jul/2026",items:[
+    "CORRIGIDO: conta nova/vazia mostrava 'Sem conexão — Todos os proxies falharam' embaixo, mesmo sem ter nenhum ativo cadastrado. O motivo: sem Ações/FIIs/BDR na carteira, o contador de preços confirmados fica em 0 (correto — não tinha nada pra buscar), mas o código tratava isso como falha de conexão. Agora carteira vazia mostra 'Nenhum ativo cadastrado ainda' em vez do aviso de erro. Ibovespa/Dólar continuam com indicador próprio, à parte",
+  ]},
   {v:"v28.7",d:"Jun/2026",items:[
     "Mesma ideia da bolinha girando (v28.6) agora também no Ibovespa e no Dólar — numa sessão nova sem cache ainda, mostra bolinha em vez do traço '—' enquanto busca. Nunca mostravam zero (já usavam '—' como reserva), então isso é mais consistência visual do que correção de bug",
   ]},
@@ -3322,15 +3325,24 @@ async function refreshPrices(manual=false){
   const nowTs=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   const tksEsperadosBR = tksAcoes.length + tksFiis.length + tksBdrs.length; // sem contar o índice
   const faltaram = tksEsperadosBR - brOK;
-  if(brOK>0){
+  // Carteira totalmente vazia (nenhum ativo em nenhuma classe): brOK=0 é ESPERADO, não é falha de
+  // conexão — não tinha nada pra buscar. Se mostrasse "Sem conexão" aqui, uma conta recém-criada
+  // veria um aviso alarmante mesmo com tudo funcionando normalmente. O Ibovespa/Dólar têm seu
+  // próprio indicador de erro (updMktErr) e continuam aparecendo à parte, independente da carteira.
+  const carteiraVazia = tksEsperadosBR===0 && D.etfs.length===0 && D.stocks.length===0 && D.cripto.length===0;
+  if(brOK>0 || carteiraVazia){
     pricesArelive=true;
-    setLastUpdText(faltaram>0
-      ? `Preços atualizados — ${nowTs} (${faltaram} ativo${faltaram>1?"s":""} sem confirmação)`
-      : `Preços atualizados — ${nowTs}`);
+    setLastUpdText(carteiraVazia
+      ? 'Nenhum ativo cadastrado ainda — adicione um ativo para acompanhar cotações'
+      : (faltaram>0
+        ? `Preços atualizados — ${nowTs} (${faltaram} ativo${faltaram>1?"s":""} sem confirmação)`
+        : `Preços atualizados — ${nowTs}`));
     const chip=document.getElementById('snapChip');
-    if(chip){chip.textContent=`Ao vivo — ${nowTs}`;chip.className='snap-chip live';}
-    const s1=document.getElementById('ac-src'),s2=document.getElementById('fi-src');
-    if(s1)s1.textContent='ao vivo';if(s2)s2.textContent='ao vivo';
+    if(chip){chip.textContent=carteiraVazia?'—':`Ao vivo — ${nowTs}`;chip.className='snap-chip'+(carteiraVazia?'':' live');}
+    if(!carteiraVazia){
+      const s1=document.getElementById('ac-src'),s2=document.getElementById('fi-src');
+      if(s1)s1.textContent='ao vivo';if(s2)s2.textContent='ao vivo';
+    }
   } else {
     const chip=document.getElementById('snapChip');
     if(chip&&!chip.classList.contains('live')){chip.textContent='Dados salvos';chip.className='snap-chip';}
