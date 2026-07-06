@@ -504,10 +504,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .ativoscart-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 .ativoscart-n{color:var(--text);font-weight:500;font-size:13.5px;white-space:nowrap;transition:color .15s;padding-right:14px}
 .ativoscart-pct{font-family:var(--mono);font-size:13.5px;font-weight:700;color:var(--text);text-align:right;transition:color .15s}
-.donut3d-stage{perspective:900px;flex-shrink:0}
-.donut3d-tilt{transform:rotateX(48deg) rotateZ(-6deg);transform-style:preserve-3d;position:relative;width:236px;height:236px}
-.donut3d-wall{position:absolute;top:11px;left:0;filter:blur(0.3px)}
-.donut3d-top{position:absolute;top:0;left:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+.donut3d-stage{perspective:1100px;flex-shrink:0}
+.donut3d-tilt{transform:rotateX(64deg) rotateZ(-8deg);transform-style:preserve-3d;position:relative}
+.donut3d-wall{position:absolute;top:22px;left:0;filter:blur(0.4px) brightness(0.55)}
+.donut3d-top{position:absolute;top:0;left:0;filter:drop-shadow(0 7px 12px rgba(0,0,0,.38))}
 .sdon-cap{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--muted);
   white-space:nowrap;cursor:pointer;text-align:left;justify-self:start;min-width:3.2ch}
 .sdon-cap u{text-decoration-style:dotted}
@@ -961,7 +961,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
   <div class="home-grid">
     <div>
       <div class="st-hl st-hl-big gold">Ativos na carteira</div>
-      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;max-width:560px;width:fit-content"></div>
+      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;max-width:620px;width:fit-content"></div>
     </div>
     <div class="home-side">
       <div>
@@ -975,7 +975,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     </div>
   </div>
   <div class="st-hl gold" style="margin-top:18px">Atual vs. Meta por classe</div>
-  <div class="bx" id="metaBarChartHome" style="margin-top:8px;max-width:480px;width:fit-content"></div>
+  <div class="bx" id="metaBarChartHome" style="margin-top:8px;max-width:620px;width:fit-content"></div>
 </section>
 
 <!-- METAS DE ALOCAÇÃO (painel próprio, igual Ações/FIIs) -->
@@ -1011,7 +1011,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <span><span class="meta-gap-dot" style="background:var(--gold);margin:0 5px 0 0"></span>Acima da meta</span>
   </div>
   <div class="st-hl gold" style="margin-top:18px">Atual vs. Meta por classe</div>
-  <div id="metaBarChartMetas" style="margin-top:8px"></div>
+  <div id="metaBarChartMetas" style="margin-top:8px;max-width:620px;width:fit-content"></div>
 </section>
 
 <!-- RESERVA E CAIXA (painel próprio, igual Ações/FIIs) -->
@@ -2104,6 +2104,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v29.5",d:"Jul/2026",items:[
+    "Rosca redesenhada do zero — mais grossa, mais 'de lado' (rotateX de 48° pra 64°), sombra mais forte pra dar profundidade de verdade. Virou um componente único (`buildDonut3D`) reaproveitado nos dois lugares que mostram composição por classe: 'Ativos na Carteira' (home) e 'Atual vs. Meta por classe' — antes eram dois desenhos de rosca diferentes (um grosso 3D, outro fino e chapado), agora é a mesma marca visual nos dois. Sem cantos arredondados dentro do desenho (as fatias sempre se encontraram com corte reto — nunca foi round, mas a versão anterior do gráfico Atual/Meta usava round e por isso aparecia aquela bolinha sobrando quando uma classe tinha valor muito pequeno). Caixas de 'Ativos na Carteira' e 'Atual vs. Meta' com a mesma régua de largura nos dois lugares onde aparecem",
+  ]},
   {v:"v29.4",d:"Jul/2026",items:[
     "Corrigido alinhamento da legenda do gráfico Atual/Meta: trocado flex (que desalinhava quando o nome da classe era mais longo) por CSS Grid de verdade — colunas retas garantidas, nome de qualquer tamanho não empurra mais os valores. Valor Atual agora usa a cor do tier (vermelho/dourado/neutro) igual à coluna Diferença da tabela, com a bolinha de status ao lado (sem emoji). Home: caixa do gráfico não estica mais a página inteira — voltou a ser uma caixa compacta do tamanho do conteúdo, como as outras. Metas de Alocação: removido o fundo branco do gráfico e alinhado à esquerda",
   ]},
@@ -2954,6 +2957,49 @@ function addTotals(tbodyId, cols){
   tb.appendChild(tr);
 }
 
+/* ── ROSCA 3D (marca do app) ──────────────────────────────────────────────
+   Componente único de rosca inclinada/grossa, reaproveitado em qualquer lugar que precise
+   mostrar composição por classe: "Ativos na Carteira" (home) e "Atual vs. Meta por classe".
+   Sem stroke-linecap round (por padrão as bordas de <circle> já são retas — "butt" — então as
+   fatias se encontram com canto reto, sem bolinha sobrando quando uma fatia é muito pequena). */
+function buildDonut3D(data, opts={}){
+  const total = data.reduce((s,d)=>s+d.v,0);
+  const R = opts.R||98, sw = opts.sw||56, cx = opts.cx||(R+sw/2+2), cy=cx, circ=2*Math.PI*R;
+  const ordenado = opts.sort===false ? data : [...data].sort((a,b)=>b.v-a.v);
+  function buildArcs(darkWall){
+    let s=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${darkWall?'#00000055':'var(--bg4)'}" stroke-width="${sw}"/>`;
+    if(!total) return s;
+    let off=circ/4;
+    ordenado.forEach(d=>{
+      const pct=d.v/total*100, arc=pct/100*circ, gap=circ-arc;
+      s+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${darkWall?'#000':d.c}" stroke-width="${sw}"
+        stroke-dasharray="${arc.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"
+        ${darkWall?'opacity="0.4"':(d.onclick?`style="cursor:pointer" onclick="${d.onclick}"`:'')}><title>${darkWall?'':`${d.label}: ${pct.toFixed(1)}%`}</title></circle>`;
+      off-=arc;
+    });
+    return s;
+  }
+  let labels="";
+  if(total && opts.showLabels!==false){
+    let cumFrac=0;
+    ordenado.forEach(d=>{
+      const frac=d.v/total;
+      const midFrac=cumFrac+frac/2;
+      const angleRad=(-90+midFrac*360)*Math.PI/180;
+      const lx=cx+R*Math.cos(angleRad), ly=cy+R*Math.sin(angleRad);
+      cumFrac+=frac;
+      if(frac>0.07){
+        labels+=`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle"
+          font-size="12" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:2.5px;pointer-events:none">${d.shortLabel||d.label}</text>`;
+      }
+    });
+  }
+  return `<div class="donut3d-stage"><div class="donut3d-tilt" style="width:${cx*2}px;height:${cy*2}px">
+    <svg class="donut3d-wall" width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}">${buildArcs(true)}</svg>
+    <svg class="donut3d-top" width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}">${buildArcs(false)}${labels}</svg>
+  </div></div>`;
+}
+
 /* ── DONUT ──────────────────────────── */
 function mkDonut(data,svgId,legId){
   const svg=document.getElementById(svgId), leg=legId?document.getElementById(legId):null;
@@ -3489,22 +3535,24 @@ function gapTier(pctAtual, pctMeta){
   return               {color:'var(--muted)', dot:'var(--muted)',label:'OK — dentro da tolerância (±3 pontos)'};
 }
 
-// Uma rosca só — composição Atual por classe — com legenda ao lado em GRID (colunas retas de
-// verdade, não flex com min-width — nomes de tamanhos diferentes não empurram as colunas
-// seguintes). Cor do valor Atual segue o mesmo tier (abaixo/OK/acima da meta) usado na tabela de
-// Metas de Alocação (var(--neg)/var(--muted)/var(--gold)) — mesmo padrão, sem emoji. Reaproveitada
-// na home e em Metas de Alocação (mesmo componente nos dois lugares, só muda o container).
+// Rosca 3D (mesmo componente de "Ativos na Carteira") — composição Atual por classe — com legenda
+// ao lado em GRID (colunas retas de verdade, não flex com min-width — nomes de tamanhos diferentes
+// não empurram as colunas seguintes). Cor do valor Atual segue o mesmo tier (abaixo/OK/acima da
+// meta) usado na tabela de Metas de Alocação (var(--neg)/var(--muted)/var(--gold)) — mesmo padrão,
+// sem emoji. Reaproveitada na home e em Metas de Alocação (mesmo componente, só muda o container).
 function mkMetaBarChart(containerId){
   const el = document.getElementById(containerId);
   if(!el) return;
   const {metas, classes, total} = computeMetasAlocData();
-  const svgId = containerId+'-svg', legId = containerId+'-leg';
+  const legId = containerId+'-leg';
+  const donutHTML = buildDonut3D(classes.map(c=>({
+    label:c.name, v:c.val, c:CLASSE_COLORS[c.id]||"var(--gold)", onclick:`goTab('${CLASSE_TABS[c.id]||'visao'}')`
+  })), {showLabels:false});
   el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap;justify-content:flex-start">
-      <svg id="${svgId}" width="150" height="150" style="flex-shrink:0"></svg>
+    <div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;justify-content:flex-start">
+      ${donutHTML}
       <div id="${legId}" style="display:grid;grid-template-columns:11px auto 54px 10px 54px 14px;align-items:center;column-gap:8px;row-gap:9px"></div>
     </div>`;
-  mkDonut(classes.map(c=>({label:c.name, v:c.val, c:CLASSE_COLORS[c.id]||"var(--gold)"})), svgId, null);
   const leg = document.getElementById(legId);
   leg.innerHTML = classes.map(c=>{
     const atual = total>0 ? c.val/total*100 : 0;
@@ -3513,8 +3561,8 @@ function mkMetaBarChart(containerId){
     const tier = gapTier(atual, meta);
     return `
     <span style="width:10px;height:10px;border-radius:50%;background:${color}"></span>
-    <span style="color:var(--text);font-size:13px;font-weight:500;white-space:nowrap">${c.name}</span>
-    <span style="font-family:var(--mono);font-weight:700;text-align:right;color:${tier.color}">${atual.toFixed(1)}%</span>
+    <span style="color:var(--text);font-size:13.5px;font-weight:500;white-space:nowrap">${c.name}</span>
+    <span style="font-family:var(--mono);font-weight:700;font-size:13.5px;text-align:right;color:${tier.color}">${atual.toFixed(1)}%</span>
     <span style="color:var(--muted);text-align:center;font-size:12px">/</span>
     <span style="font-family:var(--mono);color:var(--muted);text-align:right;font-size:12px">${meta.toFixed(1)}%</span>
     <span style="width:7px;height:7px;border-radius:50%;background:${tier.dot};justify-self:center" title="${tier.label}"></span>`;
@@ -3625,46 +3673,19 @@ function renderEvolucaoPatrimonio(){
 function renderAtivosCarteira(){
   const el = document.getElementById("ativosCarteiraBox");
   if(!el) return;
-  mkMetaBarChart("metaBarChartHome");
   const {classes, total} = computeMetasAlocData();
   const ativos = classes.filter(c=>c.val>0);
   if(!ativos.length || total<=0){
     el.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:12px;padding:24px 0">Adicione ativos pra ver a distribuição da sua carteira aqui.</div>`;
     return;
   }
-  const R=94,cx=118,cy=118,sw=46,circ=2*Math.PI*R;
-  const ordenado=[...ativos].sort((a,b)=>b.val-a.val);
   const NOME_CURTO = {acoes:"Ações",bdrs:"BDRs",fiis:"FIIs",rf:"Renda Fixa",etfs:"ETFs",stocks:"Stocks",cripto:"Cripto"};
+  const ordenado=[...ativos].sort((a,b)=>b.val-a.val);
 
-  // Monta os arcos uma vez, reaproveitados nas duas camadas (parede escura embaixo + topo colorido)
-  function buildArcs(darkWall){
-    let s=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${darkWall?'#00000055':'var(--bg4)'}" stroke-width="${sw}"/>`;
-    let off=circ/4;
-    ordenado.forEach(c=>{
-      const pct=c.val/total*100, arc=pct/100*circ, gap=circ-arc;
-      const color=CLASSE_COLORS[c.id]||"var(--gold)";
-      s+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${darkWall?'#000':color}" stroke-width="${sw}"
-        stroke-dasharray="${arc.toFixed(2)} ${gap.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"
-        ${darkWall?'opacity="0.4"':`style="cursor:pointer" onclick="goTab('${CLASSE_TABS[c.id]||'visao'}')"`}><title>${darkWall?'':`${c.name}: ${pct.toFixed(1)}%`}</title></circle>`;
-      off-=arc;
-    });
-    return s;
-  }
-
-  // Nome de cada grupo escrito dentro da própria fatia (só quando ela é grande o bastante pra caber)
-  let labels="";
-  let cumFrac=0;
-  ordenado.forEach(c=>{
-    const frac=c.val/total;
-    const midFrac=cumFrac+frac/2;
-    const angleRad=(-90+midFrac*360)*Math.PI/180;
-    const lx=cx+R*Math.cos(angleRad), ly=cy+R*Math.sin(angleRad);
-    cumFrac+=frac;
-    if(frac>0.07){
-      labels+=`<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle"
-        font-size="12" font-weight="700" fill="#fff" style="paint-order:stroke;stroke:rgba(0,0,0,.35);stroke-width:2.5px;pointer-events:none">${NOME_CURTO[c.id]||c.name}</text>`;
-    }
-  });
+  const donutHTML = buildDonut3D(ordenado.map(c=>({
+    label:c.name, shortLabel:NOME_CURTO[c.id]||c.name, v:c.val,
+    c:CLASSE_COLORS[c.id]||"var(--gold)", onclick:`goTab('${CLASSE_TABS[c.id]||'visao'}')`
+  })));
 
   const legend=ordenado.map(c=>{
     const pct=c.val/total*100;
@@ -3676,13 +3697,7 @@ function renderAtivosCarteira(){
     </div>`;
   }).join("");
 
-  el.innerHTML = `<div class="ativoscart-wrap">
-    <div class="donut3d-stage">
-      <div class="donut3d-tilt">
-        <svg class="donut3d-wall" width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}">${buildArcs(true)}</svg>
-        <svg class="donut3d-top" width="${cx*2}" height="${cy*2}" viewBox="0 0 ${cx*2} ${cy*2}">${buildArcs(false)}${labels}</svg>
-      </div>
-    </div>
+  el.innerHTML = `<div class="ativoscart-wrap">${donutHTML}
     <div class="ativoscart-legend">${legend}</div>
   </div>`;
 }
@@ -3906,6 +3921,7 @@ function render(){
   renderCripto();
   renderAlloc();
   renderAtivosCarteira();
+  mkMetaBarChart("metaBarChartHome");
   renderMaioresPosicoes();
   renderEvolucaoPatrimonio();
   renderMetasAloc();
