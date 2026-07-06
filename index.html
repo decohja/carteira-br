@@ -343,7 +343,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .dcard-add:hover{border-color:var(--gold);background:var(--gold-bg);transform:translateY(-1px)}
 .dcard-add-plus{font-size:22px;font-weight:400;color:var(--muted);line-height:1}
 .dcard-add:hover .dcard-add-plus{color:var(--gold)}
-.dcard-add-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:50;
+.dcard-add-menu{position:fixed;z-index:200;
   background:var(--card);border:1px solid var(--border2);border-radius:var(--r);
   box-shadow:0 8px 24px rgba(0,0,0,.18);padding:5px;min-width:180px;
   display:flex;flex-direction:column;gap:1px;cursor:default}
@@ -354,7 +354,6 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
   font-size:13px;color:var(--text);transition:background .12s}
 .dcard-add-opt:hover{background:var(--bg3)}
 .dcard-add-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
-.dcard-add-ja{margin-left:auto;font-size:9.5px;color:var(--muted);font-style:italic}
 
 /* ─── CONTENT ────────────────────────── */
 .content{max-width:1300px;margin:0 auto;padding:16px 18px 80px}
@@ -2129,6 +2128,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v30.0",d:"Jul/2026",items:[
+    "CORRIGIDO o menu do botão '+' que aparecia cortado/escondido: a barra de cards tem rolagem horizontal (overflow), que recortava o menu ao descer pra fora dela. Agora o menu é desenhado por cima de tudo (preso à tela, não à barra), então aparece inteiro. Se estiver perto da borda direita, ele se alinha pela direita pra não sair da tela",
+    "Classes que já estão na carteira não aparecem mais na lista do '+' — antes mostravam 'já na carteira' como aviso; agora simplesmente não entram na lista (não faz sentido 'adicionar classe' que já existe; pra comprar mais, use o botão + dentro da própria aba). Se todas já estiverem na carteira, o menu avisa que não há mais o que adicionar",
+  ]},
   {v:"v29.9",d:"Jul/2026",items:[
     "NOVO na barra de cards do topo: agora só aparecem cards das classes que você realmente tem (com valor cadastrado) — classes zeradas não poluem mais a barra. Na esquerda tem um botão '+' compacto que, ao clicar, vira a lista das classes disponíveis pra adicionar (Ações BR, BDRs, FIIs, Renda Fixa, ETFs, Stocks, Cripto) ali mesmo na barra; escolhendo uma, abre o fluxo de adicionar daquela classe, e ela vira card quando você salvar algum valor. 'Metas de Alocação' e 'Reserva e Caixa' continuam fixos, sempre visíveis no fim da barra. Numa conta nova, a barra mostra só o '+' e esses dois cards fixos",
     "De passagem, corrigido o resumo 'X/Y classes na meta' do card Metas de Alocação, que sempre mostrava 0 (comparava com um rótulo de status que não existia mais)",
@@ -4014,7 +4017,7 @@ function fecharAddClasseMenu(){
 }
 function _addClasseOutside(e){
   const m=document.getElementById("addClassMenu");
-  if(m && !m.contains(e.target)) fecharAddClasseMenu();
+  if(m && !m.contains(e.target) && !e.target.closest(".dcard-add")) fecharAddClasseMenu();
 }
 function makeAddClassBtn(classItems){
   const btn=document.createElement("button");
@@ -4029,16 +4032,29 @@ function makeAddClassBtn(classItems){
     const menu=document.createElement("div");
     menu.id="addClassMenu";
     menu.className="dcard-add-menu";
-    menu.innerHTML=`<div class="dcard-add-menu-hd">Adicionar classe</div>`+
-      ADD_CLASS_OPCOES.map(o=>{
-        const jaTem = classItems.find(ci=>ci.tab===o.tab && ci.tot>0);
-        return `<button type="button" class="dcard-add-opt" onclick="abrirAddClasse('${o.tab}')">
+    const disponiveis = ADD_CLASS_OPCOES.filter(o=>!classItems.find(ci=>ci.tab===o.tab && ci.tot>0));
+    if(!disponiveis.length){
+      menu.innerHTML=`<div class="dcard-add-menu-hd">Adicionar classe</div>
+        <div style="padding:8px;font-size:12px;color:var(--muted)">Todas as classes já estão na carteira.</div>`;
+    } else {
+      menu.innerHTML=`<div class="dcard-add-menu-hd">Adicionar classe</div>`+
+        disponiveis.map(o=>`<button type="button" class="dcard-add-opt" onclick="abrirAddClasse('${o.tab}')">
           <span class="dcard-add-dot" style="background:${o.c}"></span>
           <span>${o.name}</span>
-          ${jaTem?'<span class="dcard-add-ja">já na carteira</span>':''}
-        </button>`;
-      }).join("");
-    btn.appendChild(menu);
+        </button>`).join("");
+    }
+    // Anexado ao body (não ao botão) e posicionado por coordenadas: o dstrip tem overflow-x:auto,
+    // que cortaria qualquer menu descendo pra fora da barra. No body, o menu escapa desse recorte.
+    document.body.appendChild(menu);
+    const r=btn.getBoundingClientRect();
+    menu.style.top=(r.bottom+6)+"px";
+    menu.style.left=r.left+"px";
+    // Se encostar na borda direita da tela, alinha pela direita do botão
+    const mw=menu.offsetWidth;
+    if(r.left+mw > window.innerWidth-8){
+      menu.style.left="auto";
+      menu.style.right=(window.innerWidth-r.right)+"px";
+    }
     setTimeout(()=>document.addEventListener("click", _addClasseOutside, true),0);
   };
   return btn;
