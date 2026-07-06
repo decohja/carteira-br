@@ -340,8 +340,8 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .content{max-width:1300px;margin:0 auto;padding:16px 18px 80px}
 .panel{display:none}.panel.on{display:block}
 .two{display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start}
-.home-grid{display:grid;grid-template-columns:max-content max-content;gap:16px;align-items:start;max-width:min(100%,720px)}
-.home-side{display:flex;flex-direction:column;gap:12px}
+.home-grid{display:grid;grid-template-columns:max-content max-content;gap:16px;align-items:start}
+.home-side{display:flex;flex-direction:column;gap:16px}
 @media(max-width:820px){.home-grid{grid-template-columns:1fr}}
 .two.eq{grid-template-columns:1fr 1fr}
 .two>div{min-width:0} /* permite a coluna encolher abaixo do conteúdo — senão a tabela empurra o grid inteiro em vez de rolar internamente */
@@ -960,22 +960,22 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
   <div class="home-grid">
     <div>
-      <div class="st-hl st-hl-big gold">Ativos na carteira</div>
-      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;max-width:700px;width:fit-content"></div>
+      <div class="st-hl gold">Ativos na carteira</div>
+      <div class="bx" id="ativosCarteiraBox" style="margin-bottom:16px;width:fit-content"></div>
     </div>
     <div class="home-side">
       <div>
         <div class="st-hl gold">Maiores posições</div>
-        <div class="bx" id="maioresPosicoesBox" style="max-width:360px;width:fit-content"></div>
+        <div class="bx" id="maioresPosicoesBox" style="width:fit-content"></div>
       </div>
       <div>
         <div class="st-hl gold">Evolução do patrimônio</div>
-        <div class="bx" id="evolucaoPatrBox" style="max-width:360px;width:fit-content"></div>
+        <div class="bx" id="evolucaoPatrBox" style="width:fit-content"></div>
       </div>
     </div>
   </div>
   <div class="st-hl gold" style="margin-top:18px">Atual vs. Meta por classe</div>
-  <div class="bx" id="metaBarChartHome" style="margin-top:8px;max-width:700px;width:fit-content"></div>
+  <div class="bx" id="metaBarChartHome" style="margin-top:8px;width:fit-content"></div>
 </section>
 
 <!-- METAS DE ALOCAÇÃO (painel próprio, igual Ações/FIIs) -->
@@ -2104,6 +2104,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v29.7",d:"Jul/2026",items:[
+    "CORRIGIDO o desalinhamento vertical das caixas da Home: o título 'Ativos na carteira' usava uma fonte grande (st-hl-big, 15px) enquanto 'Maiores posições' usava a fonte pequena (st-hl, 10px) — como os títulos tinham alturas diferentes, as caixas abaixo começavam em linhas diferentes e os topos das colunas não batiam. Agora todos os títulos da Home usam o mesmo estilo (st-hl), então os topos das duas colunas alinham. Também uniformizado o espaçamento entre as caixas (16px em toda a Home) e removido um limite de largura que espremia a coluna da direita",
+  ]},
   {v:"v29.6",d:"Jul/2026",items:[
     "CORRIGIDO: gráfico 'Atual vs. Meta por classe' mostrava classes zeradas (BDRs 0%, Cripto 0%) que não fazem sentido ali — agora só entram classes com algo investido, igual o gráfico 'Ativos na Carteira' já fazia",
     "CORRIGIDO o vazamento da legenda pra fora da caixa branca: o código escrevia a rosca e a legenda em duas etapas separadas (rosca primeiro, legenda populada depois) — isso fazia a caixa calcular a largura antes da legenda existir, e ela aparecia fora do card, sem fundo. Agora escreve tudo de uma vez só. Caixa também alargada (620px → 700px) pra rosca+legenda caberem lado a lado sem quebrar linha",
