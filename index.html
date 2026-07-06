@@ -2067,6 +2067,9 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v28.0",d:"Jun/2026",items:[
+    "NOVO: se o salvamento da carteira falhar de vez (as duas tentativas), aparece um aviso vermelho na tela mostrando o erro exato — sem precisar abrir console do navegador. Isso vai finalmente mostrar POR QUE alguns saves não estão pegando",
+  ]},
   {v:"v27.9",d:"Jun/2026",items:[
     "ACHADO O BUG DE VERDADE do Lucro/Variação zerando: o cache de preço rodava ANTES dos dados reais do usuário chegarem do Supabase — nesse momento, D.etfs/D.stocks ainda estavam vazios, então o cache nunca conseguia conectar o preço salvo às posições reais. Agora roda de novo depois que os dados chegam",
   ]},
@@ -5941,15 +5944,38 @@ async function salvarCarteiraNaNuvem(){
   };
   try{
     await SB.upsert('portfolio_data', payload);
+    esconderErroSalvamento();
   }catch(e){
     // Coluna "bdrs" pode não existir ainda no Supabase (SQL de migração não rodado) — tenta de
     // novo sem ela, pra não perder o salvamento do resto da carteira por causa disso.
     console.warn("Salvamento com 'bdrs' falhou, tentando sem — rode o ALTER TABLE no Supabase:", e.message);
-    const { bdrs, ...payloadSemBdrs } = payload;
-    await SB.upsert('portfolio_data', payloadSemBdrs);
+    try{
+      const { bdrs, ...payloadSemBdrs } = payload;
+      await SB.upsert('portfolio_data', payloadSemBdrs);
+      esconderErroSalvamento();
+    }catch(e2){
+      // As duas tentativas falharam de vez — mostra na TELA, sem precisar abrir console.
+      mostrarErroSalvamento(e2.message || e.message || 'Erro desconhecido');
+      throw e2;
+    }
   }
   carteiraEhSemente = false;
   atualizaBannerMigracao();
+}
+function mostrarErroSalvamento(msg){
+  let el = document.getElementById('erroSalvamentoBanner');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'erroSalvamentoBanner';
+    el.style.cssText = 'position:fixed;bottom:16px;left:16px;right:16px;max-width:520px;margin:0 auto;background:var(--neg);color:#fff;padding:12px 16px;border-radius:10px;font-size:12.5px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4)';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `⚠️ Não consegui salvar sua carteira agora — os dados ficaram só nesta sessão.<br><span style="opacity:.85;font-size:11px">Erro: ${msg}</span>`;
+  el.style.display = 'block';
+}
+function esconderErroSalvamento(){
+  const el = document.getElementById('erroSalvamentoBanner');
+  if(el) el.style.display = 'none';
 }
 function atualizaBannerMigracao(){
   const el = document.getElementById('migBanner');
