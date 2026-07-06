@@ -1236,10 +1236,10 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
       <thead><tr>
         <th>Moeda</th>
         <th class="r">Qtd.</th>
-        <th class="r">Preço Médio <span class="info-ic" title="Preço médio pago por unidade da moeda, considerando todas as compras já feitas.">?</span></th>
-        <th class="r">Total Investido <span class="info-ic" title="Quanto você efetivamente pagou: preço médio de compra × quantidade da moeda.">?</span></th>
-        <th class="r">Total Corretora <span class="info-ic" title="Quanto vale hoje na corretora: cotação atual × quantidade da moeda. Mostra 'PM' quando não há cotação ao vivo disponível para essa moeda.">?</span></th>
-        <th class="r">Preço</th>
+        <th class="r">Preço Médio <span class="info-ic" title="Preço médio pago por unidade da moeda, considerando todas as compras já feitas. Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
+        <th class="r">Total Investido <span class="info-ic" title="Quanto você efetivamente pagou: preço médio de compra × quantidade da moeda. Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
+        <th class="r">Total Corretora <span class="info-ic" title="Quanto vale hoje na corretora: cotação atual × quantidade da moeda. Mostra 'PM' quando não há cotação ao vivo disponível para essa moeda. Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
+        <th class="r">Preço <span class="info-ic" title="Valor em dólar (US$), com o equivalente em real logo abaixo.">?</span></th>
         <th class="r">Lucro</th>
         <th class="r">% Teto Individual <span class="info-ic" title="Limite máximo que você definiu para esta moeda dentro da carteira de Cripto. Clique no valor na linha para editar.">?</span></th>
         <th></th>
@@ -2103,6 +2103,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v29.1",d:"Jul/2026",items:[
+    "Invertido: Cripto agora segue exatamente o mesmo padrão de ETFs e Stocks EUA — dólar (US$) como valor principal, com o equivalente em real logo abaixo em fonte menor. Antes (v29.0) tinha ficado ao contrário (real principal, dólar embaixo). Ajustado em Preço Médio, Total Investido, Total Corretora, Preço e Lucro, e nos tooltips (?) de cada coluna",
+  ]},
+  {v:"v29.0",d:"Jul/2026",items:[
+    "Cripto agora mostra a cotação equivalente em dólar embaixo de cada valor em real (Preço Médio, Total Investido, Total Corretora, Preço e Lucro) — mesmo padrão já usado em ETFs e Stocks EUA (valor principal + linha menor com a outra moeda), só que invertido: aqui o real é o principal e o dólar é a conversão auxiliar. Usa a mesma cotação USD/BRL (`usdBRL`) já buscada pela AwesomeAPI",
+  ]},
   {v:"v28.9",d:"Jul/2026",items:[
     "CORRIGIDO: aviso vermelho \"Não consegui salvar sua carteira — JWT expired\" ao voltar pra aba depois de um tempo em outras. Causa real: o token de sessão vence enquanto a aba está em segundo plano (o navegador atrasa o timer de renovação automática nesse estado), e a primeira tentativa de salvar ao voltar usava o token já vencido. Agora: (1) o cliente SB detecta esse erro específico, renova a sessão e tenta salvar de novo automaticamente antes de desistir; (2) ao voltar a ficar visível, a aba já força uma checagem/renovação de sessão de forma proativa, então na prática o aviso não deve mais aparecer",
   ]},
@@ -4020,11 +4026,11 @@ function renderCripto(){
         <div><div class="tk">${c.moeda}</div><div class="co">${c.nome}</div></div>
       </div></td>
       <td class="r" style="font-family:var(--mono)">${c.qtd}</td>
-      <td class="r" style="font-family:var(--mono);color:var(--muted)">${brl(c.pm,2)}</td>
-      <td class="r" style="font-family:var(--mono)">${brl(totInv,2)}</td>
-      <td class="r" style="font-family:var(--mono)">${brl(totCorretora,2)}</td>
-      <td class="r" style="font-family:var(--mono);color:${precoVivo?'var(--text)':'var(--muted)'}">${precoVivo?brl(preco,2):'PM'}${chgTxt}</td>
-      <td class="r" style="font-family:var(--mono);color:${lucroColor};font-weight:600">${lucro>=0?'+':''}${brl(lucro,2)}</td>
+      <td class="r" style="font-family:var(--mono);color:var(--muted)">${usd(c.pm/usdBRL,2)}<div class="usd2">${brl(c.pm,2)}</div></td>
+      <td class="r" style="font-family:var(--mono)">${usd(totInv/usdBRL,2)}<div class="usd2">${brl(totInv,2)}</div></td>
+      <td class="r" style="font-family:var(--mono)">${usd(totCorretora/usdBRL,2)}<div class="usd2">${brl(totCorretora,2)}</div></td>
+      <td class="r" style="font-family:var(--mono);color:${precoVivo?'var(--text)':'var(--muted)'}">${precoVivo?usd(preco/usdBRL,2):'PM'}${precoVivo?`<div class="usd2">${brl(preco,2)}</div>`:''}${chgTxt}</td>
+      <td class="r" style="font-family:var(--mono);color:${lucroColor};font-weight:600">${lucro>=0?'+':''}${usd(Math.abs(lucro)/usdBRL,2)}<div class="usd2">${lucro>=0?'+':''}${brl(lucro,2)}</div></td>
       <td>${tetoCell(c.moeda, pctCart, tetoAtual, D.cripto.length===1)}</td>
       <td class="r" style="white-space:nowrap;padding-left:4px;padding-right:8px"><button class="refbtn" onclick="openAddAtivo('cripto','${c.moeda}')" style="color:var(--pos);border-color:var(--pos);padding:3px 6px;font-size:11px;margin-right:3px" title="Comprar mais ${c.moeda}">＋</button><button class="refbtn" onclick="deleteCripto(${idx})" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Remover esta posição">✕</button></td>
     </tr>`;
