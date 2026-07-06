@@ -587,6 +587,18 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 .mtab{flex:1;padding:6px 4px;border-radius:4px;border:none;background:none;color:var(--muted);
   font-family:var(--font);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
 .mtab.on{background:var(--bg2);color:var(--text);font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+/* Painel Admin (Configurações) */
+.adm-sec{border:1px solid var(--border);border-radius:var(--rm);padding:12px 13px;margin-bottom:10px;background:var(--bg2)}
+.adm-sec-hd{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);margin-bottom:5px}
+.adm-sec-desc{font-size:10.5px;color:var(--muted);line-height:1.55;margin-bottom:10px}
+.adm-btn{font-size:11px;padding:6px 10px}
+.adm-status{font-size:11px;color:var(--text);font-family:var(--mono);line-height:1.7}
+.adm-status .ok{color:var(--pos)}.adm-status .bad{color:var(--neg)}.adm-status .muted{color:var(--muted)}
+.adm-status-row{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.adm-cor-row{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border)}
+.adm-cor-row:last-child{border-bottom:none}
+.adm-cor-nome{flex:1;font-size:12px;color:var(--text)}
+.adm-cor-input{width:38px;height:26px;border:1px solid var(--border2);border-radius:5px;padding:0;background:none;cursor:pointer}
 .avt-up{width:72px;height:72px;border-radius:50%;border:2px dashed var(--border2);
   display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:24px;
   color:var(--muted);transition:all .15s;overflow:hidden;margin:0 auto 12px}
@@ -1551,6 +1563,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
     <div class="mtabs">
       <button class="mtab on" onclick="swMTab('metas',this)">🎯 Metas</button>
       <button class="mtab" onclick="swMTab('changelog',this)">📋 Versões</button>
+      <button class="mtab" id="mtabAdmin" style="display:none" onclick="swMTab('admin',this)">🛠️ Admin</button>
     </div>
 
     <div id="mt-metas">
@@ -1565,6 +1578,43 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
 
     <div id="mt-changelog" style="display:none">
       <div id="changelogList"></div>
+    </div>
+
+    <div id="mt-admin" style="display:none">
+      <div class="adm-sec">
+        <div class="adm-sec-hd">Backup da carteira</div>
+        <div class="adm-sec-desc">Baixe um arquivo com toda a sua carteira, ou restaure a partir de um backup. A importação substitui a carteira atual.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-sec adm-btn" onclick="adminExportarJSON()">⬇️ Exportar JSON</button>
+          <button class="btn-sec adm-btn" onclick="document.getElementById('admImportFile').click()">⬆️ Importar JSON</button>
+          <input type="file" id="admImportFile" accept="application/json,.json" style="display:none" onchange="adminImportarJSON(this)"/>
+        </div>
+      </div>
+
+      <div class="adm-sec">
+        <div class="adm-sec-hd">Status do sistema</div>
+        <div id="admStatus" class="adm-status"></div>
+        <button class="btn-sec adm-btn" style="margin-top:8px" onclick="adminRenderStatus()">🔄 Atualizar status</button>
+      </div>
+
+      <div class="adm-sec">
+        <div class="adm-sec-hd">Limpar caches</div>
+        <div class="adm-sec-desc">Remove dados guardados localmente neste navegador. Sua carteira na nuvem não é afetada — só o cache de apoio.</div>
+        <div id="admCacheInfo" class="adm-status" style="margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-sec adm-btn" onclick="adminLimparCache('preco')">Preços</button>
+          <button class="btn-sec adm-btn" onclick="adminLimparCache('dy')">DY%</button>
+          <button class="btn-sec adm-btn" onclick="adminLimparCache('listas')">Listas de tickers</button>
+          <button class="btn-sec adm-btn" style="color:var(--neg);border-color:var(--neg)" onclick="adminLimparCache('tudo')">Tudo</button>
+        </div>
+      </div>
+
+      <div class="adm-sec">
+        <div class="adm-sec-hd">Cores das classes</div>
+        <div class="adm-sec-desc">Define a cor de cada classe nos gráficos (roscas, barras, cards). Salvo neste navegador.</div>
+        <div id="admCores"></div>
+        <button class="btn-sec adm-btn" style="margin-top:8px" onclick="adminResetCores()">↩️ Voltar às cores padrão</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2157,6 +2207,10 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v30.3",d:"Jul/2026",items:[
+    "NOVO painel Admin dentro de Configurações — visível só na sua conta (dona). Quatro seções: (1) Backup — exporta a carteira inteira num arquivo JSON e importa de volta (a importação substitui a carteira atual, com confirmação); (2) Status do sistema — versão, se as cotações estão conectando, USD/BRL, quantos preços/DY estão em cache, total de posições; (3) Limpar caches — botões pra zerar cache de preços, DY, listas de tickers ou tudo (só afeta este navegador, não a nuvem); (4) Cores das classes — troca a cor de cada classe nos gráficos e salva, com botão de voltar ao padrão",
+    "Modal de Configurações reestilizado: cada seção agora é um cartão com título e descrição no padrão visual do app, em vez de campos soltos",
+  ]},
   {v:"v30.2",d:"Jul/2026",items:[
     "Tema agora tem 3 modos e o cliente escolhe: Claro, Escuro e Automático. O botão de tema no topo cicla entre os três (Claro → Escuro → Automático), com ícone próprio pra cada um (sol / lua / monitor) e dica ao passar o mouse. Nas Configurações, o botão mostra o modo atual por escrito",
     "'Automático' agora segue o SISTEMA (a preferência de tema do seu celular/computador) em vez da regra antiga por horário — e reage na hora se você trocar o tema do aparelho com o app aberto. Quem já tinha um tema fixo salvo (claro ou escuro) mantém essa escolha; contas novas começam em Automático",
@@ -3683,7 +3737,12 @@ function computeMetasAlocData(){
 }
 
 // Mesmas cores usadas nos cards da fileira — mantém a rosca visualmente conectada ao resto
-const CLASSE_COLORS = {acoes:"#F59E0B",fiis:"#A78BFA",rf:"#3B82F6",etfs:"#14B8A6",stocks:"#EC4899",cripto:"#EF4444",bdrs:"#6366F1"};
+const CLASSE_COLORS_DEFAULT = {acoes:"#F59E0B",fiis:"#A78BFA",rf:"#3B82F6",etfs:"#14B8A6",stocks:"#EC4899",cripto:"#EF4444",bdrs:"#6366F1"};
+// Cores efetivas = padrão sobrescrito pelo que o admin salvou (se salvou). Editável pelo painel Admin.
+const CLASSE_COLORS = (function(){
+  try{ return {...CLASSE_COLORS_DEFAULT, ...JSON.parse(localStorage.getItem('classeCores_v1')||'{}')}; }
+  catch(e){ return {...CLASSE_COLORS_DEFAULT}; }
+})();
 const CLASSE_TABS = {fiis:"fiis",acoes:"acoes",bdrs:"bdrs",stocks:"stocks",etfs:"etfs",rf:"rf",cripto:"cripto"};
 
 // Junta posições de todas as classes num só ranking, pra "Maiores Posições"
@@ -6069,6 +6128,8 @@ function toggleTheme(){
 /* Modal */
 function openMod(tab){
   document.getElementById("mod").classList.add("open");
+  const admTab=document.getElementById("mtabAdmin");
+  if(admTab) admTab.style.display = ehAdmin() ? "block" : "none";
   swMTab(tab,document.querySelector(`.mtab[onclick*="'${tab}'"]`));
   renderMetasList();
 }
@@ -6145,7 +6206,7 @@ function exportarDadosCSV(){
   URL.revokeObjectURL(url);
 }
 function swMTab(id,btn){
-  ["metas","changelog"].forEach(t=>document.getElementById("mt-"+t).style.display=t===id?"block":"none");
+  ["metas","changelog","admin"].forEach(t=>{ const el=document.getElementById("mt-"+t); if(el) el.style.display=t===id?"block":"none"; });
   document.querySelectorAll(".mtab").forEach(b=>b.classList.remove("on"));
   if(btn) btn.classList.add("on");
   if(id==="changelog"){
@@ -6157,6 +6218,103 @@ function swMTab(id,btn){
       <ul style="margin:0;padding-left:16px">${c.items.map(i=>`<li style="font-size:11px;color:var(--muted);margin-bottom:3px">${i}</li>`).join("")}</ul>
     </div>`).join("");
   }
+  if(id==="admin"){ adminRenderStatus(); adminRenderCores(); adminRenderCacheInfo(); }
+}
+
+/* ═══════════════ PAINEL ADMIN (só OWNER) ═══════════════ */
+function ehAdmin(){ return currentUser && currentUser.email === OWNER_EMAIL; }
+
+// ── Backup: exportar/importar carteira em JSON ──
+function adminExportarJSON(){
+  const backup = {
+    _app:"ativo-br", _versao:(CHANGELOG[0]?CHANGELOG[0].v:"?"), _exportadoEm:new Date().toISOString(),
+    acoes:D.acoes, bdrs:D.bdrs, fiis:D.fiis, etfs:D.etfs, stocks:D.stocks, rf:D.rf, cripto:D.cripto,
+    extra:getCustomExtra(), metasAloc:getMetasAloc()
+  };
+  const blob = new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download=`ativo-br-backup-${new Date().toISOString().split("T")[0]}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function adminImportarJSON(input){
+  const file=input.files&&input.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const b=JSON.parse(reader.result);
+      if(b._app!=="ativo-br") throw new Error("Arquivo não é um backup do ativo·br.");
+      if(!confirm("Isso vai SUBSTITUIR sua carteira atual pelo backup. Continuar?")){ input.value=""; return; }
+      ["acoes","bdrs","fiis","etfs","stocks","rf","cripto"].forEach(k=>{ if(Array.isArray(b[k])) D[k]=b[k]; });
+      if(Array.isArray(b.extra)) saveCustomExtra(b.extra);
+      if(b.metasAloc) localStorage.setItem(METAS_KEY, JSON.stringify(b.metasAloc));
+      if(typeof saveCriptoAtivos==='function') saveCriptoAtivos();
+      render();
+      if(currentUser) salvarCarteiraNaNuvem().catch(e=>console.warn("Sync import:",e));
+      alert("Backup importado com sucesso.");
+    }catch(e){ alert("Falha ao importar: "+e.message); }
+    input.value="";
+  };
+  reader.readAsText(file);
+}
+
+// ── Status do sistema ──
+function adminRenderStatus(){
+  const el=document.getElementById("admStatus"); if(!el) return;
+  const err = window._lastFetchError;
+  const linha=(k,v,cls)=>`<div class="adm-status-row"><span class="muted">${k}</span><span class="${cls||''}">${v}</span></div>`;
+  const ultimo=document.querySelector('.last-upd-text');
+  const ultimoTxt = (ultimo&&ultimo.textContent&&ultimo.textContent!=='—')?ultimo.textContent:'—';
+  const nPreco = _contarCache(PRICE_CACHE_KEY), nDy = _contarCache(DY_CACHE_KEY);
+  el.innerHTML =
+    linha("Versão", (CHANGELOG[0]?CHANGELOG[0].v:"?")) +
+    linha("Conexão de cotações", err?("falha: "+err):"ok", err?"bad":"ok") +
+    linha("Último status", ultimoTxt) +
+    linha("USD/BRL", usdBRL?("R$ "+usdBRL.toFixed(4)):"—") +
+    linha("Preços em cache", nPreco) +
+    linha("DY em cache", nDy) +
+    linha("Posições totais", D.acoes.length+D.bdrs.length+D.fiis.length+D.etfs.length+D.stocks.length+D.rf.length+D.cripto.length);
+}
+function _contarCache(key){
+  try{ const o=JSON.parse(localStorage.getItem(key)||"{}"); return Object.keys(o).length; }catch(e){ return 0; }
+}
+
+// ── Limpar caches ──
+function adminRenderCacheInfo(){
+  const el=document.getElementById("admCacheInfo"); if(!el) return;
+  el.innerHTML=`<span class="muted">Preços:</span> ${_contarCache(PRICE_CACHE_KEY)} · <span class="muted">DY:</span> ${_contarCache(DY_CACHE_KEY)} · <span class="muted">Listas:</span> ${localStorage.getItem(TICKER_LIST_CACHE_KEY)?"sim":"não"}`;
+}
+function adminLimparCache(qual){
+  const mapa={preco:[PRICE_CACHE_KEY],dy:[DY_CACHE_KEY],listas:[TICKER_LIST_CACHE_KEY],tudo:[PRICE_CACHE_KEY,DY_CACHE_KEY,TICKER_LIST_CACHE_KEY]};
+  const keys=mapa[qual]||[];
+  if(qual==="tudo" && !confirm("Limpar TODOS os caches locais (preços, DY e listas)?")) return;
+  keys.forEach(k=>localStorage.removeItem(k));
+  adminRenderCacheInfo(); adminRenderStatus();
+  alert("Cache limpo. Os dados serão buscados de novo na próxima atualização.");
+}
+
+// ── Cores das classes ──
+const _CLASSE_NOMES={acoes:"Ações BR",bdrs:"BDRs",fiis:"FIIs",rf:"Renda Fixa",etfs:"ETFs",stocks:"Stocks",cripto:"Cripto"};
+function adminRenderCores(){
+  const el=document.getElementById("admCores"); if(!el) return;
+  el.innerHTML=Object.keys(_CLASSE_NOMES).map(id=>`
+    <div class="adm-cor-row">
+      <span class="adm-cor-nome">${_CLASSE_NOMES[id]}</span>
+      <input type="color" class="adm-cor-input" value="${CLASSE_COLORS[id]||'#888888'}" onchange="adminSetCor('${id}',this.value)"/>
+    </div>`).join("");
+}
+function adminSetCor(id,cor){
+  CLASSE_COLORS[id]=cor;
+  const salvo={}; Object.keys(_CLASSE_NOMES).forEach(k=>{ if(CLASSE_COLORS[k]!==CLASSE_COLORS_DEFAULT[k]) salvo[k]=CLASSE_COLORS[k]; });
+  localStorage.setItem('classeCores_v1', JSON.stringify(salvo));
+  render();
+}
+function adminResetCores(){
+  Object.keys(CLASSE_COLORS_DEFAULT).forEach(k=>{ CLASSE_COLORS[k]=CLASSE_COLORS_DEFAULT[k]; });
+  localStorage.removeItem('classeCores_v1');
+  adminRenderCores(); render();
 }
 function upAvt(input){
   const file=input.files[0]; if(!file) return;
