@@ -203,6 +203,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opa
 .mkt-item.usd .mk-dot{background:#16A34A}
 .mk-n{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .mk-bottom{display:flex;align-items:center;gap:6px}
+.mk-stale{font-size:8.5px;color:var(--muted);margin-top:1px;height:10px;line-height:10px;font-family:var(--mono)}
 .mk-v{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text);letter-spacing:-.01em}
 .mk-unit{font-size:9px;color:var(--muted);margin-left:-3px}
 .mk-c{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-family:var(--mono);font-weight:700;
@@ -888,6 +889,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <span class="mk-v" id="mk-ibov-v">—</span><span class="mk-unit">pts</span>
         <span class="mk-c neu" id="mk-ibov-c">—</span>
       </div>
+      <div class="mk-stale" id="mk-ibov-stale"></div>
     </div>
     <div class="mkt-item usd">
       <div class="mk-top"><span class="mk-dot"></span><span class="mk-n">DÓLAR</span></div>
@@ -895,6 +897,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         <span class="mk-v" id="mk-usd-v">—</span>
         <span class="mk-c neu" id="mk-usd-c">—</span>
       </div>
+      <div class="mk-stale" id="mk-usd-stale"></div>
     </div>
   </div>
   <div class="hdr-r">
@@ -2218,6 +2221,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v30.6",d:"Jul/2026",items:[
+    "IBOVESPA e DÓLAR nunca mais mostram traço ou zero: se a busca da vez falhar, o app exibe o ÚLTIMO valor conhecido (guardado em cache) com um 'atualizado HH:MM' embaixo, deixando claro que está um pouco velho mas presente. Melhor um valor levemente desatualizado e avisado do que sumir. O traço '—' só apareceria numa conta/sessão totalmente nova que nunca recebeu nenhum valor — e mesmo aí mostra uma bolinha de 'buscando', não traço",
+  ]},
+  {v:"v30.5",d:"Jul/2026",items:[
+    "IBOV agora tem fallback pelo Yahoo: se a Brapi falhar (ex.: 429 rate limit, que aconteceu ao estourar a cota tentando dados que viraram pagos), o Ibovespa vem do Yahoo pelo ticker ^BVSP — mesmo esquema que as ações já usavam. Antes, quando a Brapi caía, o IBOV simplesmente sumia; agora ele se mantém",
+  ]},
   {v:"v30.4",d:"Jul/2026",items:[
     "Limpeza das chamadas à Brapi que não funcionam mais no plano free (confirmado na documentação da Brapi): DY% (modules=defaultKeyStatistics) e Proventos (dividends=true) viraram recursos pagos e retornavam 400/403. Pior: o módulo de DY vinha grudado na chamada de cotação, e isso fazia a Brapi rejeitar TUDO com 400 — inclusive o preço que seria grátis. Agora a Brapi é usada só pra buscar o IBOV (cotação simples, que o free ainda entrega). A cotação das ações/FIIs/BDR já vinha 100% do Yahoo e continua assim",
     "Proventos automáticos: desativada a busca (não há fonte gratuita ativa no momento — a da Brapi caiu). O histórico de proventos já lançados continua intacto; só a detecção automática de proventos novos fica em espera até plugarmos uma fonte alternativa. DY% segue tentando pelo Yahoo (fonte que não depende da Brapi)",
@@ -3405,6 +3414,9 @@ async function refreshPrices(manual=false){
   let ibovOK=false;
   window._dyBR = window._dyBR || {}; // cache de DY% real por ticker (preenchido por fontes alternativas)
   window._priceUpdatedAt = window._priceUpdatedAt || {}; // timestamp da última cotação CONFIRMADA por ticker
+  // IBOV: tenta a Brapi primeiro (cotação simples). Se ela falhar (ex.: 429 rate limit), cai pro
+  // Yahoo — que tem o índice no ticker ^BVSP e não depende da Brapi. Assim o IBOV não some quando
+  // a Brapi está indisponível, igual as ações já não somem (elas têm o mesmo fallback).
   try{
     const url=`https://brapi.dev/api/quote/%5EBVSP?token=${BRAPI_TOKEN}`;
     const j=await corsGetJSON(url);
@@ -3412,8 +3424,21 @@ async function refreshPrices(manual=false){
     if(q&&q.regularMarketPrice){
       updMkt('ibov',q.regularMarketPrice.toLocaleString('pt-BR',{maximumFractionDigits:0}),q.regularMarketChangePercent||0);
       ibovOK=true;
-    } else { updMktErr('ibov'); }
-  }catch(e){ console.warn('IBOV falhou:',e.message); updMktErr('ibov'); }
+    }
+  }catch(e){ console.warn('IBOV pela Brapi falhou, tentando Yahoo:',e.message); }
+  if(!ibovOK){
+    try{
+      const jy=await corsGetJSON('https://query1.finance.yahoo.com/v8/finance/chart/%5EBVSP?interval=1m&range=1d');
+      const m=jy?.chart?.result?.[0]?.meta;
+      if(m?.regularMarketPrice){
+        const prev=m.chartPreviousClose||m.previousClose||m.regularMarketPrice;
+        const chg=prev? ((m.regularMarketPrice-prev)/prev*100) : 0;
+        updMkt('ibov',m.regularMarketPrice.toLocaleString('pt-BR',{maximumFractionDigits:0}),chg);
+        ibovOK=true;
+      }
+    }catch(e){ console.warn('IBOV pelo Yahoo também falhou:',e.message); }
+  }
+  if(!ibovOK) updMktErr('ibov');
 
   /* 1c. Fallback de cotação: Yahoo Finance (sufixo .SA) pra qualquer ticker BR que a Brapi não confirmou
         agora há pouco. Yahoo não exige token nem proxy (endpoint libera acesso direto do navegador),
@@ -3492,7 +3517,7 @@ async function refreshPrices(manual=false){
     });
     // compat: mantém _btcBRLDireto para código legado
     if(window._cryptoBRL['BTC']) window._btcBRLDireto=window._cryptoBRL['BTC'];
-  }catch(e){ console.warn('AwesomeAPI falhou:',e.message); }
+  }catch(e){ console.warn('AwesomeAPI falhou:',e.message); updMktErr('usd'); }
 
   /* 3. ETFs/Stocks EUA — tenta Yahoo (pode falhar por bloqueio externo; best-effort) */
   const tksUS=[...new Set([...D.etfs.map(e=>e.tk),...D.stocks.map(s=>s.tk)])];
@@ -3617,12 +3642,41 @@ function updMkt(key,val,chPct){
   try{
     localStorage.setItem("mktCache_"+key, JSON.stringify({val,chPct:ch,ts:Date.now()}));
   }catch(e){}
+  // dado fresco agora: limpa o aviso de "desatualizado"
+  const st=document.getElementById("mk-"+key+"-stale"); if(st) st.textContent="";
 }
+// Chamado quando a busca da vez falhou. Regra: NUNCA mostrar traço/zero se já houve um valor —
+// puxa o último valor conhecido do cache e mostra "atualizado HH:MM" embaixo, deixando claro que
+// está um pouco velho mas presente. Só mostra spinner (buscando) se nunca houve valor nenhum
+// (conta/sessão nova sem cache). O traço "—" some de vez.
 function updMktErr(key){
   const vEl=document.getElementById("mk-"+key+"-v");
   const cEl=document.getElementById("mk-"+key+"-c");
+  const st=document.getElementById("mk-"+key+"-stale");
   if(!vEl||!cEl) return;
-  vEl.textContent="—"; cEl.textContent="—"; cEl.className="mk-c neu";
+  let cached=null;
+  try{ cached=JSON.parse(localStorage.getItem("mktCache_"+key)||"null"); }catch(e){}
+  if(cached && cached.val!=null){
+    // Mostra o último valor conhecido (sem regravar cache) + horário da última atualização real
+    vEl.textContent=cached.val;
+    const ch=parseFloat(cached.chPct)||0, up=ch>0, dn=ch<0;
+    cEl.className="mk-c "+(up?"up":dn?"dn":"neu");
+    const arrowSvg = up
+      ? `<svg class="mk-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>`
+      : dn
+      ? `<svg class="mk-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 7 9 13 13 9 21 17"/><polyline points="14 17 21 17 21 10"/></svg>`
+      : "";
+    cEl.innerHTML = arrowSvg + Math.abs(ch).toFixed(2)+"%";
+    if(st && cached.ts){
+      const hhmm=new Date(cached.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      st.textContent="atualizado "+hhmm;
+    }
+  } else {
+    // Nunca houve valor — mostra spinner (buscando), não traço
+    const spinnerSvg='<svg class="stale-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" title="Buscando…"><path d="M21 12a9 9 0 1 1-3-6.7"/></svg>';
+    vEl.innerHTML=spinnerSvg; cEl.textContent=""; cEl.className="mk-c neu";
+    if(st) st.textContent="";
+  }
 }
 
 /* Carrega valores em cache local imediatamente — evita "—" enquanto a rede não responde.
@@ -6263,7 +6317,7 @@ function adminRenderStatus(){
   el.innerHTML =
     linha("Versão", (CHANGELOG[0]?CHANGELOG[0].v:"?")) +
     linha("Cotação BR", "Yahoo Finance", "ok") +
-    linha("IBOV", "Brapi (índice)", "ok") +
+    linha("IBOV", "Brapi → Yahoo", "ok") +
     linha("USD/BRL + Cripto", "AwesomeAPI", "ok") +
     linha("DY%", "Yahoo (parcial p/ B3)", "muted") +
     linha("Proventos automáticos", "sem fonte ativa", "muted") +
