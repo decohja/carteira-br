@@ -1937,7 +1937,18 @@ async function corsGetJSON(url){
     if(r.ok) return await r.json();
     lastErr = r.status===402 ? 'Limite mensal da Brapi atingido (402)' : `HTTP ${r.status}`;
     console.warn('corsGetJSON direct failed:',r.status,url);
-  }catch(e){ lastErr = e.name==='AbortError' ? 'Tempo esgotado (direto)' : 'Bloqueio de CORS ou rede indisponível'; console.warn('corsGetJSON direct error:',e.message,url); }
+    // 400/403 = a FONTE recusou a requisição por regra dela (ex.: recurso pago, parâmetro não
+    // liberado no plano). Proxy não resolve isso — ele só reempacota a MESMA requisição e recebe
+    // a mesma recusa. Então desiste já, sem gastar as 3 tentativas de proxy (que só geram avalanche
+    // de erro no console e ~18s de espera à toa). CORS/rede (que o proxy PODE resolver) cai no catch.
+    if(r.status===400 || r.status===403){
+      window._lastFetchError = lastErr;
+      throw new Error('Fonte recusou a requisição ('+r.status+') — não é contornável por proxy: '+lastErr);
+    }
+  }catch(e){
+    if(/Fonte recusou a requisição/.test(e.message)) throw e; // já é a nossa decisão de não insistir
+    lastErr = e.name==='AbortError' ? 'Tempo esgotado (direto)' : 'Bloqueio de CORS ou rede indisponível'; console.warn('corsGetJSON direct error:',e.message,url);
+  }
   try{
     const r=await fetchComTimeout('https://api.allorigins.win/get?url='+encodeURIComponent(url));
     const j=await r.json();
@@ -2207,6 +2218,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v30.4",d:"Jul/2026",items:[
+    "Limpeza das chamadas à Brapi que não funcionam mais no plano free (confirmado na documentação da Brapi): DY% (modules=defaultKeyStatistics) e Proventos (dividends=true) viraram recursos pagos e retornavam 400/403. Pior: o módulo de DY vinha grudado na chamada de cotação, e isso fazia a Brapi rejeitar TUDO com 400 — inclusive o preço que seria grátis. Agora a Brapi é usada só pra buscar o IBOV (cotação simples, que o free ainda entrega). A cotação das ações/FIIs/BDR já vinha 100% do Yahoo e continua assim",
+    "Proventos automáticos: desativada a busca (não há fonte gratuita ativa no momento — a da Brapi caiu). O histórico de proventos já lançados continua intacto; só a detecção automática de proventos novos fica em espera até plugarmos uma fonte alternativa. DY% segue tentando pelo Yahoo (fonte que não depende da Brapi)",
+    "corsGetJSON: quando a fonte responde 400/403 (recusa por regra dela, ex.: recurso pago), o app não tenta mais os 3 proxies em seguida — eles só repassam a mesma requisição e recebem a mesma recusa, gastando ~18s e enchendo o console de erro à toa. Bloqueio de CORS/rede (que proxy PODE resolver) continua tentando normalmente",
+    "Painel Admin › Status agora mostra a fonte real de cada dado (Cotação BR: Yahoo · IBOV: Brapi · USD/Cripto: AwesomeAPI · DY: Yahoo parcial · Proventos: sem fonte ativa) e só exibe 'último erro de rede' se de fato houver um pendente — o erro é limpo assim que as cotações chegam",
+  ]},
   {v:"v30.3",d:"Jul/2026",items:[
     "NOVO painel Admin dentro de Configurações — visível só na sua conta (dona). Quatro seções: (1) Backup — exporta a carteira inteira num arquivo JSON e importa de volta (a importação substitui a carteira atual, com confirmação); (2) Status do sistema — versão, se as cotações estão conectando, USD/BRL, quantos preços/DY estão em cache, total de posições; (3) Limpar caches — botões pra zerar cache de preços, DY, listas de tickers ou tudo (só afeta este navegador, não a nuvem); (4) Cores das classes — troca a cor de cada classe nos gráficos e salva, com botão de voltar ao padrão",
     "Modal de Configurações reestilizado: cada seção agora é um cartão com título e descrição no padrão visual do app, em vez de campos soltos",
@@ -3378,49 +3395,25 @@ async function refreshPrices(manual=false){
   const tksBR   =[...tksAcoes,...tksFiis,...tksBdrs,'^BVSP']; // inclui índice na mesma chamada
   let brOK=0;
 
-  /* 1. BR + IBOV via Brapi (token embutido — plano free, 15k req/mês, atualiza a cada 15min)
-        modules=defaultKeyStatistics traz dividendYield real (DY%) na mesma chamada, sem custo extra */
+  /* 1. IBOV via Brapi. Só o índice — cotação simples, que o plano free ainda entrega.
+        NÃO buscamos mais ações/FIIs/BDR nem DY% aqui: a Brapi free deixou de liberar
+        'modules=defaultKeyStatistics' (DY%) e 'dividends=true' (proventos) — viraram recursos
+        pagos, e juntar o módulo na chamada de cotação fazia a Brapi rejeitar TUDO com 400,
+        derrubando até o preço que seria grátis. A cotação das ações/FIIs/BDR vem do Yahoo logo
+        abaixo (bloco 1c), que já resgatava 100% dos tickers. DY% e Proventos têm tratamento à
+        parte (fontes alternativas em avaliação). */
   let ibovOK=false;
-  window._dyBR = window._dyBR || {}; // cache de DY% real por ticker
+  window._dyBR = window._dyBR || {}; // cache de DY% real por ticker (preenchido por fontes alternativas)
   window._priceUpdatedAt = window._priceUpdatedAt || {}; // timestamp da última cotação CONFIRMADA por ticker
   try{
-    const symStr = tksBR.map(s=>s.replace('^','%5E')).join(',');
-    const url=`https://brapi.dev/api/quote/${symStr}?modules=defaultKeyStatistics&token=${BRAPI_TOKEN}`;
+    const url=`https://brapi.dev/api/quote/%5EBVSP?token=${BRAPI_TOKEN}`;
     const j=await corsGetJSON(url);
-    console.log('Brapi resposta completa:', j);
-    if(j.results&&j.results.length){
-      j.results.forEach(q=>{
-        if(!q.regularMarketPrice) { console.warn('⚠ Brapi sem regularMarketPrice para',q.symbol,'— preço desse ticker vai ficar desatualizado até a próxima tentativa'); return; }
-        if(q.symbol==='^BVSP'){
-          updMkt('ibov',q.regularMarketPrice.toLocaleString('pt-BR',{maximumFractionDigits:0}),q.regularMarketChangePercent||0);
-          ibovOK=true;
-        } else {
-          trackPriceDirection(q.symbol, q.regularMarketPrice);
-          prices[q.symbol]=q.regularMarketPrice; brOK++;
-          window._priceUpdatedAt[q.symbol]=Date.now();
-          savePriceCache(q.symbol, q.regularMarketPrice);
-          // dividendYield vem como fração (ex: 0.0843 = 8.43%) — guarda já em %
-          const dy = q.defaultKeyStatistics?.dividendYield;
-          if(dy!=null && !isNaN(dy)){ window._dyBR[q.symbol] = dy*100; saveDyCache(q.symbol, dy*100); }
-        }
-      });
-    }
-    console.log(`Brapi: ${brOK} ativos BR + IBOV ${ibovOK?'OK':'FALTOU'}, DY% obtido para ${Object.keys(window._dyBR).length} tickers`);
-  }catch(e){ window._lastFetchError=e.message; console.warn('Brapi falhou:',e.message); }
-
-  /* 1b. Fallback: busca ^BVSP isolado se não veio no batch (alguns planos limitam mix de índice+ações) */
-  if(!ibovOK){
-    try{
-      const url2=`https://brapi.dev/api/quote/%5EBVSP?token=${BRAPI_TOKEN}`;
-      const j2=await corsGetJSON(url2);
-      console.log('IBOV isolado resposta:', j2);
-      const q2=j2.results&&j2.results[0];
-      if(q2&&q2.regularMarketPrice){
-        updMkt('ibov',q2.regularMarketPrice.toLocaleString('pt-BR',{maximumFractionDigits:0}),q2.regularMarketChangePercent||0);
-        ibovOK=true;
-      } else { updMktErr('ibov'); }
-    }catch(e){ console.warn('IBOV isolado falhou:',e.message); updMktErr('ibov'); }
-  }
+    const q=j.results&&j.results[0];
+    if(q&&q.regularMarketPrice){
+      updMkt('ibov',q.regularMarketPrice.toLocaleString('pt-BR',{maximumFractionDigits:0}),q.regularMarketChangePercent||0);
+      ibovOK=true;
+    } else { updMktErr('ibov'); }
+  }catch(e){ console.warn('IBOV falhou:',e.message); updMktErr('ibov'); }
 
   /* 1c. Fallback de cotação: Yahoo Finance (sufixo .SA) pra qualquer ticker BR que a Brapi não confirmou
         agora há pouco. Yahoo não exige token nem proxy (endpoint libera acesso direto do navegador),
@@ -3447,7 +3440,10 @@ async function refreshPrices(manual=false){
         }
       }catch(e){ console.warn(`Fallback Yahoo falhou pra ${tk}.SA:`,e.message); }
     }));
-    if(yhOK) console.log(`Fallback Yahoo: ${yhOK} de ${tksSemPrecoFresco.length} tickers BR resgatados`);
+    if(yhOK){
+      console.log(`Fallback Yahoo: ${yhOK} de ${tksSemPrecoFresco.length} tickers BR resgatados`);
+      window._lastFetchError = null; // cotações chegaram — não há erro de rede pendente a exibir
+    }
   }
 
   /* 1d. Fallback de DY%: Yahoo Finance (mesmo endpoint acima, com events=div) pra ativos BR que
@@ -5375,23 +5371,21 @@ async function buscarProventosManual(){
   }
 }
 
-/* ── Proventos detectados automaticamente (via Brapi/CVM) ─────────── */
-// Busca dividends=true SEPARADO da cotação, um ticker por vez — se um ticker
-// específico falhar ou vier com payload grande, não derruba a atualização de preço.
+/* ── Proventos detectados automaticamente ─────────────────────────────
+   DESATIVADO por ora: a Brapi free deixou de liberar 'dividends=true' (virou recurso pago,
+   retorna 403). Como não há fonte de proventos ativa no momento, a função não faz mais chamadas
+   de rede — só retorna vazio. Fica pronta pra plugar uma fonte alternativa depois (Yahoo, CVM,
+   Edge Function etc.): é só voltar a preencher o loop de busca aqui dentro. O histórico de
+   proventos já lançados (D.provLog) continua intacto e visível — isso só afeta a DETECÇÃO de
+   proventos NOVOS automaticamente. */
+const PROVENTOS_FONTE_ATIVA = false; // vira true quando houver fonte funcionando
 async function buscarProventosAutomaticos(){
-  const tks=[...D.acoes.map(a=>a.tk), ...D.fiis.map(f=>f.tk), ...D.bdrs.map(b=>b.tk)];
-  let sucesso=0, falhas=0;
   window._proventosNovosNestaRodada = 0;
-  await Promise.allSettled(tks.map(async tk=>{
-    try{
-      const url=`https://brapi.dev/api/quote/${tk}?dividends=true&token=${BRAPI_TOKEN}`;
-      const j=await corsGetJSON(url);
-      sucesso++;
-      const q=j.results&&j.results[0];
-      if(q?.dividendsData?.cashDividends?.length) coletarProventosSugeridos(tk, q.dividendsData.cashDividends);
-    }catch(e){ falhas++; console.warn(`Proventos: falhou pra ${tk}:`,e.message); }
-  }));
-  return {sucesso, falhas, novos: window._proventosNovosNestaRodada};
+  if(!PROVENTOS_FONTE_ATIVA){
+    return {sucesso:0, falhas:0, novos:0, desativado:true};
+  }
+  // (reservado) quando houver fonte: buscar aqui e chamar coletarProventosSugeridos(tk, lista)
+  return {sucesso:0, falhas:0, novos:0};
 }
 
 function coletarProventosSugeridos(tk, cashDividends){
@@ -6265,17 +6259,19 @@ function adminRenderStatus(){
   const el=document.getElementById("admStatus"); if(!el) return;
   const err = window._lastFetchError;
   const linha=(k,v,cls)=>`<div class="adm-status-row"><span class="muted">${k}</span><span class="${cls||''}">${v}</span></div>`;
-  const ultimo=document.querySelector('.last-upd-text');
-  const ultimoTxt = (ultimo&&ultimo.textContent&&ultimo.textContent!=='—')?ultimo.textContent:'—';
   const nPreco = _contarCache(PRICE_CACHE_KEY), nDy = _contarCache(DY_CACHE_KEY);
   el.innerHTML =
     linha("Versão", (CHANGELOG[0]?CHANGELOG[0].v:"?")) +
-    linha("Conexão de cotações", err?("falha: "+err):"ok", err?"bad":"ok") +
-    linha("Último status", ultimoTxt) +
-    linha("USD/BRL", usdBRL?("R$ "+usdBRL.toFixed(4)):"—") +
+    linha("Cotação BR", "Yahoo Finance", "ok") +
+    linha("IBOV", "Brapi (índice)", "ok") +
+    linha("USD/BRL + Cripto", "AwesomeAPI", "ok") +
+    linha("DY%", "Yahoo (parcial p/ B3)", "muted") +
+    linha("Proventos automáticos", "sem fonte ativa", "muted") +
+    linha("USD/BRL atual", usdBRL?("R$ "+usdBRL.toFixed(4)):"—") +
     linha("Preços em cache", nPreco) +
     linha("DY em cache", nDy) +
-    linha("Posições totais", D.acoes.length+D.bdrs.length+D.fiis.length+D.etfs.length+D.stocks.length+D.rf.length+D.cripto.length);
+    linha("Posições totais", D.acoes.length+D.bdrs.length+D.fiis.length+D.etfs.length+D.stocks.length+D.rf.length+D.cripto.length) +
+    (err ? linha("Último erro de rede", err, "bad") : "");
 }
 function _contarCache(key){
   try{ const o=JSON.parse(localStorage.getItem(key)||"{}"); return Object.keys(o).length; }catch(e){ return 0; }
