@@ -2221,6 +2221,15 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v31.0",d:"Jul/2026",items:[
+    "SEGURANÇA CRÍTICA: sua carteira real (tickers, preço médio, cotas, DY, proventos recebidos) estava hardcoded no código-fonte, que é PÚBLICO no GitHub — qualquer pessoa via exatamente o que você tem e quanto vale, sem precisar logar. Removida do arquivo. Não perde nada: sua carteira de verdade já vive no Supabase há semanas; essas listas só serviam de semente pro primeiro acesso, que já não é mais o caso",
+    "SEGURANÇA: upload de avatar usava um caminho FIXO compartilhado (perfil/avatar.jpg) autenticado com a chave anônima — qualquer pessoa que criasse conta podia sobrescrever a foto de perfil de TODO MUNDO. Agora cada usuário tem seu próprio caminho (perfil/{user_id}/avatar.jpg) e o upload usa o token real da sessão, não mais a chave anônima. Requer atualizar a policy do bucket no Supabase (ver painel Admin)",
+    "SEGURANÇA (XSS): campos de texto livre (banco/emissor da Renda Fixa, rótulo de meta, ticker/tipo de provento lançado à mão, nome de item extra) eram injetados sem tratamento em innerHTML — digitar HTML/script nesses campos executava. Adicionado esc() e aplicado nesses pontos",
+    "SEGURANÇA (XSS mais grave): o campo de ticker (Ações/FIIs/BDR/ETFs/Stocks/Cripto) aceitava qualquer caractere — inclusive aspas, capazes de quebrar um atributo onclick e injetar script direto. Agora só aceita letras, números, ponto e ^ (whitelist na entrada, em vez de tentar escapar em cada um dos dezenas de lugares onde o ticker aparece)",
+    "CORRIGIDO: usdBRL (câmbio usado em TODOS os cálculos — patrimônio de ETFs/Stocks, custo, lucro, variação%) nascia hardcoded em 5,80 (valor de junho) e só era atualizado se a AwesomeAPI respondesse com sucesso nesta sessão. O card do dólar já mostrava o valor real (tinha cache próprio), mas os CÁLCULOS continuavam usando 5,80 até a primeira resposta da API — números errados silenciosos quando a API falhava logo cedo. Agora usdBRL parte do último valor real em cache assim que a página abre",
+    "CORRIGIDO: o selo 'atualizado HH:MM' (do IBOV/Dólar quando a busca falha) sempre mostrava a hora do último RELOAD da página, não a hora real da última cotação — porque a função que carregava o cache no início regravava o timestamp por engano. Agora só exibe, sem regravar",
+    "REDUZIDO o risco de duas gravações da carteira colidirem: (1) chamadas concorrentes a salvarCarteiraNaNuvem() na mesma aba agora esperam em fila em vez de rodar em paralelo; (2) o auto-save de 'último preço conhecido' (que disparava a cada ~60s, sempre que qualquer preço mudava) agora tem um intervalo mínimo de 3 minutos entre gravações. Isso reduz bastante a janela de risco, mas não elimina 100% o cenário de dois APARELHOS diferentes salvando ao mesmo tempo — isso exigiria comparar updated_at antes de sobrescrever, mudança maior que fica para uma próxima rodada",
+  ]},
   {v:"v30.6",d:"Jul/2026",items:[
     "IBOVESPA e DÓLAR nunca mais mostram traço ou zero: se a busca da vez falhar, o app exibe o ÚLTIMO valor conhecido (guardado em cache) com um 'atualizado HH:MM' embaixo, deixando claro que está um pouco velho mas presente. Melhor um valor levemente desatualizado e avisado do que sumir. O traço '—' só apareceria numa conta/sessão totalmente nova que nunca recebeu nenhum valor — e mesmo aí mostra uma bolinha de 'buscando', não traço",
   ]},
@@ -2928,17 +2937,14 @@ const D={
   extra:[], // preenchido dinamicamente por renderAllocExtra() (somente itens manuais do usuário)
   cripto:[], // moedas adicionadas manualmente: {moeda, nome, qtd, pm, c (cor)}
   bdrs:[], // BDRs — recibo de empresa estrangeira negociado na B3, sempre em R$: {tk,co,st,pm,cotas,dy,teto,obj}
-  acoes:[
-    {tk:"WEGE3",co:"Weg",           st:"Indústria", pm:46.19,cotas:24, dy:4.7, teto:20,obj:"Manter"},
-    {tk:"BBSE3",co:"BB Seguridade", st:"Financeiro",pm:33.71,cotas:26, dy:13.3,teto:35,obj:"Manter"},
-    {tk:"CPLE3",co:"Copel",         st:"Energia",   pm:13.32,cotas:61, dy:8.7, teto:25,obj:"Manter"},
-    {tk:"ITSA4",co:"Itaúsa",        st:"Financeiro",pm:12.93,cotas:62, dy:7.8, teto:35,obj:"Comprar"},
-    {tk:"SAPR4",co:"Sanepar",       st:"Saneamento",pm:6.99, cotas:98, dy:4.5, teto:15,obj:"Manter"},
-    {tk:"EQTL3",co:"Equatorial",    st:"Energia",   pm:40.57,cotas:16, dy:3.5, teto:25,obj:"Comprar"},
-    {tk:"BBAS3",co:"Banco do BR",   st:"Financeiro",pm:22.22,cotas:26, dy:5.2, teto:35,obj:"Manter"},
-    {tk:"GGPS3",co:"Grupo GPS",     st:"Serviços",  pm:15.01,cotas:36, dy:2.0, teto:5, obj:"Comprar"},
-    {tk:"CXSE3",co:"Caixa Seg.",    st:"Financeiro",pm:14.97,cotas:8,  dy:7.2, teto:35,obj:"Comprar"},
-  ],
+  // SEGURANÇA (jul/2026): estas 5 listas continham a carteira REAL do dono (tickers, preço médio,
+  // cotas, DY, proventos recebidos) hardcoded aqui — e este repositório é PÚBLICO no GitHub, ou
+  // seja, qualquer pessoa podia ver exatamente o que o dono possui e quanto vale, sem nem logar.
+  // Zeradas de propósito. Isso NÃO apaga nada real: a carteira de verdade já vive no Supabase há
+  // semanas (carregarCarteiraDaNuvem() sobrescreve isto assim que o dono loga) — essas listas só
+  // serviam de "semente" pro primeiro acesso, antes de existir qualquer linha salva no banco, o
+  // que já não é mais o caso. Zerar aqui é 100% seguro e não remove nada da conta do dono.
+  acoes:[],
   tetosBR:[
     {s:"Financeiro",teto:35},{s:"Energia",teto:25},
     {s:"Indústria",teto:20},{s:"Saneamento",teto:15},{s:"Serviços",teto:5}
@@ -2950,54 +2956,30 @@ const D={
   tetosETF:[
     {s:"S&P 500 — âncora",teto:60},{s:"Industrial",teto:25},{s:"Saúde/Biotech",teto:25}
   ],
-  fiis:[
-    {tk:"BTLG11",seg:"Logística",pm:102.73,cotas:23, dy:9.18, prov:183.54,st:"CARO"},
-    {tk:"KNSC11",seg:"Papel HG",  pm:8.65,  cotas:143,dy:12.5, prov:160.06,st:"CARO"},
-    {tk:"XPML11",seg:"Shopping",  pm:105.83,cotas:11, dy:9.89, prov:101.20,st:"CARO"},
-    {tk:"GGRC11",seg:"Híbrido",   pm:9.99,  cotas:103,dy:11.94,prov:82.10, st:"NEUTRO"},
-    {tk:"GARE11",seg:"Logística", pm:8.98,  cotas:114,dy:11.62,prov:69.62, st:"BARATO"},
-    {tk:"TRXF11",seg:"Híbrido",   pm:100.63,cotas:6,  dy:12.7, prov:40.41, st:"BARATO"},
-    {tk:"HSLG11",seg:"Logística", pm:87.67, cotas:6,  dy:8.56, prov:30.42, st:"BARATO"},
-    {tk:"SNEL11",seg:"Energia",   pm:8.50,  cotas:59, dy:14.22,prov:5.90,  st:""},
-    {tk:"BTCI11",seg:"Papel HG",  pm:9.27,  cotas:44, dy:12.45,prov:8.73,  st:"BARATO"},
-  ],
-  etfs:[
-    {tk:"VOO",fun:"S&P 500 — âncora",cotas:1.2995,inv:806.28,atual:878.10,lucro:71.82,dy:1.11},
-    {tk:"XLI",fun:"Industrial",       cotas:1.2849,inv:205.00,atual:236.58,lucro:31.58,dy:1.14},
-    {tk:"XLV",fun:"Saúde/Biotech",    cotas:1.2462,inv:193.25,atual:193.94,lucro:0.69, dy:1.57},
-  ],
-  stocks:[
-    {tk:"AVGO",co:"Broadcom",   setor:"Tecnologia", inv:191.01,atual:205.93,lucro:14.92,dy:0.64,obj:"Manter",cotas:0.54342723},
-    {tk:"GOOGL",co:"Alphabet",  setor:"Tecnologia", inv:137.01,atual:162.91,lucro:25.90,dy:0.30,obj:"Manter",cotas:0.47398088},
-    {tk:"JNJ", co:"J&J",        setor:"Saúde",      inv:134.90,atual:154.89,lucro:19.99,dy:3.00,obj:"Comprar",cotas:0.63257035},
-    {tk:"KO",  co:"Coca-Cola",  setor:"Consumo",    inv:139.00,atual:147.96,lucro:8.96, dy:2.80,obj:"Manter",cotas:1.83977056},
-    {tk:"JPM", co:"JP Morgan",  setor:"Financeiro", inv:133.00,atual:145.39,lucro:12.39,dy:2.50,obj:"Manter",cotas:0.43385372},
-    {tk:"V",   co:"Visa",       setor:"Financeiro", inv:91.00, atual:98.23, lucro:7.23, dy:0.75,obj:"Manter",cotas:0.29729398},
-    {tk:"ACN", co:"Accenture",  setor:"Tecnologia", inv:90.00, atual:61.34, lucro:-28.66,dy:2.60,obj:"Manter",cotas:0.48761013},
-    {tk:"NU",  co:"Nubank",     setor:"Financeiro", inv:65.72, atual:49.82, lucro:-15.90,dy:0,  obj:"Comprar",cotas:4.00141715},
-  ],
+  fiis:[],
+  etfs:[],
+  stocks:[],
   setoresEUA:[
     {s:"Tecnologia",teto:40},{s:"Financeiro",teto:30},{s:"Saúde",teto:15},{s:"Consumo",teto:10},
     {s:"Industrial",teto:100},{s:"Energia",teto:100},{s:"Outros",teto:100},
   ],
-  rf:[{titulo:"Tesouro IPCA+ 2050",tipo:"Tesouro IPCA+",cotas:8.24,inv:7050.33,bruto:7183.30,taxa:"7,06% a.a."}],
+  rf:[],
   rfMacro:[
     {k:"Selic",v:"14,25% a.a."},{k:"IPCA 12m",v:"5,17%"},
     {k:"Expec. Selic 2026",v:"≈ 11%"},
   ],
-  provBR:[
-    {m:"Nov/25",v:4.15},{m:"Dez/25",v:31.10},{m:"Jan/26",v:11.42},
-    {m:"Fev/26",v:4.79},{m:"Mar/26",v:29.93},{m:"Abr/26",v:1.24},
-  ],
-  provLog:[
-    {tk:"BTLG11",tipo:"Dividendos",pg:"25/06/2026",vc:0.81, cotas:23, total:18.63},
-    {tk:"XPML11",tipo:"Dividendos",pg:"25/06/2026",vc:0.92, cotas:11, total:10.12},
-    {tk:"KNSC11",tipo:"Dividendos",pg:"12/06/2026",vc:0.10, cotas:143,total:14.30},
-    {tk:"SNEL11",tipo:"Dividendos",pg:"25/06/2026",vc:0.10, cotas:59, total:5.90},
-  ],
+  provBR:[],
+  provLog:[],
 };
 
 /* ═══════════════════ HELPERS ═════════════════════ */
+// SEGURANÇA: escapa texto antes de injetar em innerHTML. Sem isso, qualquer campo de texto livre
+// (nome de banco, rótulo de meta, ticker digitado à mão, nome de item extra) vira um vetor de XSS
+// — digitar `<img src=x onerror=alert(1)>` num campo executaria esse script na hora de exibir.
+// Usar esc(valor) em TODO lugar que interpola texto do usuário dentro de um template `innerHTML`.
+function esc(s){
+  return String(s??"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
 const brl=(n,d=0)=>"R$ "+Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
 const usd=(n,d=2)=>"US$ "+Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
 /* Versão para a linha de TOTAL: símbolo pequeno/sutil + número em destaque, sem quebrar linha */
@@ -3005,6 +2987,23 @@ const brlTotal=(n,d=0)=>`<span class="tot-cur">R$</span> ${Math.abs(+n).toLocale
 const usdTotal=(n,d=2)=>`<span class="tot-cur">US$</span> ${Math.abs(+n).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})}`;
 const sgn=n=>n>=0?"+":"−";
 let usdBRL=5.80, sortSt={}, pricesArelive=false;
+// CORRIGIDO (jul/2026): usdBRL nascia hardcoded em 5.80 (valor de junho) e só era atualizado se a
+// AwesomeAPI respondesse com sucesso NESTA sessão. O CARD do dólar já tinha cache próprio
+// (mktCache_usd) e mostrava o valor real mesmo com a API fora — mas a variável usdBRL usada em
+// TODOS os cálculos (patrimônio de ETFs/Stocks, custo, lucro, variação%) continuava no 5.80
+// hardcoded até a primeira resposta bem-sucedida. Resultado: card mostrava câmbio certo, cálculos
+// usavam câmbio errado, silenciosamente. Agora inicializa do cache real assim que ele existir.
+(function initUsdBRLDoCache(){
+  try{
+    const cached = JSON.parse(localStorage.getItem("mktCache_usd")||"null");
+    if(cached && cached.val){
+      // cached.val vem formatado ("R$ 5,52", com R$ e espaço) — extrai só os dígitos/vírgula/ponto
+      const limpo = String(cached.val).replace(/[^\d,.-]/g,"").replace(",",".");
+      const parsed = parseFloat(limpo);
+      if(parsed>0) usdBRL = parsed;
+    }
+  }catch(e){}
+})();
 
 /* prices: começa vazio e é imediatamente populado pelo loadPriceCache() com o último preço
    REAL confirmado numa sessão anterior (não mais um snapshot fixo gravado no código) —
@@ -3371,6 +3370,16 @@ function hideRefreshToast(){
 // ou o mesmo usuário em outro aparelho, já chega vendo o último valor real, sem começar do zero
 // esperando a busca ao vivo confirmar de novo. Não consome uma chamada extra — é um campo a mais
 // dentro do salvamento que já acontece.
+// CORRIGIDO (jul/2026): esse auto-save disparava a cada ciclo de refresh (~60s) sempre que
+// qualquer preço mudava — o que é quase sempre. Isso multiplicava a janela de risco de "duas abas/
+// aparelhos salvando por cima um do outro" (last-write-wins, sem checagem de conflito — ver
+// salvarCarteiraNaNuvem) e gerava escrita constante no banco à toa, já que ultimoPreco/ultimoDY são
+// só um cache de conveniência, não dado crítico que precisa estar sempre 100% em dia. Agora só
+// salva no máximo 1x a cada 3 minutos — reduz a frequência de escrita e o risco de conflito em ~3x,
+// sem mudar nenhum comportamento visível (o salvamento explícito ao adicionar/editar ativo continua
+// instantâneo, como sempre foi; isto aqui é só o sync passivo de "último valor conhecido").
+let _ultimoSyncValoresTs = 0;
+const SYNC_VALORES_MIN_INTERVALO_MS = 3*60*1000;
 function sincronizarUltimosValoresConhecidos(){
   let mudou = false;
   const syncBR = (list)=>{
@@ -3389,7 +3398,11 @@ function sincronizarUltimosValoresConhecidos(){
   };
   syncBR(D.acoes); syncBR(D.fiis); syncBR(D.bdrs);
   syncUS(D.etfs); syncUS(D.stocks);
-  if(mudou && currentUser) salvarCarteiraNaNuvem().catch(e=>console.warn("Sync últimos valores:",e));
+  if(!mudou || !currentUser) return;
+  const agora = Date.now();
+  if(agora - _ultimoSyncValoresTs < SYNC_VALORES_MIN_INTERVALO_MS) return; // debounce — tenta de novo no próximo ciclo
+  _ultimoSyncValoresTs = agora;
+  salvarCarteiraNaNuvem().catch(e=>console.warn("Sync últimos valores:",e));
 }
 
 async function refreshPrices(manual=false){
@@ -3689,7 +3702,13 @@ function loadMktCache(){
     try{
       const cached=JSON.parse(localStorage.getItem("mktCache_"+key)||"null");
       if(cached){
-        updMkt(key,cached.val,cached.chPct);
+        // CORRIGIDO (jul/2026): isto só EXIBE o valor salvo — não pode chamar updMkt() aqui, porque
+        // updMkt() sempre regrava o cache com ts=Date.now(), apagando o horário REAL da última
+        // cotação e trocando pelo momento em que a página foi aberta. Era por isso que o selo
+        // "atualizado HH:MM" (item novo, v30.6) sempre mostrava a hora do último reload, não a
+        // hora real da última cotação confirmada. updMktErr() já sabe mostrar isso sem regravar —
+        // reaproveita a mesma lógica aqui.
+        updMktErr(key);
       } else {
         const vEl=document.getElementById("mk-"+key+"-v"), cEl=document.getElementById("mk-"+key+"-c");
         if(vEl) vEl.innerHTML=spinnerSvg;
@@ -4715,7 +4734,7 @@ function renderAllocSec(gid,arr){
     const el=document.createElement("div"); el.className="acard";
     el.onclick=()=>{const t=tabMap[c.n];if(t) goTab(t);};
     el.innerHTML=`<div class="ac-top">
-      <div class="ac-name"><span class="ac-sw" style="background:${c.c}"></span>${c.n}</div>
+      <div class="ac-name"><span class="ac-sw" style="background:${c.c}"></span>${esc(c.n)}</div>
       <span class="ac-pct">${pct.toFixed(0)}%</span></div>
     <div class="ac-track"><div class="ac-fill" style="width:${pct}%;background:${c.c}"></div></div>
     <div class="ac-bot">
@@ -5029,7 +5048,7 @@ function renderRF(){
     const vencFmt = r.venc ? (()=>{ const [a,m,d]=r.venc.split("-"); return d&&m&&a?`venc. ${d}/${m}/${a}`:""; })() : "";
     const subInfo = [r.taxa&&r.taxa!=="—"?r.taxa:"", vencFmt].filter(Boolean).join(" · ") || "—";
     const liqSelo = r.liquidezDiaria ? ` <span style="font-size:8.5px;color:var(--pos);border:1px solid var(--pos);border-radius:3px;padding:0 3px;vertical-align:middle">liquidez diária</span>` : "";
-    tr.innerHTML=`<td><div class="tk" style="font-size:12px">${r.titulo}${liqSelo}</div><div class="co">${subInfo}</div></td>
+    tr.innerHTML=`<td><div class="tk" style="font-size:12px">${esc(r.titulo)}${liqSelo}</div><div class="co">${esc(subInfo)}</div></td>
       <td class="r">${r.cotas}</td><td class="r">${brl(r.inv,2)}</td>
       <td class="r">${brl(r.bruto,2)}</td>
       <td class="r" style="color:${ganho>=0?"var(--pos)":"var(--neg)"}">${sgn(ganho)}${brl(Math.abs(ganho),2)}</td>
@@ -5353,7 +5372,7 @@ function renderProv(){
   const logOrdenado = [...D.provLog].sort((a,b)=>parseData(b.pg)-parseData(a.pg));
   logOrdenado.forEach(l=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td class="tk">${l.tk}</td><td style="color:var(--muted);font-size:11px">${l.tipo}</td>
+    tr.innerHTML=`<td class="tk">${esc(l.tk)}</td><td style="color:var(--muted);font-size:11px">${esc(l.tipo)}</td>
       <td class="r" style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.pg}</td>
       <td class="r" style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.dc||"—"}</td>
       <td class="r">${brl(l.vc,4)}</td><td class="r">${l.cotas}</td>
@@ -5547,15 +5566,24 @@ async function addProv(){
 /* Busca logos em lote via Brapi — roda após cotações carregarem */
 /* Salva objetivo no Supabase e localmente */
 /* Upload avatar para Supabase Storage */
-const AVATAR_PATH = 'perfil/avatar.jpg';
-const AVATAR_URL  = `${SB_URL}/storage/v1/object/public/avatars/${AVATAR_PATH}`;
+// SEGURANÇA (jul/2026): antes, TODO usuário gravava no MESMO caminho fixo (perfil/avatar.jpg)
+// usando a chave anônima (SB_KEY) como autenticação — ou seja, qualquer pessoa que criasse conta
+// no app conseguia sobrescrever a foto de perfil de TODO MUNDO (o storage é um bucket só, sem
+// isolamento). Agora cada usuário tem seu próprio caminho (perfil/{user_id}/avatar.jpg) e a
+// gravação usa o TOKEN REAL do usuário logado (userAccessToken), não mais a chave anônima — assim
+// dá pra restringir a política do bucket a "só grava dentro da própria pasta" (auth.uid() = pasta).
+// IMPORTANTE: isso exige rodar a policy nova no Supabase (ver painel Admin › instruções) — até lá,
+// a política antiga (anon pode escrever em qualquer caminho) continua valendo como estava.
+function avatarPath(){ return `perfil/${currentUser?.id||'anon'}/avatar.jpg`; }
+function avatarUrl(){ return `${SB_URL}/storage/v1/object/public/avatars/${avatarPath()}`; }
 
 async function uploadAvatar_SB(file){
-  const res = await fetch(`${SB_URL}/storage/v1/object/avatars/${AVATAR_PATH}`, {
+  if(!currentUser) throw new Error('Sem sessão — não é possível fazer upload.');
+  const res = await fetch(`${SB_URL}/storage/v1/object/avatars/${avatarPath()}`, {
     method: 'POST',
     headers: {
       'apikey': SB_KEY,
-      'Authorization': 'Bearer ' + SB_KEY,
+      'Authorization': 'Bearer ' + (userAccessToken || SB_KEY),
       'Content-Type': file.type || 'image/jpeg',
       'x-upsert': 'true'
     },
@@ -5563,7 +5591,7 @@ async function uploadAvatar_SB(file){
   });
   if(!res.ok) throw new Error(await res.text());
   // adiciona cache-bust para forçar reload
-  return AVATAR_URL + '?t=' + Date.now();
+  return avatarUrl() + '?t=' + Date.now();
 }
 
 async function loadAvatar_SB(){
@@ -5576,9 +5604,10 @@ async function loadAvatar_SB(){
   // 1. localStorage cache — instantâneo, nunca some
   const cached=localStorage.getItem("avatar");
   if(cached) applyAvatar(cached);
-  // 2. Supabase — confirma/atualiza se disponível
+  // 2. Supabase — confirma/atualiza se disponível (caminho isolado por usuário)
+  if(!currentUser) return;
   try{
-    const testUrl=AVATAR_URL+'?t='+Date.now();
+    const testUrl=avatarUrl()+'?t='+Date.now();
     const r=await fetch(testUrl,{method:'HEAD'});
     if(r.ok) applyAvatar(testUrl);
   }catch(e){ /* usa cache local */ }
@@ -5934,7 +5963,12 @@ document.getElementById("addTicker")?.addEventListener("blur", async function(){
 });
 
 async function confirmarAddAtivo(){
-  const tk=document.getElementById("addTicker").value.toUpperCase().trim();
+  // SEGURANÇA: whitelist de caracteres válidos pra ticker (letras, números, ponto e ^ do índice).
+  // Sem isso, o campo aceitava QUALQUER texto (só maiúsculas + trim), e o ticker é exibido cru em
+  // dezenas de lugares do app (`${a.tk}`, `${e.tk}`, etc.) — abrindo XSS ao digitar algo como
+  // "<img src=x onerror=alert(1)>" como ticker. Bloquear aqui, na entrada, é mais seguro e muito
+  // menos arriscado do que precisar escapar em cada um dos pontos de exibição.
+  const tk=document.getElementById("addTicker").value.toUpperCase().trim().replace(/[^A-Z0-9.^]/g,"");
   const pm=parseFloat(document.getElementById("addPM").value)||0;
   const cotas=parseFloat(document.getElementById("addCotas").value)||0;
   const setor=document.getElementById("addSetor").value;
@@ -6415,7 +6449,7 @@ function renderMetasList(){
   }
   D.metas.forEach((m,i)=>{
     const div=document.createElement("div"); div.className="mi";
-    div.innerHTML=`<div style="flex:1"><div style="font-size:12px;font-weight:500">${m.lbl}</div><div style="font-family:var(--mono);font-size:15px;color:var(--gold)">${brl(m.v)}</div></div>
+    div.innerHTML=`<div style="flex:1"><div style="font-size:12px;font-weight:500">${esc(m.lbl)}</div><div style="font-family:var(--mono);font-size:15px;color:var(--gold)">${brl(m.v)}</div></div>
       <button class="btn-sec" style="font-size:11px;${D.activeMeta===i?"color:var(--gold);border-color:var(--gold-dim)":""}" onclick="setMeta(${i})">${D.activeMeta===i?"✓ Ativa":"Usar"}</button>
       <button class="btn-sec" style="font-size:11px;color:var(--neg);margin-left:4px" onclick="delMeta(${i})">✕</button>`;
     el.appendChild(div);
@@ -6586,8 +6620,32 @@ async function carregarCarteiraDaNuvem(){
   }
   atualizaBannerMigracao();
 }
+// CORRIGIDO (jul/2026): antes, duas chamadas a salvarCarteiraNaNuvem() quase simultâneas (ex.: você
+// adiciona um ativo bem na hora que o auto-sync de preços também decide salvar) disparavam DOIS
+// upserts concorrentes da carteira inteira — sem nenhuma trava. Não dá pra saber qual "ganha" por
+// último. Agora existe uma fila simples: se já tem um salvamento em andamento, a chamada nova só
+// marca "salva de novo assim que terminar" (com o estado mais atual de D), em vez de rodar em
+// paralelo. Isso NÃO resolve o cenário de dois APARELHOS/abas diferentes salvando ao mesmo tempo
+// (isso exigiria comparar updated_at antes de sobrescrever — mudança maior, fica pra depois) — mas
+// elimina a corrida dentro da MESMA aba, que era 100% evitável.
+let _salvandoPromise = null;
+let _salvarNovamentePendente = false;
 async function salvarCarteiraNaNuvem(){
   if(!currentUser) return;
+  if(_salvandoPromise){
+    _salvarNovamentePendente = true;
+    return _salvandoPromise;
+  }
+  _salvandoPromise = _executarSalvamentoCarteira().finally(()=>{
+    _salvandoPromise = null;
+    if(_salvarNovamentePendente){
+      _salvarNovamentePendente = false;
+      salvarCarteiraNaNuvem().catch(e=>console.warn("Salvamento em fila:",e));
+    }
+  });
+  return _salvandoPromise;
+}
+async function _executarSalvamentoCarteira(){
   const payload = {
     user_id: currentUser.id,
     acoes: D.acoes, fiis: D.fiis, etfs: D.etfs, stocks: D.stocks, rf: D.rf,
