@@ -2221,6 +2221,12 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v31.1",d:"Jul/2026",items:[
+    "NOVO: Proventos automáticos reativados — depois de checar 9 fontes diferentes (todas as com data de pagamento exata são pagas), voltamos com o endpoint gratuito da própria B3. Detecta e lança sozinho dividendos/JCP dos seus Ações/FIIs/BDR, com valor e tipo certos. LIMITAÇÃO CONHECIDA: esse endpoint não traz a data de pagamento real, só a data-com — os lançamentos automáticos aparecem com um selo '🖉' dourado clicável na tabela de Proventos; clique pra corrigir pra data real assim que o extrato da corretora confirmar",
+    "Proteção contra duplicação: mesmo corrigindo a data depois, o sistema não relança o mesmo provento numa busca futura (usa um controle interno que não depende da data exibida). Também protegido contra duplicar lançamentos antigos (manuais ou de quando a Brapi ainda funcionava) — compara ticker, valor e proximidade de data antes de sugerir qualquer lançamento novo",
+    "Busca throttled em até 1x por ticker a cada 20h — não martela a B3 a cada acesso. Roda automaticamente uma vez ao carregar (login) e sob demanda pelo botão 'Buscar proventos agora'",
+    "Removida formatarDataBR (função órfã do fluxo antigo da Brapi, sem uso depois da migração pra B3)",
+  ]},
   {v:"v31.0",d:"Jul/2026",items:[
     "SEGURANÇA CRÍTICA: sua carteira real (tickers, preço médio, cotas, DY, proventos recebidos) estava hardcoded no código-fonte, que é PÚBLICO no GitHub — qualquer pessoa via exatamente o que você tem e quanto vale, sem precisar logar. Removida do arquivo. Não perde nada: sua carteira de verdade já vive no Supabase há semanas; essas listas só serviam de semente pro primeiro acesso, que já não é mais o caso",
     "SEGURANÇA: upload de avatar usava um caminho FIXO compartilhado (perfil/avatar.jpg) autenticado com a chave anônima — qualquer pessoa que criasse conta podia sobrescrever a foto de perfil de TODO MUNDO. Agora cada usuário tem seu próprio caminho (perfil/{user_id}/avatar.jpg) e o upload usa o token real da sessão, não mais a chave anônima. Requer atualizar a policy do bucket no Supabase (ver painel Admin)",
@@ -5350,6 +5356,34 @@ function renderStocks(sc,sd){
 }
 
 /* Proventos */
+// Corrige a data de um provento detectado automaticamente via B3 (que vem com data-com, uma
+// aproximação — não a data de pagamento real). O usuário clica no selo "🖉" e digita a data certa
+// assim que o extrato da corretora confirmar. Atualiza local e tenta atualizar no Supabase também
+// (via ticker+valor+data antiga, já que o insert original não guardou o id da linha).
+async function editarDataProvento(idx){
+  const row = D.provLog[idx];
+  if(!row) return;
+  const nova = prompt(`Data de pagamento real de ${row.tk} (${row.tipo}, ${brl(row.total,2)})\nFormato: DD/MM/AAAA`, row.pg);
+  if(!nova || !/^\d{2}\/\d{2}\/\d{4}$/.test(nova.trim())){
+    if(nova) alert("Formato inválido — use DD/MM/AAAA.");
+    return;
+  }
+  const pgAntigo = row.pg;
+  row.pg = nova.trim();
+  row._aproximado = false;
+  renderProv();
+  if(sbOK && currentUser){
+    try{
+      const [ddA,mmA,yyyyA]=pgAntigo.split("/");
+      const [ddN,mmN,yyyyN]=row.pg.split("/");
+      await SB.patch('proventos',
+        {'ticker':'eq.'+row.tk,'valor_por_cota':'eq.'+row.vc,'data_pagamento':'eq.'+`${yyyyA}-${mmA}-${ddA}`},
+        {data_pagamento:`${yyyyN}-${mmN}-${ddN}`}
+      );
+    }catch(e){ console.warn("Corrigir data provento:", e.message); }
+  }
+}
+
 function renderProv(){
   atualizarProvBR();
   const mx=Math.max(...D.provBR.map(m=>m.v+m.futuro),1);
@@ -5372,8 +5406,9 @@ function renderProv(){
   const logOrdenado = [...D.provLog].sort((a,b)=>parseData(b.pg)-parseData(a.pg));
   logOrdenado.forEach(l=>{
     const tr=document.createElement("tr");
+    const pgAprox = l._aproximado ? `<span onclick="editarDataProvento(${D.provLog.indexOf(l)})" title="Data aproximada (data-com da B3, não a data de pagamento real). Clique pra corrigir quando souber a data certa." style="cursor:pointer;border-bottom:1px dashed var(--gold);color:var(--gold)">${l.pg} 🖉</span>` : l.pg;
     tr.innerHTML=`<td class="tk">${esc(l.tk)}</td><td style="color:var(--muted);font-size:11px">${esc(l.tipo)}</td>
-      <td class="r" style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.pg}</td>
+      <td class="r" style="font-family:var(--mono);font-size:11px;color:var(--muted)">${pgAprox}</td>
       <td class="r" style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.dc||"—"}</td>
       <td class="r">${brl(l.vc,4)}</td><td class="r">${l.cotas}</td>
       <td class="r" style="color:var(--gold);font-weight:600">${brl(l.total,2)}</td>`;
@@ -5444,49 +5479,125 @@ async function buscarProventosManual(){
   }
 }
 
-/* ── Proventos detectados automaticamente ─────────────────────────────
-   DESATIVADO por ora: a Brapi free deixou de liberar 'dividends=true' (virou recurso pago,
-   retorna 403). Como não há fonte de proventos ativa no momento, a função não faz mais chamadas
-   de rede — só retorna vazio. Fica pronta pra plugar uma fonte alternativa depois (Yahoo, CVM,
-   Edge Function etc.): é só voltar a preencher o loop de busca aqui dentro. O histórico de
-   proventos já lançados (D.provLog) continua intacto e visível — isso só afeta a DETECÇÃO de
-   proventos NOVOS automaticamente. */
-const PROVENTOS_FONTE_ATIVA = false; // vira true quando houver fonte funcionando
-async function buscarProventosAutomaticos(){
-  window._proventosNovosNestaRodada = 0;
-  if(!PROVENTOS_FONTE_ATIVA){
-    return {sucesso:0, falhas:0, novos:0, desativado:true};
-  }
-  // (reservado) quando houver fonte: buscar aqui e chamar coletarProventosSugeridos(tk, lista)
-  return {sucesso:0, falhas:0, novos:0};
+/* ── Proventos detectados automaticamente — via B3 (grátis, sem token) ────────────────
+   Endpoint público do próprio site da B3 (o mesmo que o investidor pessoa física usa em
+   "Empresas Listadas" → "Eventos Corporativos" → "Proventos em Dinheiro"). Não é uma API
+   oficialmente documentada — pode quebrar se a B3 redesenhar o site — mas é gratuita e real.
+   LIMITAÇÃO CONHECIDA E ACEITA: esse endpoint não traz "data de pagamento" — só "data-com"
+   (dataApproval/lastDatePriorEx). Usamos a data-com como APROXIMAÇÃO, marcada com um selo "🖉"
+   clicável na tabela (ver editarDataProvento) pra você corrigir pra data real quando o extrato
+   da corretora confirmar. Verificamos várias fontes pagas com data de pagamento exata antes de
+   decidir por este caminho gratuito — ver decisão registrada em conversa de jul/2026. */
+const PROVENTOS_FONTE_ATIVA = true;
+const B3_TRADING_NAME_CACHE_KEY = "b3TradingName_v1";      // {tk: {nome, ts}}
+const B3_FETCH_TS_CACHE_KEY = "b3ProventosFetchTs_v1";     // {tk: ts} — throttle por ticker
+const B3_VISTOS_KEY = "b3ProventosVistos_v1";              // ["tk|dataAprovacao|valor", ...]
+const B3_FETCH_MIN_INTERVALO_MS = 20*60*60*1000; // 20h — dado de dividendo não muda de hora em hora
+
+function _b3Cache(key){ try{ return JSON.parse(localStorage.getItem(key)||"{}"); }catch(e){ return {}; } }
+function _b3CacheSave(key,obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){} }
+
+async function b3GetTradingName(tk){
+  const cache = _b3Cache(B3_TRADING_NAME_CACHE_KEY);
+  if(cache[tk]) return cache[tk].nome; // nome de negociação não muda — cache permanente
+  try{
+    const params = JSON.stringify({language:"pt-br",pageNumber:1,pageSize:20,company:tk});
+    const b64 = btoa(params);
+    const j = await corsGetJSON(`https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies/${b64}`);
+    const nome = j?.results?.[0]?.tradingName;
+    if(nome){ cache[tk]={nome,ts:Date.now()}; _b3CacheSave(B3_TRADING_NAME_CACHE_KEY,cache); }
+    return nome||null;
+  }catch(e){ console.warn(`B3: não achou tradingName de ${tk}:`,e.message); return null; }
 }
 
-function coletarProventosSugeridos(tk, cashDividends){
+async function b3GetDividendos(tradingName){
+  const params = JSON.stringify({language:"pt-br",pageNumber:1,pageSize:50,tradingName});
+  const b64 = btoa(params);
+  const j = await corsGetJSON(`https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/${b64}`);
+  return j?.results||[];
+}
+
+async function buscarProventosAutomaticos(){
+  window._proventosNovosNestaRodada = 0;
+  if(!PROVENTOS_FONTE_ATIVA) return {sucesso:0, falhas:0, novos:0, desativado:true};
+
+  const tks = [
+    ...D.acoes.filter(a=>a.cotas>0).map(a=>a.tk),
+    ...D.fiis.filter(f=>f.cotas>0).map(f=>f.tk),
+    ...D.bdrs.filter(b=>b.cotas>0).map(b=>b.tk),
+  ];
+  const fetchTs = _b3Cache(B3_FETCH_TS_CACHE_KEY);
+  const vistos = new Set(JSON.parse(localStorage.getItem(B3_VISTOS_KEY)||"[]"));
+  let sucesso=0, falhas=0;
+
+  await Promise.allSettled(tks.map(async tk=>{
+    const agora = Date.now();
+    if(fetchTs[tk] && (agora-fetchTs[tk]) < B3_FETCH_MIN_INTERVALO_MS) return; // throttle — já checou recente
+    try{
+      const tradingName = await b3GetTradingName(tk);
+      if(!tradingName){ falhas++; return; }
+      const dividendos = await b3GetDividendos(tradingName);
+      fetchTs[tk]=agora;
+      coletarProventosSugeridosB3(tk, dividendos, vistos);
+      sucesso++;
+    }catch(e){ falhas++; console.warn(`Proventos B3: falhou pra ${tk}:`,e.message); }
+  }));
+
+  _b3CacheSave(B3_FETCH_TS_CACHE_KEY, fetchTs);
+  localStorage.setItem(B3_VISTOS_KEY, JSON.stringify([...vistos]));
+  return {sucesso, falhas, novos: window._proventosNovosNestaRodada};
+}
+
+function coletarProventosSugeridosB3(tk, dividendos, vistos){
   const ativo = D.acoes.find(a=>a.tk===tk) || D.fiis.find(f=>f.tk===tk) || D.bdrs.find(b=>b.tk===tk);
-  if(!ativo || !ativo.cotas) return; // não possui esse ativo — ignora
+  if(!ativo || !ativo.cotas) return;
   const cotas = ativo.cotas;
-  // Corte de "desde quando interessa": se sabemos a data de compra real, usa ela — só mostra
-  // proventos de depois que você teve o ativo. Se não sabemos (ativo cadastrado antes desse
-  // campo existir), cai no corte de 60 dias que já usávamos, como reserva.
   const limiteAntigo = ativo.dataCompra ? new Date(ativo.dataCompra) : (()=>{ const d=new Date(); d.setDate(d.getDate()-60); return d; })();
-  cashDividends.forEach(cd=>{
-    if(!cd.paymentDate || !cd.rate) return; // sem data de pagamento definida ainda — não dá pra sugerir lançamento
-    if(new Date(cd.paymentDate) < limiteAntigo) return; // provento antigo — fora do escopo (antes da compra, ou antes do corte de 60 dias)
-    const pg = formatarDataBR(cd.paymentDate); // parse de verdade — a Brapi manda timestamp completo, não só a data
-    const vc = cd.rate;
-    // já foi lançado (automática ou manualmente) antes? não duplica
-    const jaLancado = D.provLog.some(l=>l.tk===tk && l.pg===pg && Math.abs(l.vc-vc)<0.0001);
-    if(jaLancado) return;
-    const tipo = cd.label==="JCP" ? "JSCP" : "Dividendos";
-    const total = +(vc*cotas).toFixed(2);
-    const dc = cd.lastDatePrior ? formatarDataBR(cd.lastDatePrior) : null;
-    salvarProventoAuto({tk, tipo, pg, vc, cotas, total, dc});
+
+  dividendos.forEach(cd=>{
+    const valor = parseFloat(String(cd.valueCash||"0").replace(",","."));
+    if(!valor || !cd.dateApproval) return;
+    // Chave de dedup ESTÁVEL: não usa a data exibida (pg), porque essa pode ser corrigida depois
+    // pelo usuário (editarDataProvento) — se dedup dependesse de pg, a próxima busca automática
+    // não reconheceria o provento já lançado (a data mudou) e duplicaria o lançamento.
+    const chaveVisto = `${tk}|${cd.dateApproval}|${valor.toFixed(6)}`;
+    if(vistos.has(chaveVisto)) return;
+
+    // dataApproval vem "DD/MM/AAAA" — parse direto (não é ISO como o formato antigo da Brapi)
+    const [dd,mm,yyyy] = cd.dateApproval.split("/");
+    const dataAprovacao = new Date(+yyyy, +mm-1, +dd);
+    if(isNaN(dataAprovacao.getTime()) || dataAprovacao < limiteAntigo) { vistos.add(chaveVisto); return; }
+
+    const tipo = /JRS|JCP/i.test(cd.corporateAction||"") ? "JSCP" : "Dividendos";
+    const dataCom = cd.lastDatePriorEx || cd.dateApproval; // data-com — usada como aproximação da data de pagamento
+    const total = +(valor*cotas).toFixed(2);
+
+    // Proteção extra: além do controle "vistos" (que só sabe do que ESTA função já processou),
+    // confere contra o histórico já existente (D.provLog) — inclusive registros antigos, lançados
+    // manualmente ou pelo fluxo antigo da Brapi, que não passaram por este controle. Compara por
+    // ticker + valor por cota (tolerância pequena) + data dentro de uma janela de ±15 dias — dá
+    // pra pegar "é o mesmo provento, só que com uma data um pouco diferente" sem bloquear
+    // proventos futuros de valor igual (comum em JCP recorrente), que ficam bem mais espaçados.
+    const jaExisteParecido = D.provLog.some(l=>{
+      if(l.tk!==tk || Math.abs(l.vc-valor)>=0.0001) return false;
+      const [ld,lm,ly] = (l.pg||"").split("/");
+      if(!ld) return false;
+      const dataExistente = new Date(+ly,+lm-1,+ld);
+      const diffDias = Math.abs((dataAprovacao-dataExistente)/86400000);
+      return diffDias<=15;
+    });
+    if(jaExisteParecido){ vistos.add(chaveVisto); return; }
+
+    vistos.add(chaveVisto);
+    salvarProventoAutoB3({tk, tipo, pg:dataCom, vc:valor, cotas, total, dc:dataCom, _aproximado:true});
   });
 }
 
-// Salva um provento detectado automaticamente DIRETO no registro real — sem passar por confirmação
-// manual do usuário. É a fonte de verdade (Brapi), então entra fixo, sem botão de editar/excluir.
-async function salvarProventoAuto(row){
+// Salva um provento detectado via B3 DIRETO no histórico — marcado como aproximado (_aproximado)
+// pra UI mostrar o selo de correção. O flag _aproximado é só client-side (não existe coluna pra
+// isso na tabela 'proventos' do Supabase) — some se a página recarregar antes de você corrigir a
+// data, mas o valor/ticker/tipo do lançamento em si fica salvo e correto de qualquer forma.
+async function salvarProventoAutoB3(row){
   D.provLog.unshift(row);
   window._proventosNovosNestaRodada = (window._proventosNovosNestaRodada||0) + 1;
   if(sbOK && currentUser){
@@ -5496,22 +5607,10 @@ async function salvarProventoAuto(row){
         ticker:row.tk, tipo:row.tipo, data_pagamento:`${yyyy}-${mm}-${dd}`,
         valor_por_cota:row.vc, quantidade_cotas:row.cotas, total:row.total, user_id: currentUser.id
       });
-    }catch(e){ console.warn('Provento automático — erro ao salvar:',e); }
+    }catch(e){ console.warn('Provento automático (B3) — erro ao salvar:',e); }
   }
   atualizarProvBR();
   renderProv();
-}
-
-// Parse seguro de data vinda da Brapi — às vezes vem só "2026-11-03", às vezes o timestamp
-// completo "2026-11-03T03:00:00.000Z". Sempre extrai ano/mês/dia direto do objeto Date (nunca
-// faz split de string ingênuo, que foi a causa do bug de data quebrada tipo "03T03:00…/11/2026").
-function formatarDataBR(dataStr){
-  const d = new Date(dataStr);
-  if(isNaN(d.getTime())) return dataStr; // não conseguiu parsear — devolve o original em vez de quebrar
-  const dia = String(d.getUTCDate()).padStart(2,"0");
-  const mes = String(d.getUTCMonth()+1).padStart(2,"0");
-  const ano = d.getUTCFullYear();
-  return `${dia}/${mes}/${ano}`;
 }
 
 /* Recalcula D.provBR (últimos meses) a partir do histórico real — nunca mais valor de exemplo fixo */
