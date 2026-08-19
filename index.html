@@ -1321,7 +1321,7 @@ tr.total-row td.r:empty{border-left:none;padding-left:11px}
         </div>
       </div>
       <div class="st">Histórico</div>
-      <div class="tw"><table><thead><tr><th>Ativo</th><th>Tipo</th><th class="r">Data</th><th class="r">Data-com</th><th class="r">Val/cota</th><th class="r">Cotas</th><th class="r">Total</th></tr></thead><tbody id="provLog"></tbody></table></div>
+      <div class="tw"><table><thead><tr><th>Ativo</th><th>Tipo</th><th class="r">Data</th><th class="r">Data-com</th><th class="r">Val/cota</th><th class="r">Cotas</th><th class="r">Total</th><th></th></tr></thead><tbody id="provLog"></tbody></table></div>
     </div>
     <div>
       <div class="st">Evolução de proventos — últimos 12 meses</div>
@@ -2221,6 +2221,14 @@ function setSbStatus(ok){
 
 /* ═══════════════════ CHANGELOG ═══════════════════ */
 const CHANGELOG=[
+  {v:"v31.3",d:"Jul/2026",items:[
+    "CORRIGIDO: consumo desnecessário de cota da Brapi — descoberto depois de bater no limite mensal (5.350 chamadas bloqueadas) sem uso ativo do app. Causa: a atualização automática rodava a cada 60s SEM PARAR, mesmo com a aba em segundo plano/esquecida aberta. Agora: intervalo subiu pra 5 minutos, e a busca PARA quando a aba não está visível — retomando (com uma atualização imediata) assim que você volta a olhar pra ela. Correção temporária pro período no plano free — fica registrado no código como item de backlog pra revisar quando a Edge Function assumir a cotação com cache compartilhado (nesse cenário, quem bate na Brapi de verdade passa a ser só a função, uma vez pra todos os usuários, não um navegador por vez — daí dá pra voltar a atualizar mais rápido sem gastar cota extra)",
+  ]},
+  {v:"v31.2",d:"Jul/2026",items:[
+    "CORRIGIDO: a busca automática de proventos (v31.1) falhava 100% das vezes em produção — testamos o endpoint da B3 colando a URL direto no navegador, mas isso ignora a regra de CORS; a chamada de verdade do app (via JavaScript) esbarra nela, e os proxies públicos não conseguem alcançar a B3 de forma confiável. Solução: a busca foi movida pra dentro da Edge Function do Supabase (chamada servidor-a-servidor, sem CORS). REQUER DEPLOY: o app já está pronto pra usar, mas só funciona depois que a função for atualizada no Supabase (arquivo cotacoes/index.ts, modo 'proventos') — até lá, a busca falha graciosamente, com mensagem mais clara sobre isso",
+    "NOVO: botão de excluir (✕) em cada linha da tabela de Proventos — remove um lançamento específico pelo id (nunca por ticker+valor, que poderia casar com duas linhas idênticas e apagar a errada). Resolve o caso de duplicatas antigas, e serve pra qualquer lançamento errado daqui pra frente",
+    "Mensagem de erro da busca de proventos suavizada — antes soava como falha de conexão grave; agora deixa claro que 'função ainda não configurada' é um estado esperado, não uma falha de rede",
+  ]},
   {v:"v31.1",d:"Jul/2026",items:[
     "NOVO: Proventos automáticos reativados — depois de checar 9 fontes diferentes (todas as com data de pagamento exata são pagas), voltamos com o endpoint gratuito da própria B3. Detecta e lança sozinho dividendos/JCP dos seus Ações/FIIs/BDR, com valor e tipo certos. LIMITAÇÃO CONHECIDA: esse endpoint não traz a data de pagamento real, só a data-com — os lançamentos automáticos aparecem com um selo '🖉' dourado clicável na tabela de Proventos; clique pra corrigir pra data real assim que o extrato da corretora confirmar",
     "Proteção contra duplicação: mesmo corrigindo a data depois, o sistema não relança o mesmo provento numa busca futura (usa um controle interno que não depende da data exibida). Também protegido contra duplicar lançamentos antigos (manuais ou de quando a Brapi ainda funcionava) — compara ticker, valor e proximidade de data antes de sugerir qualquer lançamento novo",
@@ -5384,6 +5392,23 @@ async function editarDataProvento(idx){
   }
 }
 
+// Exclui um lançamento específico do histórico de proventos (ex.: pra remover uma duplicata).
+// Apaga pelo ID da linha no Supabase — nunca por ticker+valor+data (que poderia casar com as DUAS
+// linhas quando são idênticas, apagando a errada ou as duas). Se a linha ainda não tem id (foi
+// adicionada nesta sessão e ainda não veio de um reload da nuvem), só remove localmente.
+async function excluirProvento(idx){
+  const row = D.provLog[idx];
+  if(!row) return;
+  if(!confirm(`Excluir este lançamento?\n${row.tk} — ${row.tipo} — ${brl(row.total,2)} em ${row.pg}`)) return;
+  D.provLog.splice(idx,1);
+  renderProv();
+  if(row.id && sbOK && currentUser){
+    try{ await SB.del('proventos', {'id':'eq.'+row.id}); }
+    catch(e){ console.warn('Excluir provento:', e.message); alert('Removido aqui, mas houve um erro ao remover da nuvem — pode reaparecer no próximo carregamento. Erro: '+e.message); }
+  }
+  atualizarProvBR();
+}
+
 function renderProv(){
   atualizarProvBR();
   const mx=Math.max(...D.provBR.map(m=>m.v+m.futuro),1);
@@ -5411,7 +5436,8 @@ function renderProv(){
       <td class="r" style="font-family:var(--mono);font-size:11px;color:var(--muted)">${pgAprox}</td>
       <td class="r" style="font-family:var(--mono);font-size:11px;color:var(--muted)">${l.dc||"—"}</td>
       <td class="r">${brl(l.vc,4)}</td><td class="r">${l.cotas}</td>
-      <td class="r" style="color:var(--gold);font-weight:600">${brl(l.total,2)}</td>`;
+      <td class="r" style="color:var(--gold);font-weight:600">${brl(l.total,2)}</td>
+      <td class="r" style="white-space:nowrap"><button class="refbtn" onclick="excluirProvento(${D.provLog.indexOf(l)})" style="color:var(--neg);border-color:var(--neg);padding:3px 6px;font-size:11px" title="Excluir este lançamento (ex.: duplicata)">✕</button></td>`;
     fl.appendChild(tr);
   });
 
@@ -5470,7 +5496,7 @@ async function buscarProventosManual(){
   if(btn){
     btn.disabled=false; btn.textContent="🔄 Buscar proventos agora";
     if(sucesso===0 && falhas>0){
-      alert(`Não foi possível buscar agora — problema de conexão com a fonte de dados (${falhas} de ${falhas} tentativas falharam). Tenta de novo em alguns minutos.`);
+      alert(`Não consegui buscar proventos agora. Se a função de busca ainda não foi configurada no Supabase, isso é esperado. Se já foi, tenta de novo em alguns minutos.`);
     } else if(novos>0){
       alert(`${novos} provento${novos>1?"s":""} novo${novos>1?"s":""} encontrado${novos>1?"s":""} e já adicionado${novos>1?"s":""} automaticamente ao seu histórico.`);
     } else {
@@ -5479,69 +5505,57 @@ async function buscarProventosManual(){
   }
 }
 
-/* ── Proventos detectados automaticamente — via B3 (grátis, sem token) ────────────────
-   Endpoint público do próprio site da B3 (o mesmo que o investidor pessoa física usa em
-   "Empresas Listadas" → "Eventos Corporativos" → "Proventos em Dinheiro"). Não é uma API
-   oficialmente documentada — pode quebrar se a B3 redesenhar o site — mas é gratuita e real.
-   LIMITAÇÃO CONHECIDA E ACEITA: esse endpoint não traz "data de pagamento" — só "data-com"
-   (dataApproval/lastDatePriorEx). Usamos a data-com como APROXIMAÇÃO, marcada com um selo "🖉"
-   clicável na tabela (ver editarDataProvento) pra você corrigir pra data real quando o extrato
-   da corretora confirmar. Verificamos várias fontes pagas com data de pagamento exata antes de
-   decidir por este caminho gratuito — ver decisão registrada em conversa de jul/2026. */
+/* ── Proventos detectados automaticamente — via Edge Function (Supabase) ──────────────
+   A busca direta do navegador pra B3 (mesmo passando por proxy público) falhava 100% das vezes
+   em produção — a B3 não libera CORS pra esse endpoint, e os proxies gratuitos não conseguem
+   alcançá-la de forma confiável. Solução: mover a busca pra dentro de uma Edge Function no
+   Supabase (chamada servidor-a-servidor, onde CORS não é problema). Ver /supabase/functions/
+   cotacoes/index.ts (modo "proventos"). ENQUANTO a função não estiver deployada, esta busca
+   simplesmente falha graciosamente — sem alarme forte, já que isso é esperado até o deploy
+   acontecer, não uma falha de rede real.
+   LIMITAÇÃO CONHECIDA E ACEITA: o endpoint da B3 não traz "data de pagamento" — só "data-com".
+   Usada como aproximação, com selo "🖉" clicável na tabela pra correção manual depois. */
 const PROVENTOS_FONTE_ATIVA = true;
-const B3_TRADING_NAME_CACHE_KEY = "b3TradingName_v1";      // {tk: {nome, ts}}
-const B3_FETCH_TS_CACHE_KEY = "b3ProventosFetchTs_v1";     // {tk: ts} — throttle por ticker
-const B3_VISTOS_KEY = "b3ProventosVistos_v1";              // ["tk|dataAprovacao|valor", ...]
+const EDGE_FUNCTION_URL = `${SB_URL}/functions/v1/cotacoes`;
+const B3_FETCH_TS_CACHE_KEY = "b3ProventosFetchTs_v1"; // {tk: ts} — throttle por ticker
+const B3_VISTOS_KEY = "b3ProventosVistos_v1";          // ["tk|dataAprovacao|valor", ...]
 const B3_FETCH_MIN_INTERVALO_MS = 20*60*60*1000; // 20h — dado de dividendo não muda de hora em hora
 
 function _b3Cache(key){ try{ return JSON.parse(localStorage.getItem(key)||"{}"); }catch(e){ return {}; } }
 function _b3CacheSave(key,obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){} }
 
-async function b3GetTradingName(tk){
-  const cache = _b3Cache(B3_TRADING_NAME_CACHE_KEY);
-  if(cache[tk]) return cache[tk].nome; // nome de negociação não muda — cache permanente
-  try{
-    const params = JSON.stringify({language:"pt-br",pageNumber:1,pageSize:20,company:tk});
-    const b64 = btoa(params);
-    const j = await corsGetJSON(`https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies/${b64}`);
-    const nome = j?.results?.[0]?.tradingName;
-    if(nome){ cache[tk]={nome,ts:Date.now()}; _b3CacheSave(B3_TRADING_NAME_CACHE_KEY,cache); }
-    return nome||null;
-  }catch(e){ console.warn(`B3: não achou tradingName de ${tk}:`,e.message); return null; }
-}
-
-async function b3GetDividendos(tradingName){
-  const params = JSON.stringify({language:"pt-br",pageNumber:1,pageSize:50,tradingName});
-  const b64 = btoa(params);
-  const j = await corsGetJSON(`https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/${b64}`);
-  return j?.results||[];
-}
-
 async function buscarProventosAutomaticos(){
   window._proventosNovosNestaRodada = 0;
   if(!PROVENTOS_FONTE_ATIVA) return {sucesso:0, falhas:0, novos:0, desativado:true};
 
+  const fetchTs = _b3Cache(B3_FETCH_TS_CACHE_KEY);
+  const agora = Date.now();
   const tks = [
     ...D.acoes.filter(a=>a.cotas>0).map(a=>a.tk),
     ...D.fiis.filter(f=>f.cotas>0).map(f=>f.tk),
     ...D.bdrs.filter(b=>b.cotas>0).map(b=>b.tk),
-  ];
-  const fetchTs = _b3Cache(B3_FETCH_TS_CACHE_KEY);
+  ].filter(tk => !fetchTs[tk] || (agora-fetchTs[tk])>=B3_FETCH_MIN_INTERVALO_MS); // throttle por ticker
+
+  if(!tks.length) return {sucesso:0, falhas:0, novos:0, semNadaPraBuscar:true};
+
   const vistos = new Set(JSON.parse(localStorage.getItem(B3_VISTOS_KEY)||"[]"));
   let sucesso=0, falhas=0;
 
-  await Promise.allSettled(tks.map(async tk=>{
-    const agora = Date.now();
-    if(fetchTs[tk] && (agora-fetchTs[tk]) < B3_FETCH_MIN_INTERVALO_MS) return; // throttle — já checou recente
-    try{
-      const tradingName = await b3GetTradingName(tk);
-      if(!tradingName){ falhas++; return; }
-      const dividendos = await b3GetDividendos(tradingName);
-      fetchTs[tk]=agora;
-      coletarProventosSugeridosB3(tk, dividendos, vistos);
+  try{
+    const url = `${EDGE_FUNCTION_URL}?mode=proventos&tickers=${encodeURIComponent(tks.join(","))}`;
+    const r = await fetch(url, { headers: { 'Authorization': 'Bearer '+SB_KEY, 'apikey': SB_KEY } });
+    if(!r.ok) throw new Error(`Edge Function respondeu ${r.status}`);
+    const j = await r.json();
+    (j.results||[]).forEach(item=>{
+      fetchTs[item.ticker] = agora;
+      if(item.erro || !item.dividendos){ falhas++; return; }
       sucesso++;
-    }catch(e){ falhas++; console.warn(`Proventos B3: falhou pra ${tk}:`,e.message); }
-  }));
+      coletarProventosSugeridosB3(item.ticker, item.dividendos, vistos);
+    });
+  }catch(e){
+    console.warn('Proventos via Edge Function falharam (função ainda não deployada?):', e.message);
+    falhas = tks.length;
+  }
 
   _b3CacheSave(B3_FETCH_TS_CACHE_KEY, fetchTs);
   localStorage.setItem(B3_VISTOS_KEY, JSON.stringify([...vistos]));
@@ -6887,7 +6901,7 @@ async function startApp(){
     try{
       const provs = await SB.get('proventos', {'user_id':'eq.'+currentUser.id, 'order':'created_at.desc'});
       D.provLog = (provs||[]).map(p=>({
-        tk:p.ticker, tipo:p.tipo,
+        id:p.id, tk:p.ticker, tipo:p.tipo,
         pg: p.data_pagamento ? p.data_pagamento.split('-').reverse().join('/') : '—',
         vc: p.valor_por_cota, cotas: p.quantidade_cotas, total: p.total
       }));
@@ -6964,8 +6978,34 @@ async function startApp(){
   setLastUpdText("Buscando cotações…");
   await refreshPrices();
 
-  /* 5. Auto-refresh a cada 60s */
-  setInterval(()=>refreshPrices(false), 60*1000);
+  /* 5. Auto-refresh — TEMPORÁRIO enquanto estamos no plano free da Brapi (jul/2026): o app estava
+     buscando cotação a cada 60s, SEM PARAR mesmo com a aba em segundo plano/esquecida aberta —
+     isso sozinho gerava milhares de chamadas por mês (5.350 bloqueadas num único ciclo, sem uso
+     ativo nenhum). Duas correções: (1) intervalo subiu de 60s pra 5min — cotação de carteira
+     pessoal não precisa de precisão de minuto a minuto; (2) para de buscar quando a aba não está
+     visível, e retoma (com uma busca imediata) assim que você volta a olhar pra ela.
+     BACKLOG: revisar esse esquema quando a Edge Function assumir a cotação com cache compartilhado
+     (ver EDGE_FUNCTION_URL) — nesse cenário o cliente pode voltar a atualizar mais rápido sem
+     gastar cota extra, porque quem bate na Brapi de verdade passa a ser só a função, uma vez para
+     todos os usuários, não um navegador por vez. */
+  const AUTO_REFRESH_INTERVALO_MS = 5*60*1000; // 5 minutos
+  let _autoRefreshTimer = null;
+  function iniciarAutoRefresh(){
+    if(_autoRefreshTimer) return; // já rodando
+    _autoRefreshTimer = setInterval(()=>refreshPrices(false), AUTO_REFRESH_INTERVALO_MS);
+  }
+  function pararAutoRefresh(){
+    if(_autoRefreshTimer){ clearInterval(_autoRefreshTimer); _autoRefreshTimer=null; }
+  }
+  iniciarAutoRefresh();
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='hidden'){
+      pararAutoRefresh(); // aba em segundo plano — para de gastar cota à toa
+    } else {
+      iniciarAutoRefresh();
+      refreshPrices(false).catch(()=>{}); // busca imediata ao voltar — não fica com dado velho até o próximo ciclo de 5min
+    }
+  });
 
   /* Indicador de scroll horizontal em tabelas — só aparece se a tabela realmente excede a largura */
   setupTableScrollHints();
